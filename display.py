@@ -11,6 +11,10 @@ def changeStatusChar(c):
     statusw.addstr(0,1,c, curses.color_pair(1))
     statusw.refresh()
 
+def cursorInStatusBar():
+    "Place the cursor in the status bar bracket."
+    statusw.move(0, 1)
+
 def changeStatusMsg(msg):
     statusw.addstr(0, 15, ' ' * (80 - 15), curses.color_pair(1))
     statusw.addstr(0, 15, msg, curses.color_pair(1))
@@ -52,6 +56,9 @@ def getch_stack():
     return stackw.getch()
 def putch_stack(c):
     stackw.addstr(c)
+def getch_status():
+    cursorInStatusBar()
+    return statusw.getch()
 
 def addCommand(char, descr, yposn, xposn):
     try:

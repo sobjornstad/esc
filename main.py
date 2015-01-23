@@ -16,7 +16,9 @@ import curses.ascii
 import copy
 
 import display
-from consts import STACKDEPTH, STACKWIDTH
+import history
+from consts import STACKDEPTH, STACKWIDTH, UNDO_CHARACTER, REDO_CHARACTER
+from time import sleep # debug
 
 stackCheckpoints = []
 redoCheckpoints = []
@@ -103,8 +105,12 @@ class StackState(object):
         an operation (go figure) for a more helpful error message in that case.
         """
 
+        # Even if we were *not* editing the stack, checkpoint the stack state.
+        # This ensures that we will get a checkpoint anytime we call an
+        # operation as well as when we enter a number onto the stack.
+        history.hs.checkpointState(self)
+
         if self.editingStack:
-            #self._checkpoint()
             if self.s[self.stackPosn].finishEntry():
                 self.editingStack = False
                 self.cursorPosn = 0
@@ -116,10 +122,6 @@ class StackState(object):
                     msg = 'Invalid entry.'
                 display.changeStatusMsg(msg)
                 return False
-
-    def undo(self):
-        "Return to last stack state in stackCheckpoints."
-        self = self.lastStack
 
     def openNewStackItem(self, c):
         """
@@ -146,13 +148,6 @@ class StackState(object):
         self.s.pop()
         self.editingStack = False
         self.cursorPosn = 0
-
-    def _checkpoint(self, clearRedoList=True):
-        """Save current stack state to global undo list."""
-        global stackCheckpoints, redoCheckpoints
-        stackCheckpoints.append(copy.deepcopy(self))
-        if clearRedoList:
-            redoCheckpoints = []
 
     def enoughPushSpace(self, num):
         return STACKDEPTH >= len(self.s) + num
@@ -208,9 +203,13 @@ def main():
             display.changeStatusMsg("Ready")
         errorState = False
 
-        # update cursor posn and fetch one char of input
+        # update cursor posn and fetch one char of input (in stack or status)
         display.adjustCursorPos(ss)
-        c = display.getch_stack()
+        if fm.curMenu:
+            c = display.getch_status()
+        else:
+            display.cursorInStatusBar()
+            c = display.getch_stack()
 
         # if we don't have a menu open, try interpreting as a number
         if not fm.curMenu:
@@ -251,8 +250,28 @@ def main():
                 display.displayBackspace(ss, r)
                 continue
 
+        # or do we want to undo?
+        if chr(c) == UNDO_CHARACTER:
+            newSs = history.hs.lastCheckpoint(ss)
+            if newSs:
+                ss = newSs
+                display.redrawStackWin(ss)
+            else:
+                display.changeStatusMsg("Nothing to undo.")
+                errorState = True
+            continue
+        elif curses.ascii.unctrl(c) == REDO_CHARACTER:
+            newSs = history.hs.nextCheckpoint(ss)
+            if newSs:
+                ss = newSs
+                display.redrawStackWin(ss)
+            else:
+                display.changeStatusMsg("Nothing to redo.")
+                errorState = True
+            continue
 
-        # If not a number, it's an operator of some kind.
+
+        # Otherwise, it's an operator of some kind.
         if fm.runFunction(chr(c), ss):
             display.redrawStackWin(ss)
         else:

@@ -1,12 +1,11 @@
 import math
-from main import STACKDEPTH, ftostr
+from main import ftostr
+from consts import STACKDEPTH, QUIT_CHARACTER, CONSTANT_MENU_CHARACTER
 import display
+import history
 from time import sleep #debug
 
 #TODO: Possibility to provide one's own error wrapper function (for instance, for '-' with zero/one item on stack?)
-
-QUIT_CHARACTER = 'q'
-CONSTANT_MENU_CHARACTER = 'i'
 
 class ModeStorage(object):
     """
@@ -35,6 +34,18 @@ class FunctionManager(object):
         self.quitAfter = False
         self.MAX_TEXT_FUNCTIONS = STACKDEPTH
 
+    def setStatusDisplayRequested(self):
+        """
+        Indicate that, although there was no error, we wish to display something
+        on the status bar. This function is a setter for an attribute which is
+        initialized to False every time a function is run. If the attribute is
+        set at the end of runFunction, we will return False even though the
+        operation was a success, indicating something needs to be displayed.
+        """
+        self.statusDisplayRequested = True
+
+
+    ##### Menu handling ######
     def enterMenu(self, menu):
         "Change state to specify we are in a different menu."
         assert menu in self.menuNames, \
@@ -47,7 +58,6 @@ class FunctionManager(object):
 
         self.displayMenu()
         display.changeStatusMsg(msg)
-
 
     def leaveMenu(self):
         "Change state and display to leave menu, if any."
@@ -122,15 +132,21 @@ class FunctionManager(object):
                 display.addCommand(dispChar, self.menuNames[i], yposn, xposn)
             yposn += 1
 
+        # then the undo option, if on the main menu
+        if not self.curMenu:
+            display.addCommand('u', 'undo (', yposn, xposn)
+            display.addCommand('^r', 'redo)', yposn, xposn + 8)
+            yposn += 1
+
         # then the quit option, which is always there but is not a function
         quitName = 'cancel' if self.curMenu else 'quit'
         display.addCommand('q', quitName, yposn, xposn)
-
 
         # finally, make curses figure out how it's supposed to draw this
         display.commandsw.refresh()
 
 
+    ##### Function registration and use #####
     def registerFunction(self, fn, numPop, numPush, commandChar,
             commandDescr=None, menu=None):
         if menu:
@@ -168,17 +184,6 @@ class FunctionManager(object):
         self.registerFunction(lambda discard: cst, 0, 1,
                 commandChar, commandDescr, menu)
 
-    def setStatusDisplayRequested(self):
-        """
-        Indicate that, although there was no error, we wish to display something
-        on the status bar. This function is a setter for an attribute which is
-        initialized to False every time a function is run. If the attribute is
-        set at the end of runFunction, we will return False even though the
-        operation was a success, indicating something needs to be displayed.
-        """
-        self.statusDisplayRequested = True
-
-
     def runFunction(self, commandChar, ss):
         """
         Run the function indicated by /commandChar/, modifying the stack /ss/.
@@ -215,8 +220,9 @@ class FunctionManager(object):
         else:
             fnName = commandChar
 
-        # if all of those passed, we're going to run an operation, so enter the
-        # number currently being edited, if any, stopping if it is invalid
+        # If all of those passed, we're going to run an operation, so enter the
+        # number currently being edited, if any, stopping if it is invalid.
+        # Note that this also checkpoints the state of the stack for us.
         if ss.enterNumber(fnName) is False:
             return False
 
