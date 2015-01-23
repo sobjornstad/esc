@@ -491,18 +491,14 @@ def main(statusw, stackw, commandsw):
         # try running as an operator; if not, we return False and go on
         elif fm.runFunction(chr(c), ss):
             redrawStackWin(ss, stackw)
+            # find a way to set errorState here: maybe put this last
 
         elif chr(c) in ('t', 'i', 'l'):
             numOperands = 1 if chr(c) in ('s', 't') else 2
             oldSs = copy.deepcopy(ss)
             ss.enterNumber()
             if c == ord('s'):
-                try:
-                    ss = unaryOperator(ss, stackw, lambda bos: math.sqrt(bos))
-                except ValueError:
-                    ss = 'error'
-                    changeStatusMsg(statusw,
-                            "'s': Domain error! Stack unchanged.")
+                pass
             elif c == ord('t'):
                 ss = trigMenu(statusw, stackw, commandsw, ss)
             elif c == ord('i'):
@@ -548,6 +544,11 @@ def main(statusw, stackw, commandsw):
             else:
                 changeStatusMsg(statusw, "Nothing to redo.")
                 errorState = True
+
+        # program functions
+        elif c == ord('q'):
+            return
+
         elif c == ord('y'):
             ss.enterNumber()
             try:
@@ -557,10 +558,6 @@ def main(statusw, stackw, commandsw):
                 errorState = True
                 continue
             clip(ftostr(bos.value), p=False)
-
-        # program functions
-        elif c == ord('q'):
-            return
 
         else:
             char = "\\n" if chr(c) == '\n' else chr(c)
