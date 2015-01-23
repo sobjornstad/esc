@@ -1,5 +1,5 @@
 import curses
-from consts import STACKDEPTH, STACKWIDTH
+from consts import STACKDEPTH, STACKWIDTH, PROGRAM_NAME
 from time import sleep #debug
 
 # module globals defined for each of the windows: statusw, stackw, commandsw
@@ -16,8 +16,8 @@ def cursorInStatusBar():
     statusw.move(0, 1)
 
 def changeStatusMsg(msg):
-    statusw.addstr(0, 15, ' ' * (80 - 15), curses.color_pair(1))
-    statusw.addstr(0, 15, msg, curses.color_pair(1))
+    statusw.addstr(0, 16, ' ' * (80 - 15), curses.color_pair(1))
+    statusw.addstr(0, 16, msg, curses.color_pair(1))
     statusw.refresh()
 
 def redrawStackWin(ss):
@@ -90,7 +90,7 @@ def setup(stdscr):
     #statusw.addstr(0, 0, (' ' * (maxx - 1)), curses.color_pair(1))
     #DEBUG, to see where 80 cols is:
     statusw.addstr(0, 0, (' ' * 80), curses.color_pair(1))
-    statusw.addstr(0, 0, "[ ] ic 0.0.1 |", curses.color_pair(1))
+    statusw.addstr(0, 0, "[ ] %s |" % PROGRAM_NAME, curses.color_pair(1))
     statusw.move(0, 1)
 
     stackw = curses.newwin(3 + STACKDEPTH, 24, 1, 0)

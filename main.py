@@ -3,13 +3,12 @@
 #TODO:
 # History section.
 # Registers.
-# Logarithm menu.
-# Don't panic if stack width exceeded, or if other invalid input
-#   (e.g., entering an 'e' where it can't be scientific notation,
-#    multiple decimals, negative by itself)
+# Don't panic if stack width exceeded when typing.
 # A bit more documentation
-# It's sometimes possible to overflow the stack window? It should do sci notation.
-# Fix undoing and checkpoints; it fails at many important operations.
+# Dev documentation (maybe program some of my own functions)
+# And find a way to read a whole directory of function modules
+# Split functions.py into the class part and the user part
+# It's sometimes possible to overflow the stack window with results. It should do scientific notation if beyond a reasonable length.
 
 import curses.wrapper
 import curses.ascii
