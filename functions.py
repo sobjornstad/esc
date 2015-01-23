@@ -40,6 +40,11 @@ class FunctionManager(object):
         assert menu in self.menuNames, \
                 "Menu does not exist! Did you buildMenus()?"
         self.curMenu = menu
+        if menu == CONSTANT_MENU_CHARACTER:
+            msg = "Expecting constant choice (q to cancel)"
+        else:
+            msg = "Expecting %s command (q to cancel)" % self.menuNames[menu]
+        display.changeStatusMsg(msg)
 
     def leaveMenu(self):
         "Change state to leave menu, if any."
@@ -126,7 +131,7 @@ class FunctionManager(object):
 
         if self.fnattrs[commandChar] == '@menu':
             self.enterMenu(commandChar)
-            return True
+            return False # False because we need to display a status item
 
         # if all of those passed, we're going to run an operation, so enter the
         # number currently being edited, if any
