@@ -8,21 +8,15 @@
 #   (e.g., entering an 'e' where it can't be scientific notation,
 #    multiple decimals, negative by itself)
 # A bit more documentation
-# Start project commits
 # It's sometimes possible to overflow the stack window? It should do sci notation.
 # Fix undoing and checkpoints; it fails at many important operations.
 
-import curses
 import curses.wrapper
 import curses.ascii
-from time import sleep
 import copy
-import math
 
-STACKDEPTH = 12
-STACKWIDTH = 20
-stackCheckpoints = []
-redoCheckpoints = []
+import display
+from consts import STACKDEPTH, STACKWIDTH
 
 class StackItem(object):
     def __init__(self, firstchar=None, floatval=None):
@@ -164,85 +158,13 @@ def ftostr(f):
     else:
         return str(f)
 
-
-def populateCommandsWindow(win, mode='normal', opts={}):
-    def addCommand(char, descr, yposn, xposn):
-        win.addstr(yposn, xposn, char, curses.color_pair(2))
-        win.addstr(yposn, xposn + 1 + len(char), descr)
-
-    win.clear()
-    win.border()
-    win.addstr(0, 8, "Commands")
-
-    if mode == 'normal':
-        CENTERFACTOR = 1
-        addCommand("+ - * / ^ %", "", 1, 5 + CENTERFACTOR)
-        addCommand("c", "clear stack", 2, 1 + CENTERFACTOR)
-        addCommand("d", "duplicate bos", 3, 1 + CENTERFACTOR)
-        addCommand("p", "pop off bos", 4, 1 + CENTERFACTOR)
-        addCommand("r", "roll off tos", 5, 1 + CENTERFACTOR)
-        addCommand("x", "exchange bos, tos", 6, 1 + CENTERFACTOR)
-        addCommand("u", "undo (", 7, 1 + CENTERFACTOR)
-        addCommand("^r", "redo)", 7, 9 + CENTERFACTOR)
-        addCommand("y", "yank bos to cboard", 8, 1 + CENTERFACTOR)
-        addCommand("s", "square root", 9, 1 + CENTERFACTOR)
-        addCommand("t", "trig functions", 10, 1 + CENTERFACTOR)
-        addCommand("l", "log functions", 11, 1 + CENTERFACTOR)
-        addCommand("i", "insert constant", 12, 1 + CENTERFACTOR)
-        addCommand("q", "quit", 13, 1 + CENTERFACTOR)
-
-    elif mode == 'trig':
-        CENTERFACTOR = 1
-        win.addstr(1, 6, "(trig mode)")
-        win.addstr(2, 6, " [%s] " % opts['mode'] )
-        addCommand("s", "sine", 4, 1 + CENTERFACTOR)
-        addCommand("c", "cosine", 5, 1 + CENTERFACTOR)
-        addCommand("t", "tangent", 6, 1 + CENTERFACTOR)
-        addCommand("i", "arc sin", 7, 1 + CENTERFACTOR)
-        addCommand("o", "arc cos", 8, 1 + CENTERFACTOR)
-        addCommand("a", "arc tan", 9, 1 + CENTERFACTOR)
-        addCommand("d", "degree mode", 10, 1 + CENTERFACTOR)
-        addCommand("r", "radian mode", 11, 1 + CENTERFACTOR)
-        addCommand("q", "cancel", 12, 1 + CENTERFACTOR)
-
-    elif mode == 'log':
-        CENTERFACTOR = 1
-        win.addstr(1, 7, "(log mode)")
-        addCommand("l", "log x", 3, 1 + CENTERFACTOR)
-        addCommand("1", "10^x", 4, 1 + CENTERFACTOR)
-        addCommand("e", "ln x", 5, 1 + CENTERFACTOR)
-        addCommand("n", "e^x", 6, 1 + CENTERFACTOR)
-        addCommand("q", "cancel", 7, 1 + CENTERFACTOR)
-
-    elif mode == 'cst':
-        CENTERFACTOR = 1
-        win.addstr(1, 4, "(constant mode)")
-        addCommand("p", "pi", 3, 1 + CENTERFACTOR)
-        addCommand("e", "e", 4, 1 + CENTERFACTOR)
-        addCommand("q", "cancel", 5, 1 + CENTERFACTOR)
-
-    else:
-        assert False, "Invalid mode used for populateCommandsWindow()"
-
-    win.refresh()
-
 def isNumber(c):
     if (c >= '0' and c <= '9') or c == '.' or c == '_' or c == "e":
         return True
     else:
         return False
 
-def changeStatusChar(statusw, c):
-    """Place the indicated character /c/ in the status bracket."""
-    statusw.addstr(0,1,c, curses.color_pair(1))
-    statusw.refresh()
-
-def changeStatusMsg(statusw, msg):
-    statusw.addstr(0, 15, ' ' * (80 - 15), curses.color_pair(1))
-    statusw.addstr(0, 15, msg, curses.color_pair(1))
-    statusw.refresh()
-
-def main(statusw, stackw, commandsw):
+def main():
     errorState = False
     ss = StackState()
     from functions import fm
@@ -250,18 +172,12 @@ def main(statusw, stackw, commandsw):
     while True:
         # restore status bar after one successful action
         if not errorState:
-            changeStatusMsg(statusw, "Ready")
+            display.changeStatusMsg("Ready")
         errorState = False
 
         # update cursor posn and fetch one char of input
-        stackw.move(1 + ss.stackPosn, ss.cursorPosn + 1)
-        if not ss.editingStack:
-            # when not editing a number, cursor goes on *next line*
-            stackw.move(2 + ss.stackPosn, ss.cursorPosn + 1)
-            changeStatusChar(statusw, ' ')
-        else:
-            changeStatusChar(statusw, 'i')
-        c = stackw.getch()
+        display.adjustCursorPos(ss)
+        c = display.getch_stack()
 
         # if we don't have a menu open, try interpreting as a number
         if not fm.curMenu:
@@ -279,12 +195,12 @@ def main(statusw, stackw, commandsw):
                 else:
                     ok = ss.openNewStackItem(char)
                     if not ok: # no more space on the stack
-                        changeStatusMsg(statusw, "Stack is full.")
+                        display.changeStatusMsg("Stack is full.")
                         errorState = True
                         continue
-                    stackw.move(1 + ss.stackPosn, ss.cursorPosn + 1)
+                    display.defaultStackCursorPos(ss)
 
-                stackw.addstr(char)
+                display.putch_stack(char)
                 ss.cursorPosn += 1
                 continue
 
@@ -293,77 +209,33 @@ def main(statusw, stackw, commandsw):
                 if ss.editingStack:
                     ss.enterNumber()
                 else:
-                    changeStatusMsg(statusw, "No number to finish adding. " \
+                    display.changeStatusMsg("No number to finish adding. " \
                                              "(Use 'd' to duplicate bos.)")
                     errorState = True
                 continue
 
             elif c == curses.KEY_BACKSPACE or c == 127:
                 r = ss.backspace()
-                if r == 0:
-                    stackw.addstr(1 + ss.stackPosn, ss.cursorPosn + 1, ' ')
-                    stackw.move(1 + ss.stackPosn, ss.cursorPosn + 1)
-                elif r == 1:
-                    stackw.addstr(2 + ss.stackPosn, ss.cursorPosn + 1, ' ')
-                    stackw.move(2 + ss.stackPosn, ss.cursorPosn + 1)
+                display.displayBackspace(ss, r)
                 continue
 
 
         # If not a number, it's an operator of some kind.
         if fm.runFunction(chr(c), ss):
-            redrawStackWin(ss, stackw)
+            display.redrawStackWin(ss)
             # find a way to set errorState here: maybe put this last
         else:
             # some error was fired
             errorState = True
             #char = "\\n" if chr(c) == '\n' else chr(c)
-            #changeStatusMsg(statusw, "Unrecognized command '%s'." % char)
+            #changeStatusMsg("Unrecognized command '%s'." % char)
 
         if c == ord('q') and fm.quitAfter:
             return
 
-def redrawStackWin(ss, stackw):
-    stackw.clear()
-    stackw.border()
-    stackw.addstr(0, 9, "Stack")
-    for i in range(len(ss.s)):
-        stackw.addstr(1 + i, 1, ss.s[i].entry)
-
-def setup(stdscr):
-    maxy, maxx = stdscr.getmaxyx()
-    curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_GREEN)
-    curses.init_pair(2, curses.COLOR_BLUE, curses.COLOR_BLACK)
-
-    status = curses.newwin(1, maxx, 0, 0)
-    #status.addstr(0, 0, (' ' * (maxx - 1)), curses.color_pair(1))
-    #DEBUG, to see where 80 cols is:
-    status.addstr(0, 0, (' ' * 80), curses.color_pair(1))
-    status.addstr(0, 0, "[ ] ic 0.0.1 |", curses.color_pair(1))
-    status.move(0, 1)
-
-    stack = curses.newwin(3 + STACKDEPTH, 24, 1, 0)
-    stack.border()
-    stack.addstr(0, 9, "Stack")
-
-    history = curses.newwin(3 + STACKDEPTH, 32, 1, 24)
-    history.border()
-    history.addstr(0, 13, "History")
-
-    commands = curses.newwin(3 + STACKDEPTH, 24, 1, 56)
-    populateCommandsWindow(commands)
-
-    #registers = curses.newwin(maxy - (3 + STACKDEPTH), maxx, 4 + STACKDEPTH, 0)
-    registers = curses.newwin(maxy - 1 - (3 + STACKDEPTH), 80, 4 + STACKDEPTH, 0)
-    registers.border()
-    registers.addstr(0, 36, "Registers")
-
-    stack.refresh()
-    status.refresh()
-    history.refresh()
-    commands.refresh()
-    registers.refresh()
-
-    main(status, stack, commands)
+def bootstrap(stdscr):
+    display.setup(stdscr)
+    main()
 
 if __name__ == "__main__":
-    curses.wrapper(setup)
+    curses.wrapper(bootstrap)
