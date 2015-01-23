@@ -4,6 +4,8 @@ from main import STACKDEPTH
 
 #TODO: Possibility to provide one's own error wrapper function (for instance, for '-' with zero/one item on stack?)
 
+QUIT_CHARACTER = 'q'
+
 class FunctionManager(object):
     """
     This object maintains the list of available functions / commands, handles
@@ -15,41 +17,24 @@ class FunctionManager(object):
         self.functions = []
         self.fnattrs = {}
         self.menuNames = {}
-        self.menus = None
         self.curMenu = None
+        self.quitAfter = False
         self.MAX_TEXT_FUNCTIONS = STACKDEPTH
 
     def enterMenu(self, menu):
         "Change state to specify we are in a different menu."
-        assert menu in self.menuNames.values(), \
+        assert menu in self.menuNames, \
                 "Menu does not exist! Did you buildMenus()?"
         self.curMenu = menu
+
     def leaveMenu(self):
         "Change state to leave menu, if any."
         self.curMenu = None
 
-    def buildMenus(self):
-        # build dict of all menus in existence
-        menuList = []
-        for f in self.fnattrs:
-            if self.fnattrs[f]['menu'] not in menuList:
-                menuList.append(self.fnattrs[f]['menu'])
-        self.menus = {i: [] for i in menuList}
-
-        for f in self.functions:
-            self.menus[self.fnattrs[f]['menu']].append(f)
-
-        for i in self.menus:
-            if i is not None:
-                assert i in self.menuNames.values(), \
-                        "I don't know about menu %s! Did you registerMenu()?" % i
-
-        #TODO: check for dupes and assert errors
-
-    def registerMenu(self, commandChar, name, parent=None):
-        pass
-
-
+    def registerMenu(self, commandChar, name):
+        self.menuNames[commandChar] = name
+        self.functions.append(commandChar)
+        self.fnattrs[commandChar] = '@menu'
 
     def registerFunction(self, fn, numPop, numPush, commandChar,
             commandDescr=None, menu=None):
@@ -59,6 +44,8 @@ class FunctionManager(object):
         #        "Can't fit any more functions on this screen! Try using a menu."
 
         if menu:
+            assert menu in self.menuNames, \
+                    "That menu doesn't exist (try registerMenu())."
             commandChar = menu + commandChar
 
         self.functions.append(commandChar)
@@ -73,6 +60,14 @@ class FunctionManager(object):
         and return False.
         """
 
+        if commandChar == QUIT_CHARACTER:
+            if self.curMenu:
+                self.leaveMenu()
+            else:
+                # in main menu; quit at end of main loop
+                self.quitAfter = True
+            return True
+
         if self.curMenu:
             commandChar = self.curMenu + commandChar
 
@@ -80,14 +75,19 @@ class FunctionManager(object):
             # write an error message
             return False
 
-        # if currently entering a number, finish that entry so we can use it
+        if self.fnattrs[commandChar] == '@menu':
+            self.enterMenu(commandChar)
+            return True
+
+        # if all of those passed, we're going to run an operation, so enter the
+        # number currently being edited, if any
         ss.enterNumber()
 
         #TODO: run a wrapper to make sure there are enough elements to pop and
         #      enough space to push the results
 
         if self.fnattrs[commandChar]['pop'] == -1:
-            # pop the whole stack; will push the whole stack back later
+            # whole stack requested; will push the whole stack back later
             args = ss.s
             ss.clearStack()
         else:
@@ -95,6 +95,7 @@ class FunctionManager(object):
 
         retvals = self.fnattrs[commandChar]['fn'](args)
         if hasattr(retvals, 'startswith') and retvals.startswith('err'):
+            #TODO: print out the error
             return False
 
         # push return vals, creating an iterable from single retvals
@@ -117,14 +118,9 @@ fm.registerFunction(lambda s: s[1] % s[0], 2, 1, '%')
 fm.registerFunction(lambda s: math.sqrt(s[0]), 1, 1, 's')
 
 # stack operations
-fm.registerFunction(lambda s: (s[0], s[0]), 1, 2, 'd', 'duplicate bos', 'q')
+fm.registerMenu('&', 'ampersand menu')
+fm.registerFunction(lambda s: (s[0], s[0]), 1, 2, 'd', 'duplicate bos', '&')
 fm.registerFunction(lambda s: (s[0], s[1]), 2, 2, 'x', 'exchange bos, sos')
 fm.registerFunction(lambda s: None, 1, 0, 'p', 'pop off bos')
 fm.registerFunction(lambda s: None, -1, 0, 'c', 'clear stack')
 fm.registerFunction(lambda s: [i.value for i in s[1:]], -1, 0, 'r', 'roll off tos')
-
-#fm.registerMenu(
-#fm.buildMenus()
-
-print fm.functions
-print fm.fnattrs

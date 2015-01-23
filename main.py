@@ -546,8 +546,6 @@ def main(statusw, stackw, commandsw):
                 errorState = True
 
         # program functions
-        elif c == ord('q'):
-            return
 
         elif c == ord('y'):
             ss.enterNumber()
@@ -563,6 +561,9 @@ def main(statusw, stackw, commandsw):
             char = "\\n" if chr(c) == '\n' else chr(c)
             errorState = True
             changeStatusMsg(statusw, "Unrecognized command '%s'." % char)
+
+        if c == ord('q') and fm.quitAfter:
+            return
 
 def redrawStackWin(ss, stackw):
     stackw.clear()
