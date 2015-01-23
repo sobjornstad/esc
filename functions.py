@@ -133,15 +133,16 @@ class FunctionManager(object):
             self.enterMenu(commandChar)
             return False # False because we need to display a status item
 
-        # if all of those passed, we're going to run an operation, so enter the
-        # number currently being edited, if any
-        ss.enterNumber()
-
         # define the name of this function in case we need to communicate it
         if self.fnattrs[commandChar]['descr']:
             fnName = self.fnattrs[commandChar]['descr']
         else:
             fnName = commandChar
+
+        # if all of those passed, we're going to run an operation, so enter the
+        # number currently being edited, if any, stopping if it is invalid
+        if ss.enterNumber(fnName) is False:
+            return False
 
         # make sure there will be space to push the results
         # if requesting the whole stack, it's function's responsibility to check

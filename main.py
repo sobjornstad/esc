@@ -38,8 +38,19 @@ class StackItem(object):
         self.entry += nextchar
 
     def finishEntry(self):
-        self.isEntered = True
-        self.value = float(self.entry)
+        """
+        Convert an entered string to a float value. If successful, return True;
+        if the entered string does not form a valid float, return False. This
+        should be called from self.enterNumber() and probably nowhere else.
+        """
+
+        try:
+            self.value = float(self.entry)
+        except ValueError:
+            return False
+        else:
+            self.isEntered = True
+            return True
 
 class StackState(object):
     """
@@ -82,13 +93,29 @@ class StackState(object):
             return 0
         return -1
 
-    def enterNumber(self):
-        "Finish the entry of a number."
+    def enterNumber(self, runningOp=None):
+        """
+        Finish the entry of a number. Returns True if done, False if the value
+        was invalid, and None if we were not editing the stack in the first
+        place.
+
+        Set runningOp to an operation name if you're entering prior to running
+        an operation (go figure) for a more helpful error message in that case.
+        """
+
         if self.editingStack:
-            self._checkpoint()
-            self.s[self.stackPosn].finishEntry()
-            self.editingStack = False
-            self.cursorPosn = 0
+            #self._checkpoint()
+            if self.s[self.stackPosn].finishEntry():
+                self.editingStack = False
+                self.cursorPosn = 0
+                return True
+            else:
+                if runningOp:
+                    msg = 'Cannot run "%s": invalid value on bos.' % runningOp
+                else:
+                    msg = 'Invalid entry.'
+                display.changeStatusMsg(msg)
+                return False
 
     def undo(self):
         "Return to last stack state in stackCheckpoints."
@@ -210,10 +237,12 @@ def main():
             # more number-entering functions
             if c == ord('\n') or c == ord(' '):
                 if ss.editingStack:
-                    ss.enterNumber()
+                    r = ss.enterNumber()
                 else:
                     display.changeStatusMsg("No number to finish adding. " \
                                              "(Use 'd' to duplicate bos.)")
+                    r = False
+                if r is False: # could also be None, which would be different
                     errorState = True
                 continue
             elif c == curses.KEY_BACKSPACE or c == 127:
