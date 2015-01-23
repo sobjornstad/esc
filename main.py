@@ -141,6 +141,18 @@ class StackState(object):
         if clearRedoList:
             redoCheckpoints = []
 
+    def push(self, vals):
+        for i in vals:
+            self.s.append(StackItem(floatval=i))
+        self.stackPosn += len(vals)
+        #val = ftostr(val)
+        #stackw.addstr(1 + ss.stackPosn, 1, val)
+
+    def pop(self, num=1):
+        self.stackPosn -= num
+        return [self.s.pop().value for i in range(num)]
+
+
 def ftostr(f):
     """
     Convert a floating-point number to a string. It will be formatted as an
@@ -222,6 +234,7 @@ def isNumber(c):
 
 def pushOnto(val, ss, stackw):
     "Push a given float onto the stack."
+    # Duplicating as a method -- we want to move to force refresh otherwise
 
     ss.s.append(StackItem(floatval=val))
     ss.stackPosn += 1
@@ -413,6 +426,7 @@ def cstMenu(statusw, stackw, commandsw, ss):
 def main(statusw, stackw, commandsw):
     errorState = False
     ss = StackState()
+    from functions import fm
 
     while True:
         # restore status bar after one successful action
@@ -475,6 +489,12 @@ def main(statusw, stackw, commandsw):
 
 
         # operators
+        elif chr(c) in ('+'):
+            ss.enterNumber()
+            fm.runFunction(chr(c), ss)
+            redrawStackWin(ss, stackw)
+
+
         elif chr(c) in ('+', '-', '*', '/', '^', '%', 's', 't', 'i', 'l'):
             numOperands = 1 if chr(c) in ('s', 't') else 2
             oldSs = copy.deepcopy(ss)
