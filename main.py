@@ -211,7 +211,7 @@ def main():
                 continue
 
             # more number-entering functions
-            if c == ord('\n'):
+            if c == ord('\n') or c == ord(' '):
                 if ss.editingStack:
                     ss.enterNumber()
                 else:
