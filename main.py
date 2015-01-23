@@ -298,70 +298,6 @@ def changeStatusMsg(statusw, msg):
     statusw.addstr(0, 15, msg, curses.color_pair(1))
     statusw.refresh()
 
-
-def clip(str, p=True, c=True):
-    # http://stackoverflow.com/questions/7606062/
-    # is-there-a-way-to-directly-send-a-python-output-to-clipboard
-    "Use xsel to yank a string to the clipboard on Unix."
-    from subprocess import Popen, PIPE
-    if p:
-        p = Popen(['xsel', '-pi'], stdin=PIPE)
-        p.communicate(input=str)
-    if c:
-        p = Popen(['xsel', '-bi'], stdin=PIPE)
-        p.communicate(input=str)
-
-def trigMenu(statusw, stackw, commandsw, ss):
-    "Handle the trig mode. Return new stack state."
-
-    populateCommandsWindow(commandsw, mode='trig', opts={'mode': ss.trigMode})
-    changeStatusMsg(statusw, "Expecting trig command (q cancels)")
-    while True:
-        fn = statusw.getch(0, 1)
-        if chr(fn) not in ('s', 'c', 't', 'i', 'o', 'a', 'r', 'd', 'q'):
-            char = "\\n" if chr(fn) == '\n' else chr(fn)
-            changeStatusMsg(statusw, "Invalid trig mode command " \
-                                     "'%s' (q cancels)" % char)
-        else:
-            if fn == ord('r'):
-                ss.trigMode = 'radians'
-                break
-            elif fn == ord('d'):
-                ss.trigMode = 'degrees'
-                break
-
-            if ss and ss.trigMode == 'degrees' and chr(fn) in ('s', 'c', 't'):
-                # convert bos to radians for following fns
-                ss = unaryOperator(ss, stackw, lambda bos: math.radians(bos))
-
-            try:
-                if fn == ord('s'):
-                    ss = unaryOperator(ss, stackw, lambda bos: math.sin(bos))
-                elif fn == ord('c'):
-                    ss = unaryOperator(ss, stackw, lambda bos: math.cos(bos))
-                elif fn == ord('t'):
-                    ss = unaryOperator(ss, stackw, lambda bos: math.tan(bos))
-                elif fn == ord('i'):
-                    ss = unaryOperator(ss, stackw, lambda bos: math.asin(bos))
-                elif fn == ord('o'):
-                    ss = unaryOperator(ss, stackw, lambda bos: math.acos(bos))
-                elif fn == ord('a'):
-                    ss = unaryOperator(ss, stackw, lambda bos: math.atan(bos))
-            except ValueError:
-                ss = 'error' # force rollback to original stack
-                changeStatusMsg(statusw,
-                        "'t': Domain error! Stack unchanged.")
-                break
-
-            if ss and ss.trigMode == 'degrees' and chr(fn) in ('i', 'o', 'a'):
-                # convert radian result to degrees
-                ss = unaryOperator(ss, stackw, lambda bos: math.degrees(bos))
-
-            break
-
-    populateCommandsWindow(commandsw)
-    return ss
-
 def logMenu(statusw, stackw, commandsw, ss):
     "Handle the log mode. Return new stack state."
 
@@ -499,8 +435,6 @@ def main(statusw, stackw, commandsw):
             ss.enterNumber()
             if c == ord('s'):
                 pass
-            elif c == ord('t'):
-                ss = trigMenu(statusw, stackw, commandsw, ss)
             elif c == ord('i'):
                 ss = cstMenu(statusw, stackw, commandsw, ss)
             elif c == ord('l'):
@@ -546,7 +480,6 @@ def main(statusw, stackw, commandsw):
                 errorState = True
 
         # program functions
-
         elif c == ord('y'):
             ss.enterNumber()
             try:
