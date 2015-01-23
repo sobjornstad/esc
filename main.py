@@ -18,6 +18,9 @@ import copy
 import display
 from consts import STACKDEPTH, STACKWIDTH
 
+stackCheckpoints = []
+redoCheckpoints = []
+
 class StackItem(object):
     def __init__(self, firstchar=None, floatval=None):
         if firstchar is not None:
@@ -99,7 +102,8 @@ class StackState(object):
         Start a new item on the stack with the given character /c/. Return
         False if we have exceeded the maximum capacity of the stack.
         """
-        if self.stackPosn > STACKDEPTH - 2:
+
+        if not self.enoughPushSpace(1):
             return False
 
         self.stackPosn += 1
@@ -126,16 +130,29 @@ class StackState(object):
         if clearRedoList:
             redoCheckpoints = []
 
+    def enoughPushSpace(self, num):
+        return STACKDEPTH >= len(self.s) + num
+    def freeStackSpaces(self):
+        return STACKDEPTH - self.stackPosn - 1
+
+
     def push(self, vals):
+        if not self.enoughPushSpace(len(vals)):
+            return False
         for i in vals:
             self.s.append(StackItem(floatval=i))
         self.stackPosn += len(vals)
-        #val = ftostr(val)
-        #stackw.addstr(1 + ss.stackPosn, 1, val)
+        return True
 
     def pop(self, num=1):
         self.stackPosn -= num
-        return [self.s.pop().value for i in range(num)]
+        oldStack = copy.deepcopy(self.s)
+        try:
+            return [self.s.pop().value for i in range(num)]
+        except IndexError:
+            self.s = oldStack
+            self.stackPosn += num
+            return None
 
 
 def ftostr(f):
@@ -172,12 +189,10 @@ def main():
 
         # if we don't have a menu open, try interpreting as a number
         if not fm.curMenu:
-            # work around a dumb terminal bug where pressing a WM modkey
-            # command at a getch prompt causes the application to crash
             try:
                 char = chr(c)
             except ValueError:
-                continue
+                continue # ignore unrecognized or invalid characters
             if isNumber(char):
                 if char == '_':
                     char = '-' # negative sign, like dc
@@ -204,7 +219,6 @@ def main():
                                              "(Use 'd' to duplicate bos.)")
                     errorState = True
                 continue
-
             elif c == curses.KEY_BACKSPACE or c == 127:
                 r = ss.backspace()
                 display.displayBackspace(ss, r)
@@ -214,12 +228,8 @@ def main():
         # If not a number, it's an operator of some kind.
         if fm.runFunction(chr(c), ss):
             display.redrawStackWin(ss)
-            # find a way to set errorState here: maybe put this last
         else:
-            # some error was fired
             errorState = True
-            #char = "\\n" if chr(c) == '\n' else chr(c)
-            #changeStatusMsg("Unrecognized command '%s'." % char)
 
         if c == ord('q') and fm.quitAfter:
             return

@@ -1,6 +1,7 @@
-import copy
 import math
 from main import STACKDEPTH, ftostr
+import display
+from time import sleep #debug
 
 #TODO: Possibility to provide one's own error wrapper function (for instance, for '-' with zero/one item on stack?)
 
@@ -86,6 +87,17 @@ class FunctionManager(object):
         self.registerFunction(lambda discard: cst, 0, 1,
                 commandChar, commandDescr, menu)
 
+    def setStatusDisplayRequested(self):
+        """
+        Indicate that, although there was no error, we wish to display something
+        on the status bar. This function is a setter for an attribute which is
+        initialized to False every time a function is run. If the attribute is
+        set at the end of runFunction, we will return False even though the
+        operation was a success, indicating something needs to be displayed.
+        """
+        self.statusDisplayRequested = True
+
+
     def runFunction(self, commandChar, ss):
         """
         Run the function indicated by /commandChar/, modifying the stack /ss/.
@@ -93,6 +105,8 @@ class FunctionManager(object):
         return True; else, write an appropriate error message to the status bar
         and return False.
         """
+
+        self.statusDisplayRequested = False # see docstring for setter
 
         if commandChar == QUIT_CHARACTER:
             if self.curMenu:
@@ -107,7 +121,7 @@ class FunctionManager(object):
             self.leaveMenu() # after using a function from a menu, close it
 
         if commandChar not in self.functions:
-            # write an error message
+            display.changeStatusMsg("Unrecognized command '%s'." % commandChar)
             return False
 
         if self.fnattrs[commandChar] == '@menu':
@@ -118,28 +132,56 @@ class FunctionManager(object):
         # number currently being edited, if any
         ss.enterNumber()
 
-        #TODO: run a wrapper to make sure there are enough elements to pop and
-        #      enough space to push the results
+        # define the name of this function in case we need to communicate it
+        if self.fnattrs[commandChar]['descr']:
+            fnName = self.fnattrs[commandChar]['descr']
+        else:
+            fnName = commandChar
 
-        if self.fnattrs[commandChar]['pop'] == -1:
+        # make sure there will be space to push the results
+        # if requesting the whole stack, it's function's responsibility to check
+        numToPop = self.fnattrs[commandChar]['pop']
+        numToPush = self.fnattrs[commandChar]['push']
+        if not ss.enoughPushSpace(numToPush - numToPop) and numToPop != -1:
+            msg = "'%s': stack is too full (short %i space%s)."
+            numShort = numToPush - numToPop - ss.freeStackSpaces()
+            msg = msg % (fnName, numShort, 's' if numShort != 1 else '')
+            display.changeStatusMsg(msg)
+            return False
+
+        if numToPop == -1:
             # whole stack requested; will push the whole stack back later
-            args = ss.s
+            args = ss.s #TODO: Does this get bos in the right place? No...?
             ss.clearStack()
         else:
-            args = ss.pop(num=self.fnattrs[commandChar]['pop'])
+            #print ss.s
+            args = ss.pop(numToPop)
+            if (not args) and numToPop != 0:
+                msg = '"%s" needs at least %i item%s on stack.'
+                msg = msg % (fnName, numToPop, 's' if numToPop != 1 else '')
+                display.changeStatusMsg(msg)
+                return False
 
-        retvals = self.fnattrs[commandChar]['fn'](args)
-        if hasattr(retvals, 'startswith') and retvals.startswith('err'):
-            #TODO: print out the error
+        try:
+            retvals = self.fnattrs[commandChar]['fn'](args)
+        except ValueError:
+            # illegal operation; restore original args to stack and return
+            ss.push(args)
+            display.changeStatusMsg("Domain error! Stack unchanged.")
+            return False
+
+
+        if hasattr(retvals, 'startswith') and retvals.startswith('err: '):
+            display.changeStatusMsg("Error: %s" % retvals[5:])
             return False
 
         # push return vals, creating an iterable from single retvals
-        if self.fnattrs[commandChar]['push'] > 0:
+        if numToPush > 0 or (numToPop == -1 and retvals is not None):
             try:
                 ss.push(retvals)
             except TypeError:
                 ss.push((retvals,))
-        return True
+        return True if not self.statusDisplayRequested else False
 
 ####### BEGINNING OF FUNCTIONS #######
 # Note: eventually I anticipate this part will be in a separate file
@@ -154,7 +196,7 @@ fm.registerFunction(lambda s: s[1] * s[0], 2, 1, '*')
 fm.registerFunction(lambda s: s[1] / s[0], 2, 1, '/')
 fm.registerFunction(lambda s: s[1] ** s[0], 2, 1, '^')
 fm.registerFunction(lambda s: s[1] % s[0], 2, 1, '%')
-fm.registerFunction(lambda s: math.sqrt(s[0]), 1, 1, 's')
+fm.registerFunction(lambda s: math.sqrt(s[0]), 1, 1, 's', 'square root')
 
 # stack operations
 fm.registerFunction(lambda s: (s[0], s[0]), 1, 2, 'd', 'duplicate bos')
@@ -172,8 +214,8 @@ fm.registerMenu('t', 'trig menu')
 def trigWrapper(s, func, arc=False):
     """
     Used anytime a trig function is called. Performs any conversions from
-    degrees to radians and vice versa, as called for by ss.trigMode (all Python
-    math module functions use only radians).
+    degrees to radians and vice versa, as called for by modes.trigMode (all
+    Python math module functions use only radians).
 
     Takes the requested stack item, a function to be called on the value
     after/before the appropriate conversion, and a boolean indicating whether
@@ -217,8 +259,6 @@ fm.registerModeChange(toRadians, 'r', 'radian mode', 't')
 # LOGARITHMS #
 ##############
 
-#TODO: Disable number entry while a menu is open
-
 fm.registerMenu('l', 'log menu')
 fm.registerFunction(lambda s: math.log10(s[0]), 1, 1, 'l', 'log x', 'l')
 fm.registerFunction(lambda s: math.pow(10, s[0]), 1, 1, '1', '10^x', 'l')
@@ -238,12 +278,17 @@ fm.registerConstant(math.e, 'e', 'e')
 
 # miscellaneous
 def yankBos(s):
-    "Use xsel to yank bottom of stack."
+    """
+    Use xsel to yank bottom of stack. This probably only works on Unix-like
+    systems.
+    """
     # help from: http://stackoverflow.com/questions/7606062/
     # is-there-a-way-to-directly-send-a-python-output-to-clipboard
     from subprocess import Popen, PIPE
     p = Popen(['xsel', '-bi'], stdin=PIPE)
     p.communicate(input=ftostr(s[0]))
+    display.changeStatusMsg('"%s" placed on system clipboard.' % ftostr(s[0]))
+    fm.setStatusDisplayRequested()
     return s[0] # put back onto stack
 
 fm.registerFunction(yankBos, 1, 1, 'y', 'yank bos to cboard')

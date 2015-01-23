@@ -1,5 +1,6 @@
 import curses
 from consts import STACKDEPTH
+from time import sleep #debug
 
 # module globals defined for each of the windows: statusw, stackw, commandsw
 # (two other windows I'm not currently using them will presumably join these
@@ -20,7 +21,12 @@ def redrawStackWin(ss):
     stackw.border()
     stackw.addstr(0, 9, "Stack")
     for i in range(len(ss.s)):
-        stackw.addstr(1 + i, 1, ss.s[i].entry)
+        try:
+            stackw.addstr(1 + i, 1, ss.s[i].entry)
+        except AttributeError:
+            print type(ss.s[i])
+            print dir(ss.s[i])
+            sleep(5)
 
 def defaultStackCursorPos(ss):
     stackw.move(1 + ss.stackPosn, ss.cursorPosn + 1)
