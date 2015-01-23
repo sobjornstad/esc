@@ -172,7 +172,7 @@ class FunctionManager(object):
 
 
         if hasattr(retvals, 'startswith') and retvals.startswith('err: '):
-            display.changeStatusMsg("Error: %s" % retvals[5:])
+            display.changeStatusMsg(retvals[5:])
             return False
 
         # push return vals, creating an iterable from single retvals
