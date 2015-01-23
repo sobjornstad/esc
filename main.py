@@ -38,15 +38,6 @@ class StackItem(object):
         self.isEntered = True
         self.value = float(self.entry)
 
-    def getReprStrlen(self):
-        """
-        Return the number of characters taken to represent the number as a
-        string on the stack. Useful for knowing what to overwrite when emptying
-        that row of the stack.
-        """
-
-        return len(self.entry)
-
 class StackState(object):
     """
     An object containing the current state of the stack: a stack pointer, the
@@ -204,7 +195,7 @@ def main():
                 ss.cursorPosn += 1
                 continue
 
-            # special number-entering functions
+            # more number-entering functions
             if c == ord('\n'):
                 if ss.editingStack:
                     ss.enterNumber()

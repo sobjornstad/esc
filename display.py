@@ -2,6 +2,8 @@ import curses
 from consts import STACKDEPTH
 
 # module globals defined for each of the windows: statusw, stackw, commandsw
+# (two other windows I'm not currently using them will presumably join these
+# eventually)
 
 def changeStatusChar(c):
     """Place the indicated character /c/ in the status bracket."""
