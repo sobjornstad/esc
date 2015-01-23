@@ -45,9 +45,7 @@ class StackState(object):
     """
     An object containing the current state of the stack: a stack pointer, the
     screen cursor's position across on the current value, the stack itself as a
-    list, and whether we are currently editing a number, as well as any mode
-    options, which are not strictly part of the stack but are part of the
-    program state and should follow it anyway.
+    list, and whether we are currently editing a number. 
 
     Values may be manipulated directly as convenient. There are also several
     helper methods for convenience.
@@ -59,7 +57,6 @@ class StackState(object):
 
     def __init__(self):
         self.clearStack()
-        self.trigMode = 'degrees'
 
     def clearStack(self):
         "Set up an empty stack, or clear the stack."
