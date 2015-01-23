@@ -232,62 +232,6 @@ def isNumber(c):
     else:
         return False
 
-def pushOnto(val, ss, stackw):
-    "Push a given float onto the stack."
-    # Duplicating as a method -- we want to move to force refresh otherwise
-
-    ss.s.append(StackItem(floatval=val))
-    ss.stackPosn += 1
-    val = ftostr(val)
-    stackw.addstr(1 + ss.stackPosn, 1, val)
-
-def unaryOperator(ss, stackw, opfn):
-    """
-    Just like binaryOperator, except only one item is pulled off the bottom of
-    the stack and the opfn thus only takes one argument.
-    """
-
-    if len(ss.s) < 1:
-        return None
-
-    bos = ss.s.pop()
-    stackw.addstr(1 + ss.stackPosn, 1, ' ' * bos.getReprStrlen())
-    ss.stackPosn -= 1
-
-    result = opfn(bos.value)
-    pushOnto(result, ss, stackw)
-
-    return ss
-
-def binaryOperator(ss, stackw, opfn):
-    """
-    Run the passed function /opfn/ on the stack in StackState /ss/. Update the
-    stack as well as the representation of the stack on window /stackw/, and
-    return the updated StackState. If there are not at least two items on the
-    stack, return None.
-
-    The opfn should take two arguments, /sos/ (second on stack) and /bos/
-    (bottom of stack) and return a float to be pushed noto the stack.
-    """
-
-    if len(ss.s) < 2:
-        return None
-
-    # pop values off stack
-    bos = ss.s.pop() # bottom of stack
-    sos = ss.s.pop() # second on stack
-
-    # blank out old portion of stack
-    stackw.addstr(1 + ss.stackPosn, 1, ' ' * bos.getReprStrlen())
-    stackw.addstr(ss.stackPosn, 1, ' ' * sos.getReprStrlen())
-    ss.stackPosn -= 2
-
-    # calculate and push result
-    result = opfn(sos.value, bos.value)
-    pushOnto(result, ss, stackw)
-
-    return ss
-
 def changeStatusChar(statusw, c):
     """Place the indicated character /c/ in the status bracket."""
     statusw.addstr(0,1,c, curses.color_pair(1))
@@ -297,67 +241,6 @@ def changeStatusMsg(statusw, msg):
     statusw.addstr(0, 15, ' ' * (80 - 15), curses.color_pair(1))
     statusw.addstr(0, 15, msg, curses.color_pair(1))
     statusw.refresh()
-
-def logMenu(statusw, stackw, commandsw, ss):
-    "Handle the log mode. Return new stack state."
-
-    populateCommandsWindow(commandsw, mode='log')
-    changeStatusMsg(statusw, "Expecting log command (q cancels)")
-    while True:
-        fn = statusw.getch(0, 1)
-        if chr(fn) not in ('l', '1', 'e', 'n', 'q'):
-            char = "\\n" if chr(fn) == '\n' else chr(fn)
-            changeStatusMsg(statusw, "Invalid log mode command " \
-                                     "'%s' (q cancels)" % char)
-        else:
-            try:
-                if fn == ord('l'):
-                    ss = unaryOperator(ss, stackw, lambda bos: math.log10(bos))
-                elif fn == ord('1'):
-                    ss = unaryOperator(ss, stackw, lambda bos: math.pow(10,bos))
-                elif fn == ord('e'):
-                    ss = unaryOperator(ss, stackw, lambda bos: math.log(bos))
-                elif fn == ord('n'):
-                    ss = unaryOperator(ss, stackw, lambda bos: math.pow(math.e, bos))
-            except ValueError:
-                ss = 'error' # force rollback to original stack
-                changeStatusMsg(statusw,
-                        "'l': Domain error! Stack unchanged.")
-                break
-
-            if ss and ss.trigMode == 'degrees' and chr(fn) in ('i', 'o', 'a'):
-                # convert radian result to degrees
-                ss = unaryOperator(ss, stackw, lambda bos: math.degrees(bos))
-
-            break
-
-    populateCommandsWindow(commandsw)
-    return ss
-
-def cstMenu(statusw, stackw, commandsw, ss):
-    "Handle insertion of constants. Return new stack state."
-
-    populateCommandsWindow(commandsw, mode='cst')
-    changeStatusMsg(statusw, "Expecting constant choice (q cancels)")
-    while True:
-        fn = statusw.getch(0, 1)
-        if chr(fn) not in ('p', 'e', 'q'):
-            char = "\\n" if chr(fn) == '\n' else chr(fn)
-            changeStatusMsg(statusw, "Invalid constant choice " \
-                                     "'%s' (q cancels)" % char)
-        else:
-            if ss.stackPosn > STACKDEPTH - 2:
-                changeStatusMsg(statusw, "'i': Stack is full.")
-                populateCommandsWindow(commandsw)
-                return 'error'
-
-            if fn == ord('p'):
-                pushOnto(math.pi, ss, stackw)
-            elif fn == ord('e'):
-                pushOnto(math.e, ss, stackw)
-
-            populateCommandsWindow(commandsw)
-            return ss
 
 def main(statusw, stackw, commandsw):
     errorState = False
@@ -380,120 +263,61 @@ def main(statusw, stackw, commandsw):
             changeStatusChar(statusw, 'i')
         c = stackw.getch()
 
-        # entry of a number
-        # work around a dumb terminal bug where pressing a WM modkey
-        # command at a getch prompt causes the application to crash
-        try:
-            char = chr(c)
-        except ValueError:
-            continue
-        if isNumber(char):
-            if char == '_':
-                char = '-' # negative sign, like dc
-            if ss.editingStack:
-                ss.s[ss.stackPosn].addChar(char)
-            else:
-                ok = ss.openNewStackItem(char)
-                if not ok: # no more space on the stack
-                    changeStatusMsg(statusw, "Stack is full.")
+        # if we don't have a menu open, try interpreting as a number
+        if not fm.curMenu:
+            # work around a dumb terminal bug where pressing a WM modkey
+            # command at a getch prompt causes the application to crash
+            try:
+                char = chr(c)
+            except ValueError:
+                continue
+            if isNumber(char):
+                if char == '_':
+                    char = '-' # negative sign, like dc
+                if ss.editingStack:
+                    ss.s[ss.stackPosn].addChar(char)
+                else:
+                    ok = ss.openNewStackItem(char)
+                    if not ok: # no more space on the stack
+                        changeStatusMsg(statusw, "Stack is full.")
+                        errorState = True
+                        continue
+                    stackw.move(1 + ss.stackPosn, ss.cursorPosn + 1)
+
+                stackw.addstr(char)
+                ss.cursorPosn += 1
+                continue
+
+            # special number-entering functions
+            if c == ord('\n'):
+                if ss.editingStack:
+                    ss.enterNumber()
+                else:
+                    changeStatusMsg(statusw, "No number to finish adding. " \
+                                             "(Use 'd' to duplicate bos.)")
                     errorState = True
-                    continue
-                stackw.move(1 + ss.stackPosn, ss.cursorPosn + 1)
+                continue
 
-            stackw.addstr(char)
-            ss.cursorPosn += 1
-            continue
-
-        # special number-entering functions
-        if c == ord('\n'):
-            if ss.editingStack:
-                ss.enterNumber()
-            else:
-                changeStatusMsg(statusw, "No number to finish adding. " \
-                                         "(Use 'd' to duplicate bos.)")
-                errorState = True
-
-        elif c == curses.KEY_BACKSPACE or c == 127:
-            r = ss.backspace()
-            if r == 0:
-                stackw.addstr(1 + ss.stackPosn, ss.cursorPosn + 1, ' ')
-                stackw.move(1 + ss.stackPosn, ss.cursorPosn + 1)
-            elif r == 1:
-                stackw.addstr(2 + ss.stackPosn, ss.cursorPosn + 1, ' ')
-                stackw.move(2 + ss.stackPosn, ss.cursorPosn + 1)
+            elif c == curses.KEY_BACKSPACE or c == 127:
+                r = ss.backspace()
+                if r == 0:
+                    stackw.addstr(1 + ss.stackPosn, ss.cursorPosn + 1, ' ')
+                    stackw.move(1 + ss.stackPosn, ss.cursorPosn + 1)
+                elif r == 1:
+                    stackw.addstr(2 + ss.stackPosn, ss.cursorPosn + 1, ' ')
+                    stackw.move(2 + ss.stackPosn, ss.cursorPosn + 1)
+                continue
 
 
-
-        # try running as an operator; if not, we return False and go on
-        elif fm.runFunction(chr(c), ss):
+        # If not a number, it's an operator of some kind.
+        if fm.runFunction(chr(c), ss):
             redrawStackWin(ss, stackw)
             # find a way to set errorState here: maybe put this last
-
-        elif chr(c) in ('t', 'i', 'l'):
-            numOperands = 1 if chr(c) in ('s', 't') else 2
-            oldSs = copy.deepcopy(ss)
-            ss.enterNumber()
-            if c == ord('s'):
-                pass
-            elif c == ord('i'):
-                ss = cstMenu(statusw, stackw, commandsw, ss)
-            elif c == ord('l'):
-                ss = logMenu(statusw, stackw, commandsw, ss)
-
-            if not ss:
-                ss = oldSs
-                msg = "'" + chr(c) + "': "
-                if numOperands == 2 and len(ss.s) > 0:
-                    msg += "Only one item on stack."
-                else:
-                    msg += "Stack is empty."
-                if chr(c) == '-':
-                    msg += " (Did you mean '_'?)"
-
-                changeStatusMsg(statusw, msg)
-                errorState = True
-            elif ss == 'error':
-                # code that sets this displays error message, we do the rest
-                ss = oldSs
-                redrawStackWin(ss, stackw)
-                errorState = True
-
-
-        # stack operations
-        elif c == ord('u'):
-            if stackCheckpoints:
-                global redoCheckpoints
-                redoCheckpoints.append(copy.deepcopy(ss))
-                ss = stackCheckpoints.pop()
-                redrawStackWin(ss, stackw)
-            else:
-                changeStatusMsg(statusw, "Nothing to undo.")
-                errorState = True
-        elif curses.ascii.unctrl(c) == "^R":
-            if redoCheckpoints:
-                # save redo checkpoint
-                ss._checkpoint(clearRedoList=False)
-                ss = redoCheckpoints.pop()
-                redrawStackWin(ss, stackw)
-            else:
-                changeStatusMsg(statusw, "Nothing to redo.")
-                errorState = True
-
-        # program functions
-        elif c == ord('y'):
-            ss.enterNumber()
-            try:
-                bos = ss.s[-1]
-            except IndexError:
-                changeStatusMsg(statusw, "Nothing on stack to yank.")
-                errorState = True
-                continue
-            clip(ftostr(bos.value), p=False)
-
         else:
-            char = "\\n" if chr(c) == '\n' else chr(c)
+            # some error was fired
             errorState = True
-            changeStatusMsg(statusw, "Unrecognized command '%s'." % char)
+            #char = "\\n" if chr(c) == '\n' else chr(c)
+            #changeStatusMsg(statusw, "Unrecognized command '%s'." % char)
 
         if c == ord('q') and fm.quitAfter:
             return
@@ -504,7 +328,6 @@ def redrawStackWin(ss, stackw):
     stackw.addstr(0, 9, "Stack")
     for i in range(len(ss.s)):
         stackw.addstr(1 + i, 1, ss.s[i].entry)
-
 
 def setup(stdscr):
     maxy, maxx = stdscr.getmaxyx()

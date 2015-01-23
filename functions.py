@@ -5,6 +5,7 @@ from main import STACKDEPTH, ftostr
 #TODO: Possibility to provide one's own error wrapper function (for instance, for '-' with zero/one item on stack?)
 
 QUIT_CHARACTER = 'q'
+CONSTANT_MENU_CHARACTER = 'i'
 
 class ModeStorage(object):
     """
@@ -67,6 +68,24 @@ class FunctionManager(object):
     def registerModeChange(self, fn, commandChar, commandDescr, menu):
         self.registerFunction(fn, 0, 0, commandChar, commandDescr, menu)
 
+    def registerConstant(self, cst, commandChar, commandDescr,
+            menu=CONSTANT_MENU_CHARACTER):
+        """
+        Constants are handled as functions which pop zero values off the stack
+        and push one (predefined) value onto the stack. This function creates
+        such a function given the predefined value, and places it onto the
+        constants menu under /commandChar/ and name /commandDescr/.
+        Alternatively, you can specify a different menu.
+        """
+
+        # silently register the constant menu if it isn't already
+        cmc = CONSTANT_MENU_CHARACTER
+        if menu == cmc and cmc not in self.menuNames:
+            self.registerMenu(cmc, "insert constant")
+
+        self.registerFunction(lambda discard: cst, 0, 1,
+                commandChar, commandDescr, menu)
+
     def runFunction(self, commandChar, ss):
         """
         Run the function indicated by /commandChar/, modifying the stack /ss/.
@@ -122,6 +141,9 @@ class FunctionManager(object):
                 ss.push((retvals,))
         return True
 
+####### BEGINNING OF FUNCTIONS #######
+# Note: eventually I anticipate this part will be in a separate file
+
 fm = FunctionManager()
 modes = ModeStorage()
 
@@ -135,8 +157,7 @@ fm.registerFunction(lambda s: s[1] % s[0], 2, 1, '%')
 fm.registerFunction(lambda s: math.sqrt(s[0]), 1, 1, 's')
 
 # stack operations
-fm.registerMenu('&', 'ampersand menu')
-fm.registerFunction(lambda s: (s[0], s[0]), 1, 2, 'd', 'duplicate bos', '&')
+fm.registerFunction(lambda s: (s[0], s[0]), 1, 2, 'd', 'duplicate bos')
 fm.registerFunction(lambda s: (s[0], s[1]), 2, 2, 'x', 'exchange bos, sos')
 fm.registerFunction(lambda s: None, 1, 0, 'p', 'pop off bos')
 fm.registerFunction(lambda s: None, -1, 0, 'c', 'clear stack')
@@ -155,7 +176,7 @@ def trigWrapper(s, func, arc=False):
     math module functions use only radians).
 
     Takes the requested stack item, a function to be called on the value
-    after/before the appropriate conversions, and a boolean indicating whether
+    after/before the appropriate conversion, and a boolean indicating whether
     this is an arc/inverse function (requiring radian->degree after
     computation) or a forward one (requiring degree->radian before
     computation).
@@ -190,6 +211,28 @@ def toRadians(discard):
     modes.trigMode = 'radians'
 fm.registerModeChange(toDegrees, 'd', 'degree mode', 't')
 fm.registerModeChange(toRadians, 'r', 'radian mode', 't')
+
+
+##############
+# LOGARITHMS #
+##############
+
+#TODO: Disable number entry while a menu is open
+
+fm.registerMenu('l', 'log menu')
+fm.registerFunction(lambda s: math.log10(s[0]), 1, 1, 'l', 'log x', 'l')
+fm.registerFunction(lambda s: math.pow(10, s[0]), 1, 1, '1', '10^x', 'l')
+fm.registerFunction(lambda s: math.log(s[0]), 1, 1, 'n', 'ln x', 'l')
+fm.registerFunction(lambda s: math.pow(math.e, s[0]), 1, 1, 'e', 'e^x', 'l')
+
+
+#############
+# CONSTANTS #
+#############
+
+fm.registerConstant(math.pi, 'p', 'pi')
+fm.registerConstant(math.e, 'e', 'e')
+
 
 
 
