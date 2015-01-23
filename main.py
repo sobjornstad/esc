@@ -70,10 +70,10 @@ class StackState(object):
 
 
     def __init__(self):
-        self.stackClear()
+        self.clearStack()
         self.trigMode = 'degrees'
 
-    def stackClear(self):
+    def clearStack(self):
         "Set up an empty stack, or clear the stack."
         self.s = []
         self.stackPosn = -1
@@ -488,12 +488,9 @@ def main(statusw, stackw, commandsw):
 
 
 
-        # operators
-        elif chr(c) in ('+', '-', '*', '/', '^', '%', 's'):
-            ss.enterNumber()
-            fm.runFunction(chr(c), ss)
+        # try running as an operator; if not, we return False and go on
+        elif fm.runFunction(chr(c), ss):
             redrawStackWin(ss, stackw)
-
 
         elif chr(c) in ('t', 'i', 'l'):
             numOperands = 1 if chr(c) in ('s', 't') else 2
@@ -533,58 +530,6 @@ def main(statusw, stackw, commandsw):
 
 
         # stack operations
-        elif c == ord('d'):
-            ss.enterNumber()
-            try:
-                bos = ss.s[-1]
-            except IndexError:
-                changeStatusMsg(statusw, "'d': Stack is empty.")
-                errorState = True
-            else:
-                if ss.stackPosn > STACKDEPTH - 2:
-                    changeStatusMsg(statusw, "'d': Stack is full.")
-                    errorState = True
-                else:
-                    pushOnto(bos.value, ss, stackw)
-        elif c == ord('r'):
-            ss.enterNumber()
-            try:
-                ss.s.pop(0)
-            except IndexError:
-                changeStatusMsg(statusw, "'r': Stack is empty.")
-                errorState = True
-                continue
-            redrawStackWin(ss, stackw)
-            ss.stackPosn -= 1
-        elif c == ord('x'):
-            ss.enterNumber()
-            if len(ss.s) < 2:
-                msg = "Only one item on stack." if len(ss.s) == 1 \
-                        else "Stack is empty."
-                changeStatusMsg(statusw, "'x': %s" % msg)
-                errorState = True
-                continue
-
-            bos = ss.s.pop()
-            sos = ss.s.pop()
-            ss.s.append(bos)
-            ss.s.append(sos)
-            redrawStackWin(ss, stackw)
-        elif c == ord('c'):
-            ss.enterNumber()
-            ss.stackClear()
-            redrawStackWin(ss, stackw)
-        elif c == ord('p'):
-            ss.enterNumber()
-            try:
-                item = ss.s.pop()
-            except IndexError:
-                changeStatusMsg(statusw, "'p': Stack is empty.")
-                errorState = True
-                continue
-            stackw.addstr(ss.stackPosn + 1, 1, ' ' * item.getReprStrlen())
-            ss.stackPosn -= 1
-
         elif c == ord('u'):
             if stackCheckpoints:
                 global redoCheckpoints
