@@ -489,29 +489,17 @@ def main(statusw, stackw, commandsw):
 
 
         # operators
-        elif chr(c) in ('+'):
+        elif chr(c) in ('+', '-', '*', '/', '^', '%', 's'):
             ss.enterNumber()
             fm.runFunction(chr(c), ss)
             redrawStackWin(ss, stackw)
 
 
-        elif chr(c) in ('+', '-', '*', '/', '^', '%', 's', 't', 'i', 'l'):
+        elif chr(c) in ('t', 'i', 'l'):
             numOperands = 1 if chr(c) in ('s', 't') else 2
             oldSs = copy.deepcopy(ss)
             ss.enterNumber()
-            if c == ord('+'):
-                ss = binaryOperator(ss, stackw, lambda sos, bos: sos + bos)
-            elif c == ord('-'):
-                ss = binaryOperator(ss, stackw, lambda sos, bos: sos - bos)
-            elif c == ord('*'):
-                ss = binaryOperator(ss, stackw, lambda sos, bos: sos * bos)
-            elif c == ord('/'):
-                ss = binaryOperator(ss, stackw, lambda sos, bos: sos / bos)
-            elif c == ord('^'):
-                ss = binaryOperator(ss, stackw, lambda sos, bos: sos ** bos)
-            elif c == ord('%'):
-                ss = binaryOperator(ss, stackw, lambda sos, bos: sos % bos)
-            elif c == ord('s'):
+            if c == ord('s'):
                 try:
                     ss = unaryOperator(ss, stackw, lambda bos: math.sqrt(bos))
                 except ValueError:

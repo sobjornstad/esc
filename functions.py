@@ -1,5 +1,5 @@
+import math
 from main import STACKDEPTH
-from time import sleep #DEBUG
 
 class FunctionManager(object):
     """
@@ -39,7 +39,11 @@ class FunctionManager(object):
 
 fm = FunctionManager()
 
-def plusFn(s):
-    return s[1] + s[0]
-
-fm.registerFunction(plusFn, 2, 1, '+')
+# basic operators
+fm.registerFunction(lambda s: s[1] + s[0], 2, 1, '+')
+fm.registerFunction(lambda s: s[1] - s[0], 2, 1, '-')
+fm.registerFunction(lambda s: s[1] * s[0], 2, 1, '*')
+fm.registerFunction(lambda s: s[1] / s[0], 2, 1, '/')
+fm.registerFunction(lambda s: s[1] ** s[0], 2, 1, '^')
+fm.registerFunction(lambda s: s[1] % s[0], 2, 1, '%')
+fm.registerFunction(lambda s: math.sqrt(s[0]), 1, 1, 's')
