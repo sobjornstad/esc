@@ -200,6 +200,7 @@ def main():
     errorState = False
     ss = StackState()
     from functions import fm
+    fm.displayMenu()
 
     while True:
         # restore status bar after one successful action

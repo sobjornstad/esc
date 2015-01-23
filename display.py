@@ -53,66 +53,18 @@ def getch_stack():
 def putch_stack(c):
     stackw.addstr(c)
 
-def populateCommandsWindow(mode='normal', opts={}):
-    def addCommand(char, descr, yposn, xposn):
+def addCommand(char, descr, yposn, xposn):
+    try:
         commandsw.addstr(yposn, xposn, char, curses.color_pair(2))
-        commandsw.addstr(yposn, xposn + 1 + len(char), descr)
+        if descr:
+            commandsw.addstr(yposn, xposn + 1 + len(char), descr)
+    except curses.error:
+        pass
 
+def resetCommandsWindow():
     commandsw.clear()
     commandsw.border()
     commandsw.addstr(0, 8, "Commands")
-
-    if mode == 'normal':
-        CENTERFACTOR = 1
-        addCommand("+ - * / ^ %", "", 1, 5 + CENTERFACTOR)
-        addCommand("c", "clear stack", 2, 1 + CENTERFACTOR)
-        addCommand("d", "duplicate bos", 3, 1 + CENTERFACTOR)
-        addCommand("p", "pop off bos", 4, 1 + CENTERFACTOR)
-        addCommand("r", "roll off tos", 5, 1 + CENTERFACTOR)
-        addCommand("x", "exchange bos, tos", 6, 1 + CENTERFACTOR)
-        addCommand("u", "undo (", 7, 1 + CENTERFACTOR)
-        addCommand("^r", "redo)", 7, 9 + CENTERFACTOR)
-        addCommand("y", "yank bos to cboard", 8, 1 + CENTERFACTOR)
-        addCommand("s", "square root", 9, 1 + CENTERFACTOR)
-        addCommand("t", "trig functions", 10, 1 + CENTERFACTOR)
-        addCommand("l", "log functions", 11, 1 + CENTERFACTOR)
-        addCommand("i", "insert constant", 12, 1 + CENTERFACTOR)
-        addCommand("q", "quit", 13, 1 + CENTERFACTOR)
-
-    elif mode == 'trig':
-        CENTERFACTOR = 1
-        commandsw.addstr(1, 6, "(trig mode)")
-        commandsw.addstr(2, 6, " [%s] " % opts['mode'] )
-        addCommand("s", "sine", 4, 1 + CENTERFACTOR)
-        addCommand("c", "cosine", 5, 1 + CENTERFACTOR)
-        addCommand("t", "tangent", 6, 1 + CENTERFACTOR)
-        addCommand("i", "arc sin", 7, 1 + CENTERFACTOR)
-        addCommand("o", "arc cos", 8, 1 + CENTERFACTOR)
-        addCommand("a", "arc tan", 9, 1 + CENTERFACTOR)
-        addCommand("d", "degree mode", 10, 1 + CENTERFACTOR)
-        addCommand("r", "radian mode", 11, 1 + CENTERFACTOR)
-        addCommand("q", "cancel", 12, 1 + CENTERFACTOR)
-
-    elif mode == 'log':
-        CENTERFACTOR = 1
-        commandsw.addstr(1, 7, "(log mode)")
-        addCommand("l", "log x", 3, 1 + CENTERFACTOR)
-        addCommand("1", "10^x", 4, 1 + CENTERFACTOR)
-        addCommand("e", "ln x", 5, 1 + CENTERFACTOR)
-        addCommand("n", "e^x", 6, 1 + CENTERFACTOR)
-        addCommand("q", "cancel", 7, 1 + CENTERFACTOR)
-
-    elif mode == 'cst':
-        CENTERFACTOR = 1
-        commandsw.addstr(1, 4, "(constant mode)")
-        addCommand("p", "pi", 3, 1 + CENTERFACTOR)
-        addCommand("e", "e", 4, 1 + CENTERFACTOR)
-        addCommand("q", "cancel", 5, 1 + CENTERFACTOR)
-
-    else:
-        assert False, "Invalid mode used for populateCommandsWindow()"
-
-    commandsw.refresh()
 
 def setup(stdscr):
     maxy, maxx = stdscr.getmaxyx()
@@ -137,7 +89,7 @@ def setup(stdscr):
     historyw.addstr(0, 13, "History")
 
     commandsw = curses.newwin(3 + STACKDEPTH, 24, 1, 56)
-    populateCommandsWindow()
+    # will be populated in main() after initializing the FunctionManager
 
     #registers = curses.newwin(maxy - (3 + STACKDEPTH), maxx, 4 + STACKDEPTH, 0)
     registersw = curses.newwin(maxy - 1 - (3 + STACKDEPTH), 80, 4 + STACKDEPTH, 0)

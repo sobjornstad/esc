@@ -44,16 +44,92 @@ class FunctionManager(object):
             msg = "Expecting constant choice (q to cancel)"
         else:
             msg = "Expecting %s command (q to cancel)" % self.menuNames[menu]
+
+        self.displayMenu()
         display.changeStatusMsg(msg)
 
+
     def leaveMenu(self):
-        "Change state to leave menu, if any."
-        self.curMenu = None
+        "Change state and display to leave menu, if any."
+        if self.curMenu:
+            self.curMenu = None
+            self.displayMenu()
 
     def registerMenu(self, commandChar, name):
         self.menuNames[commandChar] = name
         self.functions.append(commandChar)
         self.fnattrs[commandChar] = '@menu'
+
+    def displayMenu(self):
+        """
+        Update the commands window to show the current menu.
+        """
+
+        display.resetCommandsWindow()
+
+        MIN_XPOSN = 2
+        MAX_XPOSN = 22
+        xposn = 2
+        yposn = 1
+        anonFunctions = []
+        normFunctions = []
+        for i in self.functions:
+            # menu?
+            try:
+                menu = self.fnattrs[i] == '@menu'
+            except TypeError:
+                pass
+            else:
+                if menu:
+                    normFunctions.append(i)
+                    continue
+
+            # anonymous function?
+            if not self.fnattrs[i]['descr']:
+                anonFunctions.append(i)
+                continue
+
+            # normal function.
+            normFunctions.append(i)
+
+            # filter out anything not in the current menu
+            for i in anonFunctions[:]:
+                if (len(i) > 1 and self.curMenu != i[0]) or \
+                        (len(i) == 1 and self.curMenu):
+                    anonFunctions.remove(i)
+
+            for i in normFunctions[:]:
+                if (len(i) > 1 and self.curMenu != i[0]) or \
+                        (len(i) == 1 and self.curMenu):
+                    normFunctions.remove(i)
+
+        # print anonymous functions to the screen
+        for i in anonFunctions:
+            display.addCommand(i, None, yposn, xposn)
+            xposn += 2
+            if xposn >= MAX_XPOSN - 2:
+                yposn += 1
+                xposn = MIN_XPOSN
+
+        # then normal functions and menus
+        yposn += 1
+        xposn = MIN_XPOSN
+        for i in normFunctions:
+            dispChar = i if not self.curMenu else i[1] # remove menu char
+            try:
+                display.addCommand(dispChar, self.fnattrs[i]['descr'], yposn, xposn)
+            except TypeError: # menu
+                display.addCommand(dispChar, self.menuNames[i], yposn, xposn)
+            yposn += 1
+
+        # then the quit option, which is always there but is not a function
+        quitName = 'cancel' if self.curMenu else 'quit'
+        display.addCommand('q', quitName, yposn, xposn)
+
+
+        # finally, make curses figure out how it's supposed to draw this
+        display.commandsw.refresh()
+
 
     def registerFunction(self, fn, numPop, numPush, commandChar,
             commandDescr=None, menu=None):
