@@ -158,7 +158,9 @@ class StackState(object):
     def push(self, vals):
         if not self.enoughPushSpace(len(vals)):
             return False
-        for i in vals:
+        # we need to take it in reverse because it's like we're popping from
+        # the provided slice of stack
+        for i in reversed(vals):
             self.s.append(StackItem(floatval=i))
         self.stackPosn += len(vals)
         return True
@@ -208,7 +210,6 @@ def main():
         if fm.curMenu:
             c = display.getch_status()
         else:
-            display.cursorInStatusBar()
             c = display.getch_stack()
 
         # if we don't have a menu open, try interpreting as a number

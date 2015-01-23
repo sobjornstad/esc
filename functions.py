@@ -30,6 +30,7 @@ class FunctionManager(object):
         self.functions = []
         self.fnattrs = {}
         self.menuNames = {}
+        self.menuFns = {}
         self.curMenu = None
         self.quitAfter = False
         self.MAX_TEXT_FUNCTIONS = STACKDEPTH
@@ -65,10 +66,12 @@ class FunctionManager(object):
             self.curMenu = None
             self.displayMenu()
 
-    def registerMenu(self, commandChar, name):
+    def registerMenu(self, commandChar, name, dynDisp=None):
         self.menuNames[commandChar] = name
         self.functions.append(commandChar)
         self.fnattrs[commandChar] = '@menu'
+        if dynDisp:
+            self.menuFns[commandChar] = dynDisp
 
     def displayMenu(self):
         """
@@ -112,6 +115,15 @@ class FunctionManager(object):
                 if (len(i) > 1 and self.curMenu != i[0]) or \
                         (len(i) == 1 and self.curMenu):
                     normFunctions.remove(i)
+
+        # print menu title, using menuFns if available
+        if self.curMenu in self.menuFns:
+            display.addMenuTitle(self.menuFns[self.curMenu](), yposn, xposn-1)
+            yposn += 1
+        elif self.curMenu:
+            display.addMenuTitle(self.menuNames[self.curMenu], yposn, xposn-1)
+            yposn += 1
+
 
         # print anonymous functions to the screen
         for i in anonFunctions:
@@ -257,6 +269,10 @@ class FunctionManager(object):
             ss.push(args)
             display.changeStatusMsg("Domain error! Stack unchanged.")
             return False
+        except ZeroDivisionError:
+            ss.push(args)
+            display.changeStatusMsg("Sorry, division by zero is against the law.")
+            return False
 
 
         if hasattr(retvals, 'startswith') and retvals.startswith('err: '):
@@ -288,7 +304,7 @@ fm.registerFunction(lambda s: math.sqrt(s[0]), 1, 1, 's', 'square root')
 
 # stack operations
 fm.registerFunction(lambda s: (s[0], s[0]), 1, 2, 'd', 'duplicate bos')
-fm.registerFunction(lambda s: (s[0], s[1]), 2, 2, 'x', 'exchange bos, sos')
+fm.registerFunction(lambda s: (s[1], s[0]), 2, 2, 'x', 'exchange bos, sos')
 fm.registerFunction(lambda s: None, 1, 0, 'p', 'pop off bos')
 fm.registerFunction(lambda s: None, -1, 0, 'c', 'clear stack')
 fm.registerFunction(lambda s: [i.value for i in s[1:]], -1, 0, 'r', 'roll off tos')
@@ -298,7 +314,7 @@ fm.registerFunction(lambda s: [i.value for i in s[1:]], -1, 0, 'r', 'roll off to
 # TRIG FUNCTIONS #
 ##################
 
-fm.registerMenu('t', 'trig menu')
+fm.registerMenu('t', 'trig menu', dynDisp=lambda: 'trig [%s]' % modes.trigMode)
 def trigWrapper(s, func, arc=False):
     """
     Used anytime a trig function is called. Performs any conversions from

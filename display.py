@@ -1,5 +1,5 @@
 import curses
-from consts import STACKDEPTH
+from consts import STACKDEPTH, STACKWIDTH
 from time import sleep #debug
 
 # module globals defined for each of the windows: statusw, stackw, commandsw
@@ -59,6 +59,12 @@ def putch_stack(c):
 def getch_status():
     cursorInStatusBar()
     return statusw.getch()
+
+def addMenuTitle(text, yposn, xposn):
+    text = "(%s)" % text
+    ctrxpos = (STACKWIDTH - len(text)) / 2 + 1
+    addCommand('', text, yposn, ctrxpos)
+
 
 def addCommand(char, descr, yposn, xposn):
     try:
