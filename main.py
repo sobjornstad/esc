@@ -195,7 +195,8 @@ def isNumber(c):
 def main():
     errorState = False
     ss = StackState()
-    from functions import fm
+
+    from functions import fm # also runs all content in functions module
     fm.displayMenu()
 
     while True:
