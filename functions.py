@@ -3,9 +3,11 @@ from main import ftostr
 import display
 import math
 
-####### BEGINNING OF FUNCTIONS #######
 
-# basic operations
+####################
+# BASIC OPERATIONS #
+####################
+
 fm.registerFunction(lambda s: s[1] + s[0], 2, 1, '+')
 fm.registerFunction(lambda s: s[1] - s[0], 2, 1, '-')
 fm.registerFunction(lambda s: s[1] * s[0], 2, 1, '*')
@@ -14,11 +16,16 @@ fm.registerFunction(lambda s: s[1] ** s[0], 2, 1, '^')
 fm.registerFunction(lambda s: s[1] % s[0], 2, 1, '%')
 fm.registerFunction(lambda s: math.sqrt(s[0]), 1, 1, 's')
 
-# stack operations
+
+####################
+# STACK OPERATIONS #
+####################
+
 fm.registerFunction(lambda s: (s[0], s[0]), 1, 2, 'd', 'duplicate bos')
 fm.registerFunction(lambda s: (s[1], s[0]), 2, 2, 'x', 'exchange bos, sos')
 fm.registerFunction(lambda s: None, 1, 0, 'p', 'pop off bos')
-fm.registerFunction(lambda s: [i.value for i in s[1:]], -1, 0, 'r', 'roll off tos')
+fm.registerFunction(lambda s: [i.value for i in reversed(s[1:])], -1, 0,
+        'r', 'roll off tos')
 fm.registerFunction(lambda s: None, -1, 0, 'c', 'clear stack')
 
 
@@ -90,9 +97,10 @@ fm.registerConstant(math.pi, 'p', 'pi')
 fm.registerConstant(math.e, 'e', 'e')
 
 
+#################
+# MISCELLANEOUS #
+#################
 
-
-# miscellaneous
 def yankBos(s):
     """
     Use xsel to yank bottom of stack. This probably only works on Unix-like
