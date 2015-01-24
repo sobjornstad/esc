@@ -4,11 +4,12 @@
 # History section.
 # Registers.
 # Don't panic if stack width exceeded when typing.
-# A bit more documentation
+# Don't crash if a constant is an integer rather than a float
+# Don't crash when a menu is registered without any content
+# Also, make sure descriptions are not too long to fit
 # Dev documentation (maybe program some of my own functions)
-# And find a way to read a whole directory of function modules
-# Split functions.py into the class part and the user part
 # It's sometimes possible to overflow the stack window with results. It should do scientific notation if beyond a reasonable length.
+# rounding for display purposes? When I entered 6.02e23, for example, it showed a crapton of 6.019999999999999999999999 stuff (which also overflowed the screen).
 
 import curses.wrapper
 import curses.ascii

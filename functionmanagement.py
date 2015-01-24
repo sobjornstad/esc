@@ -1,3 +1,4 @@
+import copy
 import math
 from main import ftostr
 from consts import STACKDEPTH, QUIT_CHARACTER, CONSTANT_MENU_CHARACTER
@@ -251,7 +252,9 @@ class FunctionManager(object):
 
         if numToPop == -1:
             # whole stack requested; will push the whole stack back later
-            args = ss.s #TODO: Does this get bos in the right place? No...?
+            sr = copy.deepcopy(ss.s)
+            sr.reverse()
+            args = sr
             ss.clearStack()
         else:
             #print ss.s
