@@ -34,12 +34,16 @@ Manual
 ======
 
 There are three documentation files located in the `docs/` folder:
-* **beginners.md** – this contains information about understanding the stack and
-  Reverse Polish Notation. If you have used another RPN calculator before, you
-  can skip this, but users new to RPN should read this first.
+* **beginners.md** – this contains information about understanding the stack
+  and Reverse Polish Notation. If you have used another RPN calculator before,
+  you can skip this, but users new to RPN should read this first.
 * **manual.md** – this contains the user documentation for the program. You
   should read this next, or first if you skipped the first file.
-* **extending.md** – this contains the “developer documentation”, although every
-  user of this calculator can easily be a “developer” if they so desire. In here
-  you will learn how to add new functions and change the menus of your esc
-  calculator using simple Python code.
+* **extending.md** – this contains a beginner’s introduction to Python (as
+  useful for coding esc functions) and esc’s extension features. In here you
+  will learn how to add new operations and change the menus of your esc
+  calculator.
+* **devel.md** – this contains a programmer’s reference to the extension
+  features. If you’re comfortable with Python and programming terminology, you
+  may want to start here rather than `extending.md` for a reference of the
+  relevant functions.
