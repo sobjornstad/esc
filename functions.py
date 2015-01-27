@@ -84,8 +84,8 @@ fm.registerModeChange(toRadians, 'r', 'radian mode', 't')
 fm.registerMenu('l', 'log menu')
 fm.registerFunction(lambda s: s[0].log10(), 1, 1, 'l', 'log x', 'l')
 fm.registerFunction(lambda s: 10 ** s[0], 1, 1, '1', '10^x', 'l')
-fm.registerFunction(lambda s: math.log(s[0]), 1, 1, 'n', 'ln x', 'l')
-fm.registerFunction(lambda s: math.pow(math.e, s[0]), 1, 1, 'e', 'e^x', 'l')
+fm.registerFunction(lambda s: s[0].ln(), 1, 1, 'n', 'ln x', 'l')
+fm.registerFunction(lambda s: s[0].exp(), 1, 1, 'e', 'e^x', 'l')
 
 
 #############

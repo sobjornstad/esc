@@ -34,9 +34,21 @@ class StackItem(object):
             self.value = None
         elif decval is not None:
             self.isEntered = True
-            # don't add a .0 to the fake entry, the user wouldn't have
-            self.entry = str(decval)
             self.value = decval
+            self.entry = str(decval.normalize()).replace('E', 'e')
+
+            # if we weren't using scientific notation but the new value is too
+            # long to fit in the stack window, convert it, knocking down the
+            # displayed precision to fit
+            if len(self.entry) > STACKWIDTH:
+                precision = STACKWIDTH
+                precision -= 3            # account for length of exponent
+                precision -= len("0.e+")  # account for new characters
+                precision -= (1 if self.value.as_tuple().sign == 1 else 0)
+                self.entry = ("%." + str(precision) + "e") % (decval)
+        else:
+            assert False, "No valid argument to constructor of StackItem!"
+
 
     def addChar(self, nextchar):
         assert not self.isEntered, "Number already entered!"
