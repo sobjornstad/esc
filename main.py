@@ -3,9 +3,6 @@
 #TODO:
 # History section.
 # Registers.
-# Don't panic if stack width exceeded when typing.
-# Don't crash if a constant is an integer rather than a float
-# Similarly, don't crash if a function returns an int rather than a float
 # Don't crash when a menu is registered without any content
 # Also, make sure descriptions are not too long to fit
 # Dev documentation (maybe program some of my own functions)
@@ -39,8 +36,18 @@ class StackItem(object):
             assert False, "No valid argument to constructor of StackItem!"
 
     def addChar(self, nextchar):
+        """
+        Add a character to the running string of the number being entered on
+        the stack. Return True if successful, False if the stack width has
+        been exceeded.
+        """
+
         assert not self.isEntered, "Number already entered!"
-        self.entry += nextchar
+        if len(self.entry) < STACKWIDTH:
+            self.entry += nextchar
+            return True
+        else:
+            return False
 
     def finishEntry(self):
         """
@@ -248,7 +255,13 @@ def main():
                 if char == '_':
                     char = '-' # negative sign, like dc
                 if ss.editingStack:
-                    ss.s[ss.stackPosn].addChar(char)
+                    r = ss.s[ss.stackPosn].addChar(char)
+                    if not r:
+                        # no more stack width left
+                        display.changeStatusMsg("No more precision available." \
+                                " (You can use scientific notation.)")
+                        errorState = True
+                        continue
                 else:
                     ok = ss.openNewStackItem(char)
                     if not ok: # no more space on the stack
