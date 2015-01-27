@@ -9,8 +9,6 @@
 # Don't crash when a menu is registered without any content
 # Also, make sure descriptions are not too long to fit
 # Dev documentation (maybe program some of my own functions)
-# It's sometimes possible to overflow the stack window with results. It should do scientific notation if beyond a reasonable length.
-# rounding for display purposes? When I entered 6.02e23, for example, it showed a crapton of 6.019999999999999999999999 stuff (which also overflowed the screen).
 
 import curses.wrapper
 import curses.ascii
@@ -20,6 +18,7 @@ from decimal import Decimal
 
 import display
 import history
+import util
 from consts import STACKDEPTH, STACKWIDTH, UNDO_CHARACTER, REDO_CHARACTER
 from time import sleep # debug
 
@@ -35,20 +34,9 @@ class StackItem(object):
         elif decval is not None:
             self.isEntered = True
             self.value = decval
-            self.entry = str(decval.normalize()).replace('E', 'e')
-
-            # if we weren't using scientific notation but the new value is too
-            # long to fit in the stack window, convert it, knocking down the
-            # displayed precision to fit
-            if len(self.entry) > STACKWIDTH:
-                precision = STACKWIDTH
-                precision -= 3            # account for length of exponent
-                precision -= len("0.e+")  # account for new characters
-                precision -= (1 if self.value.as_tuple().sign == 1 else 0)
-                self.entry = ("%." + str(precision) + "e") % (decval)
+            self._entryFromVal()
         else:
             assert False, "No valid argument to constructor of StackItem!"
-
 
     def addChar(self, nextchar):
         assert not self.isEntered, "Number already entered!"
@@ -67,8 +55,26 @@ class StackItem(object):
         except decimal.InvalidOperation:
             return False
         else:
+            self._entryFromVal()  # convert string rep to internal display rep
             self.isEntered = True
             return True
+
+    def _entryFromVal(self):
+        "(Re)set the /entry/ string based on the attribute /value/."
+
+        self.entry = str(util.remove_exponent(
+            self.value.normalize())).replace('E', 'e')
+
+        # if we weren't using scientific notation but the new value is too
+        # long to fit in the stack window, convert it, knocking down the
+        # displayed precision to fit
+        if len(self.entry) > STACKWIDTH:
+            precision = STACKWIDTH
+            precision -= 3            # account for length of exponent
+            precision -= len("0.e+")  # account for new characters
+            precision -= (1 if self.value.as_tuple().sign == 1 else 0)
+            self.entry = ("%." + str(precision) + "e") % (self.value)
+
 
 class StackState(object):
     """
@@ -259,6 +265,9 @@ def main():
             if c == ord('\n') or c == ord(' '):
                 if ss.editingStack:
                     r = ss.enterNumber()
+                    # representation might have changed; e.g. user enters 3.0,
+                    # calculator displays it to 3
+                    display.redrawStackWin(ss)
                 else:
                     display.changeStatusMsg("No number to finish adding. " \
                                              "(Use 'd' to duplicate bos.)")
