@@ -225,9 +225,10 @@ the program (our function name, *increment*) do not go in quotation marks, while
 text which is destined for the screen does.
 
 It’s a good idea to add a comment describing what your function is for; in our
-case, it’s probably pretty self-evident, but just for good measure, I’ll add
-one. Any line which begins with `#` is a comment: everything on that line is
-completely ignored by the computer. Our increment code thus becomes:
+case, it’s probably pretty self-evident, but just for good measure, I’ll add one
+(no pun intended!). Any line which begins with `#` is a comment: everything on
+that line is completely ignored by the computer. Our increment code thus
+becomes:
 
     # increment operator: add one to bos
     def increment(s):
@@ -350,8 +351,8 @@ There are a couple of worthwhile things to note about this:
   (albeit with some complications for constructions that algebra does not have),
   but again, it’s easier to read and less likely that you make a mistake, and
   there’s no tax on parentheses.
-* The first item we place in the return statement will be pushed first – just
-  like the first statement we get in `s` was popped first.
+* The first item we place in the return statement will end up at the bottom of
+  the stack. Remember the rule: element 0 is always bos.
 
 Now we need to register the function. This works exactly the same way as it did
 with our increment function – the only difference is that we have a different
@@ -389,6 +390,7 @@ and the description of the menu:
     fm.registerMenu('m', 'an example menu')
 
 Then to add something to the menu:
+
     fm.registerFunction(blah blah blah, 'description', 'm')
 
 The important thing is that after the fifth argument to `registerFunction`, the

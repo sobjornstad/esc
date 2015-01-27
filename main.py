@@ -5,6 +5,7 @@
 # Registers.
 # Don't panic if stack width exceeded when typing.
 # Don't crash if a constant is an integer rather than a float
+# Similarly, don't crash if a function returns an int rather than a float
 # Don't crash when a menu is registered without any content
 # Also, make sure descriptions are not too long to fit
 # Dev documentation (maybe program some of my own functions)
