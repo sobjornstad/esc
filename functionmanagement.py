@@ -1,6 +1,5 @@
 import copy
 import math
-from main import ftostr
 from consts import STACKDEPTH, QUIT_CHARACTER, CONSTANT_MENU_CHARACTER
 import display
 import history
@@ -284,10 +283,9 @@ class FunctionManager(object):
 
         # push return vals, creating an iterable from single retvals
         if numToPush > 0 or (numToPop == -1 and retvals is not None):
-            try:
-                ss.push(retvals)
-            except TypeError:
-                ss.push((retvals,))
+            if not hasattr(retvals, '__iter__'):
+                retvals = (retvals,)
+            ss.push(retvals)
         return True if not self.statusDisplayRequested else False
 
 # global module objects

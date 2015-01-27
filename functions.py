@@ -1,5 +1,4 @@
 from functionmanagement import fm, modes
-from main import ftostr
 import display
 import math
 
@@ -83,8 +82,8 @@ fm.registerModeChange(toRadians, 'r', 'radian mode', 't')
 ##############
 
 fm.registerMenu('l', 'log menu')
-fm.registerFunction(lambda s: math.log10(s[0]), 1, 1, 'l', 'log x', 'l')
-fm.registerFunction(lambda s: math.pow(10, s[0]), 1, 1, '1', '10^x', 'l')
+fm.registerFunction(lambda s: s[0].log10(), 1, 1, 'l', 'log x', 'l')
+fm.registerFunction(lambda s: 10 ** s[0], 1, 1, '1', '10^x', 'l')
 fm.registerFunction(lambda s: math.log(s[0]), 1, 1, 'n', 'ln x', 'l')
 fm.registerFunction(lambda s: math.pow(math.e, s[0]), 1, 1, 'e', 'e^x', 'l')
 
@@ -110,8 +109,8 @@ def yankBos(s):
     # is-there-a-way-to-directly-send-a-python-output-to-clipboard
     from subprocess import Popen, PIPE
     p = Popen(['xsel', '-bi'], stdin=PIPE)
-    p.communicate(input=ftostr(s[0]))
-    display.changeStatusMsg('"%s" placed on system clipboard.' % ftostr(s[0]))
+    p.communicate(input=str(s[0]))
+    display.changeStatusMsg('"%s" placed on system clipboard.' % str(s[0]))
     fm.setStatusDisplayRequested()
     return s[0] # put back onto stack
 

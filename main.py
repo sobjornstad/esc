@@ -15,6 +15,8 @@
 import curses.wrapper
 import curses.ascii
 import copy
+import decimal
+from decimal import Decimal
 
 import display
 import history
@@ -25,16 +27,16 @@ stackCheckpoints = []
 redoCheckpoints = []
 
 class StackItem(object):
-    def __init__(self, firstchar=None, floatval=None):
+    def __init__(self, firstchar=None, decval=None):
         if firstchar is not None:
             self.isEntered = False
             self.entry = firstchar
             self.value = None
-        elif floatval is not None:
+        elif decval is not None:
             self.isEntered = True
             # don't add a .0 to the fake entry, the user wouldn't have
-            self.entry = ftostr(floatval)
-            self.value = floatval
+            self.entry = str(decval)
+            self.value = decval
 
     def addChar(self, nextchar):
         assert not self.isEntered, "Number already entered!"
@@ -42,14 +44,15 @@ class StackItem(object):
 
     def finishEntry(self):
         """
-        Convert an entered string to a float value. If successful, return True;
-        if the entered string does not form a valid float, return False. This
-        should be called from self.enterNumber() and probably nowhere else.
+        Convert an entered string to a Decimal value. If successful, return
+        True; if the entered string does not form a valid number, return False.
+        This should be called from self.enterNumber() and probably nowhere
+        else.
         """
 
         try:
-            self.value = float(self.entry)
-        except ValueError:
+            self.value = Decimal(self.entry)
+        except decimal.InvalidOperation:
             return False
         else:
             self.isEntered = True
@@ -162,7 +165,16 @@ class StackState(object):
         # we need to take it in reverse because it's like we're popping from
         # the provided slice of stack
         for i in reversed(vals):
-            self.s.append(StackItem(floatval=i))
+            decval = i
+            if type(decval) != Decimal:
+                try:
+                    decval = Decimal(i)
+                except decimal.InvalidOperation as e:
+                    assert False, "That operation returned a value that cannot"\
+                            " be converted to a Decimal. The original error"   \
+                            " message is as follows: %r" % e
+
+            self.s.append(StackItem(decval=decval))
         self.stackPosn += len(vals)
         return True
 
@@ -175,18 +187,6 @@ class StackState(object):
             self.s = oldStack
             self.stackPosn += num
             return None
-
-
-def ftostr(f):
-    """
-    Convert a floating-point number to a string. It will be formatted as an
-    integer if it has no significant decimal part, and a float otherwise.
-    """
-
-    if f.is_integer():
-        return str(int(f))
-    else:
-        return str(f)
 
 def isNumber(c):
     if (c >= '0' and c <= '9') or c == '.' or c == '_' or c == "e":
@@ -206,6 +206,12 @@ def main():
         if not errorState:
             display.changeStatusMsg("Ready")
         errorState = False
+
+        #DEBUG: work out the type errors
+        #try:
+            #display.changeStatusMsg("bos is %s" % type(ss.s[-1].value))
+        #except (IndexError):
+            #display.changeStatusMsg("no valid number on bos")
 
         # update cursor posn and fetch one char of input (in stack or status)
         display.adjustCursorPos(ss)
