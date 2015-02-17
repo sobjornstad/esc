@@ -15,13 +15,14 @@ documentation, which describe values on the stack:
   ordinarily values are removed and added from the *bottom* of the stack, not
   the top. However, it does get referenced occasionally.
 
-*Note: If you are familiar with stacks from computer science, you may be puzzled
-as to why esc pushes and pops from the *bottom* of the stack, as opposed to the
-more normal top. The answer is that if you do it this way, non-commutative
-operations appear on the screen in the correct order. If numbers were popped
-from the top of the stack, you would see 5 above 7, but when you pressed the -
-key, 5 would be popped first and used as the first argument and you would get
-the answer -2, which would be confusing.*
+*Note: If you are familiar with stacks from computer science, you may be
+puzzled as to why esc pushes and pops from the* bottom *of the stack, as
+opposed to the more normal top. The answer is that if you do it this way,
+non-commutative operations appear on the screen in the correct order. If
+numbers were popped from the top of the stack, you would see 5 closer to the
+end of the stack than 7, but when you pressed the - key, 5 would be popped
+first and used as the first argument and you would get the answer -2, which
+would be confusing.*
 
 As you play with the stack, adding numbers and performing operations, you will
 eventually want to get rid of parts of the stack, or perhaps duplicate or

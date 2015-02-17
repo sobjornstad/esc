@@ -105,6 +105,7 @@ class FunctionManager(object):
             # normal function.
             normFunctions.append(i)
 
+            #TODO: This looks like it's indented wrong and should be one left
             # filter out anything not in the current menu
             for i in anonFunctions[:]:
                 if (len(i) > 1 and self.curMenu != i[0]) or \
@@ -199,12 +200,13 @@ class FunctionManager(object):
     def runFunction(self, commandChar, ss):
         """
         Run the function indicated by /commandChar/, modifying the stack /ss/.
-        If the function completes successfully (i.e., it did not return None),
-        return True; else, write an appropriate error message to the status bar
-        and return False.
+        If the function exits silently (i.e., it did not return None and did
+        not request a status bar display by doing a
+        setStatusDisplayRequested()), return True; else, write an appropriate
+        message to the status bar and return False.
         """
 
-        self.statusDisplayRequested = False # see docstring for setter
+        self.statusDisplayRequested = False # see docstring of setter
 
         if commandChar == QUIT_CHARACTER:
             if self.curMenu:

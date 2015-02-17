@@ -19,11 +19,19 @@ import util
 from consts import STACKDEPTH, STACKWIDTH, UNDO_CHARACTER, REDO_CHARACTER
 from time import sleep # debug
 
+#TODO: do we use these anymore?
 stackCheckpoints = []
 redoCheckpoints = []
 
 class StackItem(object):
     def __init__(self, firstchar=None, decval=None):
+        """
+        We can create an item on the stack either by the user entering it (in
+        which case we have methods for gradually building up a string repr of
+        the value and then converting it to the Decimal value that is used for
+        calculations) or by directly entering a Decimal value (for instance, as
+        the result of a calculation).
+        """
         if firstchar is not None:
             self.isEntered = False
             self.entry = firstchar
@@ -93,9 +101,9 @@ class StackState(object):
     helper methods for convenience.
 
     Generally, a StackState object should be initialized at the beginning of
-    execution and used until the program exits.
+    execution and used until the program exits. Checkpointing and undoing
+    operate by copying and restoring the stack state object.
     """
-
 
     def __init__(self):
         self.clearStack()
@@ -110,7 +118,7 @@ class StackState(object):
     def backspace(self):
         """
         Backspace one character in the current item on the stack. Return 0 if a
-        character was backspaced, 1 if the whole stack was wiped out, and -1 if
+        character was backspaced, 1 if the whole item was wiped out, and -1 if
         a stack item was not being edited at all.
         """
 

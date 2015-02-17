@@ -60,7 +60,8 @@ In both of the predefined examples, I used a constant from Python’s `math`
 library, but you can also just write a number there. If you wish, you can use
 scientific notation, written in the same way as inside esc.
 
-So to add the speed of light, I would add the line:
+So to add the speed of light in a vacuum in meters per second, I would add the
+line:
 
     fm.registerConstant(3.0e9, 'c', 'c - speed of light')
 
@@ -337,20 +338,20 @@ There are a couple of worthwhile things to note about this:
   *also* means something, and it has nothing whatsoever to do with
   exponentiation. I’ve been there.
 * I began by creating the variables “height” and “radius”. I would not have had
-  to do this; I could have equivalently written `s[0]` wherever I wrote `height`
-  and `s[1]` wherever I wrote `radius`. But doing it this way means that the
-  formula is much easier to read (and it’s thus less likely that I make a
-  mistake in it). Additionally, if I later realize that I got the order of the
-  arguments wrong and `height` should have been `s[1]` and vice versa, I can fix
-  the problem by simply changing it there. Indeed, I could pull the SA and V
-  lines out of this function and plunk them into any other function (with
-  different arguments!) and they would be right at home there, just so long as I
-  set `height` and `radius` first.
+  to do this; I could have equivalently written `s[0]` wherever I wrote
+  `height` and `s[1]` wherever I wrote `radius`. But doing it this way means
+  that the formula is much easier to read (and it’s thus less likely that I
+  make a mistake in it). Additionally, if I later realize that I got the order
+  of the arguments wrong and `height` should have been `s[1]` and vice versa, I
+  can fix the problem by simply changing it there. Indeed, I could pull the SA
+  and V lines out of this function and plunk them into any other function and
+  they would be right at home there, just so long as I set `height` and
+  `radius` first.
 * I used parentheses in a number of places where they were not strictly
-  necessary. Python observes the order of operations you’re used to from algebra
-  (albeit with some complications for constructions that algebra does not have),
-  but again, it’s easier to read and less likely that you make a mistake, and
-  there’s no tax on parentheses.
+  necessary. Python observes the order of operations you’re used to from
+  algebra (albeit with some complications for constructions that algebra does
+  not have), but again, it’s easier to read and less likely that you make a
+  mistake, and there’s no tax on parentheses.
 * The first item we place in the return statement will end up at the bottom of
   the stack. Remember the rule: element 0 is always bos.
 
