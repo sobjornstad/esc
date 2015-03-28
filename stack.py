@@ -52,7 +52,7 @@ class StackItem(object):
         """
         Convert an entered string to a Decimal value. If successful, return
         True; if the entered string does not form a valid number, return False.
-        This should be called from self.enterNumber() and probably nowhere
+        This should be called from ss.enterNumber() and probably nowhere
         else.
         """
 

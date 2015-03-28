@@ -13,19 +13,14 @@ import curses.ascii
 import display
 import history
 import stack
+import util
 from consts import UNDO_CHARACTER, REDO_CHARACTER
-
-def isNumber(c):
-    if (c >= '0' and c <= '9') or c == '.' or c == '_' or c == "e":
-        return True
-    else:
-        return False
 
 def main():
     errorState = False
     ss = stack.StackState()
 
-    from functions import fm # also runs all content in functions module
+    from functions import fm # adds all functions in functions.py to fm
     fm.displayMenu()
 
     while True:
@@ -33,12 +28,6 @@ def main():
         if not errorState:
             display.changeStatusMsg("Ready")
         errorState = False
-
-        #DEBUG: work out the type errors
-        #try:
-            #display.changeStatusMsg("bos is %s" % type(ss.s[-1].value))
-        #except (IndexError):
-            #display.changeStatusMsg("no valid number on bos")
 
         # update cursor posn and fetch one char of input (in stack or status)
         display.adjustCursorPos(ss)
@@ -53,7 +42,7 @@ def main():
                 char = chr(c)
             except ValueError:
                 continue # ignore unrecognized or invalid characters
-            if isNumber(char):
+            if util.isNumber(char):
                 if char == '_':
                     char = '-' # negative sign, like dc
                 if ss.editingStack:
@@ -81,7 +70,7 @@ def main():
                 if ss.editingStack:
                     r = ss.enterNumber()
                     # representation might have changed; e.g. user enters 3.0,
-                    # calculator displays it to 3
+                    # calculator displays it as 3
                     display.redrawStackWin(ss)
                 else:
                     display.changeStatusMsg("No number to finish adding. " \
@@ -120,9 +109,12 @@ def main():
         if fm.runFunction(chr(c), ss):
             display.redrawStackWin(ss)
         else:
+            # either there was an error, or we simply wanted to display output
+            # on the status bar.
             errorState = True
 
-        if c == ord('q') and fm.quitAfter:
+        # if, within fm, we chose to quit, quit.
+        if fm.quitAfter:
             return
 
 def bootstrap(stdscr):

@@ -49,8 +49,6 @@ class FunctionManager(object):
     ##### Menu handling ######
     def enterMenu(self, menu):
         "Change state to specify we are in a different menu."
-        assert menu in self.menuNames, \
-                "Menu does not exist! Did you buildMenus()?"
         self.curMenu = menu
         if menu == CONSTANT_MENU_CHARACTER:
             msg = "Expecting constant choice (q to cancel)"
@@ -67,6 +65,7 @@ class FunctionManager(object):
             self.displayMenu()
 
     def registerMenu(self, commandChar, name, dynDisp=None):
+        "Create a new menu. Must be done before adding items to it."
         self.menuNames[commandChar] = name
         self.functions.append(commandChar)
         self.fnattrs[commandChar] = '@menu'
@@ -152,7 +151,7 @@ class FunctionManager(object):
 
         # then the quit option, which is always there but is not a function
         quitName = 'cancel' if self.curMenu else 'quit'
-        display.addCommand('q', quitName, yposn, xposn)
+        display.addCommand(QUIT_CHARACTER, quitName, yposn, xposn)
 
         # finally, make curses figure out how it's supposed to draw this
         display.commandsw.refresh()
