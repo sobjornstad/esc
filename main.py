@@ -19,10 +19,6 @@ import util
 from consts import STACKDEPTH, STACKWIDTH, UNDO_CHARACTER, REDO_CHARACTER
 from time import sleep # debug
 
-#TODO: do we use these anymore?
-stackCheckpoints = []
-redoCheckpoints = []
-
 class StackItem(object):
     def __init__(self, firstchar=None, decval=None):
         """

@@ -105,17 +105,16 @@ class FunctionManager(object):
             # normal function.
             normFunctions.append(i)
 
-            #TODO: This looks like it's indented wrong and should be one left
-            # filter out anything not in the current menu
-            for i in anonFunctions[:]:
-                if (len(i) > 1 and self.curMenu != i[0]) or \
-                        (len(i) == 1 and self.curMenu):
-                    anonFunctions.remove(i)
+        # filter out anything not in the current menu
+        for i in anonFunctions[:]:
+            if (len(i) > 1 and self.curMenu != i[0]) or \
+                    (len(i) == 1 and self.curMenu):
+                anonFunctions.remove(i)
 
-            for i in normFunctions[:]:
-                if (len(i) > 1 and self.curMenu != i[0]) or \
-                        (len(i) == 1 and self.curMenu):
-                    normFunctions.remove(i)
+        for i in normFunctions[:]:
+            if (len(i) > 1 and self.curMenu != i[0]) or \
+                    (len(i) == 1 and self.curMenu):
+                normFunctions.remove(i)
 
         # print menu title, using menuFns if available
         if self.curMenu in self.menuFns:
