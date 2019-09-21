@@ -1,7 +1,7 @@
 from decimal import Decimal
 import math
 
-import display
+from display import screen
 from functionmanagement import fm, modes
 
 
@@ -112,7 +112,7 @@ def yankBos(s):
     from subprocess import Popen, PIPE
     p = Popen(['xsel', '-bi'], stdin=PIPE)
     p.communicate(input=str(s[0]).encode())
-    display.changeStatusMsg('"%s" placed on system clipboard.' % str(s[0]))
+    screen().set_status_msg('"%s" placed on system clipboard.' % str(s[0]))
     fm.setStatusDisplayRequested()
     return s[0] # put back onto stack
 

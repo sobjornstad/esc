@@ -1,110 +1,224 @@
 import curses
 from consts import STACKDEPTH, STACKWIDTH, PROGRAM_NAME
 
-statusw = None
-stackw = None
-commandsw = None
+_screen = None
 
 
-def changeStatusChar(c):
-    """Place the indicated character /c/ in the status bracket."""
-    statusw.addstr(0, 1, c, curses.color_pair(1))
-    statusw.refresh()
+class Window:
+    def __init__(self, scr):
+        self.scr = scr
+        self.window = None
 
-def cursorInStatusBar():
-    "Place the cursor in the status bar bracket."
-    statusw.move(0, 1)
+    def refresh(self):
+        if self.window is not None:
+            self.window.refresh()
 
-def changeStatusMsg(msg):
-    statusw.addstr(0, 16, ' ' * (79 - 15), curses.color_pair(1))
-    statusw.addstr(0, 16, msg, curses.color_pair(1))
-    statusw.refresh()
+    def getch(self):
+        return self.window.getch()
 
-def redrawStackWin(ss):
-    stackw.clear()
-    stackw.border()
-    stackw.addstr(0, 9, "Stack")
-    for i in range(len(ss.s)):
-        stackw.addstr(1 + i, 1, ss.s[i].entry)
-
-def defaultStackCursorPos(ss):
-    stackw.move(1 + ss.stackPosn, ss.cursorPosn + 1)
-
-def adjustCursorPos(ss):
-    defaultStackCursorPos(ss)
-    if not ss.editingStack:
-        # when not editing a number, cursor goes on *next line*
-        stackw.move(2 + ss.stackPosn, ss.cursorPosn + 1)
-        changeStatusChar(' ')
-    else:
-        changeStatusChar('i')
-
-def displayBackspace(ss, ssReturn):
-    if ssReturn == 0:
-        stackw.addstr(1 + ss.stackPosn, ss.cursorPosn + 1, ' ')
-        stackw.move(1 + ss.stackPosn, ss.cursorPosn + 1)
-    elif ssReturn == 1:
-        stackw.addstr(2 + ss.stackPosn, ss.cursorPosn + 1, ' ')
-        stackw.move(2 + ss.stackPosn, ss.cursorPosn + 1)
-
-def getch_stack():
-    return stackw.getch()
-def putch_stack(c):
-    stackw.addstr(c)
-def getch_status():
-    cursorInStatusBar()
-    return statusw.getch()
-
-def addMenuTitle(text, yposn, xposn):
-    text = "(%s)" % text
-    ctrxpos = (STACKWIDTH - len(text)) / 2 + 1
-    addCommand('', text, yposn, ctrxpos)
+    def putch(self, c):
+        self.window.addstr(c)
 
 
-def addCommand(char, descr, yposn, xposn):
-    try:
-        commandsw.addstr(yposn, xposn, char, curses.color_pair(2))
-        if descr:
-            commandsw.addstr(yposn, xposn + 1 + len(char), descr)
-    except curses.error:
-        pass
+class StatusWindow(Window):
+    def __init__(self, scr, max_x):
+        super().__init__(scr)
 
-def resetCommandsWindow():
-    commandsw.clear()
-    commandsw.border()
-    commandsw.addstr(0, 8, "Commands")
+        self.status_char = ' '
+        self.status_msg = ''
 
-def setup(stdscr):
-    maxy, maxx = stdscr.getmaxyx()
-    curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_GREEN)
-    curses.init_pair(2, curses.COLOR_BLUE, curses.COLOR_BLACK)
+        self.window = curses.newwin(1, max_x, 0, 0)
+        self.window.addstr(0, 0, (' ' * 79), curses.color_pair(1))
+        self.window.addstr(0, 0, f"[{self.status_char}] {PROGRAM_NAME} |",
+                           curses.color_pair(1))
+        self.window.move(0, 1)
+        self.refresh()
 
-    global statusw, stackw, commandsw
+    def refresh(self):
+        self.window.addstr(0, 1, self.status_char, curses.color_pair(1))
+        self.window.addstr(0, 16, ' ' * (79 - 15), curses.color_pair(1))
+        self.window.addstr(0, 16, self.status_msg, curses.color_pair(1))
+        super().refresh()
 
-    statusw = curses.newwin(1, maxx, 0, 0)
-    #statusw.addstr(0, 0, (' ' * (maxx - 1)), curses.color_pair(1))
-    statusw.addstr(0, 0, (' ' * 79), curses.color_pair(1))
-    statusw.addstr(0, 0, "[ ] %s |" % PROGRAM_NAME, curses.color_pair(1))
-    statusw.move(0, 1)
+    def emplace_cursor(self):
+        "Place the cursor in the status bar bracket."
+        self.window.move(0, 1)
 
-    stackw = curses.newwin(3 + STACKDEPTH, 24, 1, 0)
-    stackw.border()
-    stackw.addstr(0, 9, "Stack")
+    def getch(self):
+        self.emplace_cursor()
+        return super().getch()
 
-    historyw = curses.newwin(3 + STACKDEPTH, 32, 1, 24)
-    historyw.border()
-    historyw.addstr(0, 13, "History")
 
-    commandsw = curses.newwin(3 + STACKDEPTH, 24, 1, 56)
-    # will be populated in main() after initializing the FunctionManager
 
-    #registers = curses.newwin(maxy - (3 + STACKDEPTH), maxx, 4 + STACKDEPTH, 0)
-    registersw = curses.newwin(maxy - 1 - (3 + STACKDEPTH), 80, 4 + STACKDEPTH, 0)
-    registersw.border()
-    registersw.addstr(0, 36, "Registers")
+class StackWindow(Window):
+    def __init__(self, scr):
+        super().__init__(scr)
+        self.ss = None
 
-    stackw.refresh()
-    statusw.refresh()
-    historyw.refresh()
-    commandsw.refresh()
-    registersw.refresh()
+        self.window = curses.newwin(3 + STACKDEPTH, 24, 1, 0)
+        self.window.border()
+        self.window.addstr(0, 9, "Stack")
+        self.refresh()
+
+    def refresh(self):
+        self.window.clear()
+        self.window.border()
+        self.window.addstr(0, 9, "Stack")
+        if self.ss:
+            for index, stack_item in enumerate(self.ss):
+                self.window.addstr(1 + index, 1, stack_item.entry)
+        super().refresh()
+
+    def set_cursor_posn(self):
+        if self.ss.editingStack:
+            self.window.move(1 + self.ss.stackPosn, self.ss.cursorPosn + 1)
+            self.scr.set_status_char('i')
+        else:
+            # when not editing a number, cursor goes on *next line*
+            self.window.move(2 + self.ss.stackPosn, self.ss.cursorPosn + 1)
+            self.scr.set_status_char(' ')
+
+    def backspace(self, status):
+        if status == 0:  # character backspaced
+            self.window.addstr(1 + self.ss.stackPosn, self.ss.cursorPosn + 1, ' ')
+            self.window.move(1 + self.ss.stackPosn, self.ss.cursorPosn + 1)
+        elif status == 1:  # stack item wiped out
+            self.window.addstr(2 + self.ss.stackPosn, self.ss.cursorPosn + 1, ' ')
+            self.window.move(2 + self.ss.stackPosn, self.ss.cursorPosn + 1)
+        else:  # nothing to backspace
+            pass
+
+
+class HistoryWindow(Window):
+    def __init__(self, scr):
+        super().__init__(scr)
+        self.window = curses.newwin(3 + STACKDEPTH, 32, 1, 24)
+        self.window.border()
+        self.window.addstr(0, 13, "History")
+        self.refresh()
+
+
+class CommandsWindow(Window):
+    def __init__(self, scr):
+        super().__init__(scr)
+        self.window = curses.newwin(3 + STACKDEPTH, 24, 1, 56)
+        self.commands = []
+        self.refresh()
+
+    def refresh(self):
+        self.window.clear()
+        self.window.border()
+        self.window.addstr(0, 8, "Commands")
+
+        # TODO: This is desperately ugly and is intended to be a hack until
+        # commands are objects we can introspect.
+        for command in self.commands:
+            try:
+                self.window.addstr(*command[:-1])
+                if command[-1]:
+                    self.window.addstr(command[0],
+                                       command[1] + 1 + len(command[2]),
+                                       command[-1])
+            except curses.error:
+                pass
+        super().refresh()
+
+    def add_menu(self, text, yposn, xposn):
+        text = "(%s)" % text
+        ctrxpos = (STACKWIDTH - len(text)) // 2 + 1
+        self.add_command('', text, yposn, ctrxpos)
+
+    def add_command(self, char, descr, yposn, xposn):
+        self.commands.append((yposn, xposn, char, curses.color_pair(2), descr))
+
+    def reset(self):
+        self.commands.clear()
+
+
+class RegistersWindow(Window):
+    def __init__(self, scr, max_y):
+        super().__init__(scr)
+        self.window = curses.newwin(max_y - 1 - (3 + STACKDEPTH), 80, 4 + STACKDEPTH, 0)
+        self.window.border()
+        self.window.addstr(0, 36, "Registers")
+        self.refresh()
+
+
+class EscScreen:
+    def __init__(self, stdscr):
+        self.stdscr = stdscr
+        self.statusw = None
+        self.stackw = None
+        self.historyw = None
+        self.commandsw = None
+        self.registersw = None
+        self._setup()
+
+    def _setup(self):
+        max_y, max_x = self.stdscr.getmaxyx()
+
+        curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_GREEN)
+        curses.init_pair(2, curses.COLOR_BLUE, curses.COLOR_BLACK)
+
+        self.statusw = StatusWindow(self, max_x)
+        self.stackw = StackWindow(self)
+        self.historyw = HistoryWindow(self)
+        self.commandsw = CommandsWindow(self)
+        self.registersw = RegistersWindow(self, max_y)
+
+
+    ### Status bar ###
+    def set_status_char(self, c):
+        """Place the indicated character /c/ in the status bracket."""
+        self.statusw.status_char = c
+        self.statusw.refresh()
+
+    def set_status_msg(self, msg):
+        self.statusw.status_msg = msg
+        self.statusw.refresh()
+
+    def focus_status_bar(self):
+        "Place the cursor in the status bar bracket."
+        self.statusw.emplace_cursor()
+
+    def getch_status(self):
+        return self.statusw.getch()
+
+
+    ### Stack ###
+    def refresh_stack(self, ss):
+        self.stackw.ss = ss
+        self.stackw.refresh()
+
+    def place_cursor(self, ss):
+        self.stackw.ss = ss
+        self.stackw.set_cursor_posn()
+
+    def backspace(self, ss, ssReturn):
+        self.stackw.ss = ss
+        self.stackw.backspace(ssReturn)
+
+    def getch_stack(self):
+        return self.stackw.getch()
+
+    def putch_stack(self, c):
+        self.stackw.putch(c)
+
+
+    ### Commands ###
+    def add_menu(self, text, yposn, xposn):
+        self.commandsw.add_menu(text, yposn, xposn)
+
+    def add_command(self, char, descr, yposn, xposn):
+        self.commandsw.add_command(char, descr, yposn, xposn)
+
+    def reset_commands_window(self):
+        self.commandsw.reset()
+
+def screen():
+    return _screen
+
+
+def init(stdscr):
+    global _screen
+    _screen = EscScreen(stdscr)

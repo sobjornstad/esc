@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
 
-#TODO:
-# History section.
-# Registers.
-# Don't crash when a menu is registered without any content
-# Also, make sure descriptions are not too long to fit
-# Dev documentation (maybe program some of my own functions)
-
 import curses
 import curses.ascii
 
 import display
+from display import screen
 import history
 import stack
 import util
@@ -26,15 +20,15 @@ def main():
     while True:
         # restore status bar after one successful action
         if not errorState:
-            display.changeStatusMsg("Ready")
+            screen().set_status_msg("Ready")
         errorState = False
 
         # update cursor posn and fetch one char of input (in stack or status)
-        display.adjustCursorPos(ss)
+        screen().place_cursor(ss)
         if fm.curMenu:
-            c = display.getch_status()
+            c = screen().getch_status()
         else:
-            c = display.getch_stack()
+            c = screen().getch_stack()
 
         # if we don't have a menu open, try interpreting as a number
         if not fm.curMenu:
@@ -49,19 +43,19 @@ def main():
                     r = ss.s[ss.stackPosn].addChar(char)
                     if not r:
                         # no more stack width left
-                        display.changeStatusMsg("No more precision available." \
+                        screen().set_status_msg("No more precision available." \
                                 " (You can use scientific notation.)")
                         errorState = True
                         continue
                 else:
                     ok = ss.openNewStackItem(char)
                     if not ok: # no more space on the stack
-                        display.changeStatusMsg("Stack is full.")
+                        screen().set_status_msg("Stack is full.")
                         errorState = True
                         continue
-                    display.defaultStackCursorPos(ss)
+                    screen().place_cursor(ss)
 
-                display.putch_stack(char)
+                screen().putch_stack(char)
                 ss.cursorPosn += 1
                 continue
 
@@ -71,17 +65,17 @@ def main():
                     r = ss.enterNumber()
                     # representation might have changed; e.g. user enters 3.0,
                     # calculator displays it as 3
-                    display.redrawStackWin(ss)
+                    screen().refresh_stack(ss)
                 else:
-                    display.changeStatusMsg("No number to finish adding. " \
-                                             "(Use 'd' to duplicate bos.)")
+                    screen().set_status_msg(
+                        "No number to finish adding. (Use 'd' to duplicate bos.)")
                     r = False
                 if r is False: # could also be None, which would be different
                     errorState = True
                 continue
             elif c == curses.KEY_BACKSPACE or c == 127:
                 r = ss.backspace()
-                display.displayBackspace(ss, r)
+                screen().backspace(ss, r)
                 continue
 
         # or do we want to undo?
@@ -89,25 +83,25 @@ def main():
             newSs = history.hs.lastCheckpoint(ss)
             if newSs:
                 ss = newSs
-                display.redrawStackWin(ss)
+                screen().refresh_stack(ss)
             else:
-                display.changeStatusMsg("Nothing to undo.")
+                screen().set_status_msg("Nothing to undo.")
                 errorState = True
             continue
         elif curses.ascii.unctrl(c) == REDO_CHARACTER:
             newSs = history.hs.nextCheckpoint(ss)
             if newSs:
                 ss = newSs
-                display.redrawStackWin(ss)
+                screen().refresh_stack(ss)
             else:
-                display.changeStatusMsg("Nothing to redo.")
+                screen().set_status_msg("Nothing to redo.")
                 errorState = True
             continue
 
 
         # Otherwise, it's an operator of some kind.
         if fm.runFunction(chr(c), ss):
-            display.redrawStackWin(ss)
+            screen().refresh_stack(ss)
         else:
             # either there was an error, or we simply wanted to display output
             # on the status bar.
@@ -118,7 +112,7 @@ def main():
             return
 
 def bootstrap(stdscr):
-    display.setup(stdscr)
+    display.init(stdscr)
     main()
 
 if __name__ == "__main__":

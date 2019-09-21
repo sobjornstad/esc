@@ -99,6 +99,10 @@ class StackState(object):
     def __init__(self):
         self.clearStack()
 
+    def __iter__(self):
+        for i in self.s:
+            yield i
+
     def clearStack(self):
         "Set up an empty stack, or clear the stack."
         self.s = []
@@ -148,7 +152,7 @@ class StackState(object):
                     msg = 'Cannot run "%s": invalid value on bos.' % runningOp
                 else:
                     msg = 'Invalid entry.'
-                display.changeStatusMsg(msg)
+                display.set_status_msg(msg)
                 return False
 
     def openNewStackItem(self, c):

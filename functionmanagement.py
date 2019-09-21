@@ -1,6 +1,6 @@
 import copy
 from consts import STACKDEPTH, QUIT_CHARACTER, CONSTANT_MENU_CHARACTER
-import display
+from display import screen
 
 
 class ModeStorage(object):
@@ -53,7 +53,7 @@ class FunctionManager(object):
             msg = "Expecting %s command (q to cancel)" % self.menuNames[menu]
 
         self.displayMenu()
-        display.changeStatusMsg(msg)
+        screen().set_status_msg(msg)
 
     def leaveMenu(self):
         "Change state and display to leave menu, if any."
@@ -74,7 +74,7 @@ class FunctionManager(object):
         Update the commands window to show the current menu.
         """
 
-        display.resetCommandsWindow()
+        screen().reset_commands_window()
 
         MIN_XPOSN = 2
         MAX_XPOSN = 22
@@ -114,16 +114,16 @@ class FunctionManager(object):
 
         # print menu title, using menuFns if available
         if self.curMenu in self.menuFns:
-            display.addMenuTitle(self.menuFns[self.curMenu](), yposn, xposn-1)
+            screen().add_menu(self.menuFns[self.curMenu](), yposn, xposn-1)
             yposn += 1
         elif self.curMenu:
-            display.addMenuTitle(self.menuNames[self.curMenu], yposn, xposn-1)
+            screen().add_menu(self.menuNames[self.curMenu], yposn, xposn-1)
             yposn += 1
 
 
         # print anonymous functions to the screen
         for i in anonFunctions:
-            display.addCommand(i, None, yposn, xposn)
+            screen().add_command(i, None, yposn, xposn)
             xposn += 2
             if xposn >= MAX_XPOSN - 2:
                 yposn += 1
@@ -135,23 +135,23 @@ class FunctionManager(object):
         for i in normFunctions:
             dispChar = i if not self.curMenu else i[1] # remove menu char
             try:
-                display.addCommand(dispChar, self.fnattrs[i]['descr'], yposn, xposn)
+                screen().add_command(dispChar, self.fnattrs[i]['descr'], yposn, xposn)
             except TypeError: # menu
-                display.addCommand(dispChar, self.menuNames[i], yposn, xposn)
+                screen().add_command(dispChar, self.menuNames[i], yposn, xposn)
             yposn += 1
 
         # then the undo option, if on the main menu
         if not self.curMenu:
-            display.addCommand('u', 'undo (', yposn, xposn)
-            display.addCommand('^r', 'redo)', yposn, xposn + 8)
+            screen().add_command('u', 'undo (', yposn, xposn)
+            screen().add_command('^r', 'redo)', yposn, xposn + 8)
             yposn += 1
 
         # then the quit option, which is always there but is not a function
         quitName = 'cancel' if self.curMenu else 'quit'
-        display.addCommand(QUIT_CHARACTER, quitName, yposn, xposn)
+        screen().add_command(QUIT_CHARACTER, quitName, yposn, xposn)
 
         # finally, make curses figure out how it's supposed to draw this
-        display.commandsw.refresh()
+        screen().commandsw.refresh()
 
 
     ##### Function registration and use #####
@@ -216,7 +216,7 @@ class FunctionManager(object):
             self.leaveMenu() # after using a function from a menu, close it
 
         if commandChar not in self.functions:
-            display.changeStatusMsg("Unrecognized command '%s'." % commandChar)
+            screen().set_status_msg("Unrecognized command '%s'." % commandChar)
             return False
 
         if self.fnattrs[commandChar] == '@menu':
@@ -243,7 +243,7 @@ class FunctionManager(object):
             msg = "'%s': stack is too full (short %i space%s)."
             numShort = numToPush - numToPop - ss.freeStackSpaces()
             msg = msg % (fnName, numShort, 's' if numShort != 1 else '')
-            display.changeStatusMsg(msg)
+            screen().set_status_msg(msg)
             return False
 
         if numToPop == -1:
@@ -258,7 +258,7 @@ class FunctionManager(object):
             if (not args) and numToPop != 0:
                 msg = '"%s" needs at least %i item%s on stack.'
                 msg = msg % (fnName, numToPop, 's' if numToPop != 1 else '')
-                display.changeStatusMsg(msg)
+                screen().set_status_msg(msg)
                 return False
 
         try:
@@ -266,16 +266,16 @@ class FunctionManager(object):
         except ValueError:
             # illegal operation; restore original args to stack and return
             ss.push(args)
-            display.changeStatusMsg("Domain error! Stack unchanged.")
+            screen().set_status_msg("Domain error! Stack unchanged.")
             return False
         except ZeroDivisionError:
             ss.push(args)
-            display.changeStatusMsg("Sorry, division by zero is against the law.")
+            screen().set_status_msg("Sorry, division by zero is against the law.")
             return False
 
 
         if hasattr(retvals, 'startswith') and retvals.startswith('err: '):
-            display.changeStatusMsg(retvals[5:])
+            screen().set_status_msg(retvals[5:])
             return False
 
         # push return vals, creating an iterable from single retvals
