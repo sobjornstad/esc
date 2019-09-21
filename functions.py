@@ -1,6 +1,7 @@
 from functionmanagement import fm, modes
 import display
 import math
+from decimal import Decimal
 
 
 ####################
@@ -115,3 +116,8 @@ def yankBos(s):
     return s[0] # put back onto stack
 
 fm.registerFunction(yankBos, 1, 1, 'y', 'yank bos to cboard')
+
+def addMnSalesTax(s):
+    tax = Decimal(.07375) * s[0]
+    return s[0] + tax
+fm.registerFunction(addMnSalesTax, 1, 1, 'T', 'add 7% MN Sales Tax')
