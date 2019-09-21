@@ -66,7 +66,7 @@ class StackWindow(Window):
         self.window.addstr(0, 9, "Stack")
         if self.ss:
             for index, stack_item in enumerate(self.ss):
-                self.window.addstr(1 + index, 1, stack_item.entry)
+                self.window.addstr(1 + index, 1, str(stack_item))
         super().refresh()
 
     def set_cursor_posn(self):

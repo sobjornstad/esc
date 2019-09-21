@@ -25,7 +25,7 @@ fm.registerFunction(lambda s: math.sqrt(s[0]), 1, 1, 's')
 fm.registerFunction(lambda s: (s[0], s[0]), 1, 2, 'd', 'duplicate bos')
 fm.registerFunction(lambda s: (s[1], s[0]), 2, 2, 'x', 'exchange bos, sos')
 fm.registerFunction(lambda s: None, 1, 0, 'p', 'pop off bos')
-fm.registerFunction(lambda s: [i.value for i in s[:-1]], -1, 0,
+fm.registerFunction(lambda s: [i.decimal for i in s[:-1]], -1, 0,
                     'r', 'roll off tos')
 fm.registerFunction(lambda s: None, -1, 0, 'c', 'clear stack')
 

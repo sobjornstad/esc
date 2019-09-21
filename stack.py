@@ -8,7 +8,25 @@ import util
 from consts import STACKDEPTH, STACKWIDTH
 
 
-class StackItem(object):
+class StackItem:
+    """
+    An item placed on esc's stack. At its root, this is a number, but it gets
+    more complicated than that!
+
+    For one, we need a numeric value for calculations as well as a string
+    value to display on the screen. The functions finish_entry() and
+    _string_repr_from_value() can be used to update the numeric and string
+    representations from the other. We could dynamically compute the string
+    representation with reasonable performance, but see the next paragraph
+    for why this isn't helpful.
+
+    For another, a stack item may be *incomplete* (self.is_entered = False).
+    That's because the user doesn't enter a number all at once, it will often
+    consist of multiple keystrokes. If so, there won't be a decimal
+    representation until we call finish_entry(). The StackState is in charge
+    of calling this method if needed before trying to do any calculations
+    with the number.
+    """
     def __init__(self, firstchar=None, decval=None):
         """
         We can create an item on the stack either by the user entering it (in
@@ -16,70 +34,88 @@ class StackItem(object):
         the value and then converting it to the Decimal value that is used for
         calculations) or by directly entering a Decimal value (for instance, as
         the result of a calculation).
-
-        At all times, we store a numeric value for calculations as well as a
-        string value for display on the screen. The functions finishEntry() and
-        _entryFromVal() can be used to update the numeric and string
-        representations from the other.
         """
+        self.is_entered = None
+        self.decimal = None
+        self.string = None
 
         if firstchar is not None:
-            self.isEntered = False
-            self.entry = firstchar
-            self.value = None
+            self._init_partial(firstchar)
         elif decval is not None:
-            self.isEntered = True
-            self.value = decval
-            self._entryFromVal()
+            self._init_full(decval)
         else:
-            assert False, "No valid argument to constructor of StackItem!"
+            raise AssertionError("No valid argument to constructor of StackItem!")
 
-    def addChar(self, nextchar):
+    def __repr__(self):
+        return f"<StackItem: Decimal({self.decimal}) String({self.string})>"
+
+    def __str__(self):
+        return self.string
+
+    def _init_partial(self, firstchar):
+        "Initialize a partial item from a string being entered by the user."
+        self.is_entered = False
+        self.decimal = None
+        self.string = firstchar
+
+    def _init_full(self, decval):
+        "Initialize an item from a Decimal."
+        self.is_entered = True
+        self.decimal = decval
+        self._string_repr_from_value()
+
+    def _string_repr_from_value(self):
+        "(Re)set the string representation based on the attribute /value/."
+        self.string = \
+            str(util.remove_exponent(self.decimal.normalize())).replace('E', 'e')
+
+        # If we weren't using scientific notation but the new value is too
+        # long to fit in the stack window, convert it, knocking down the
+        # displayed precision to fit.
+        if len(self.string) > STACKWIDTH:
+            precision = STACKWIDTH
+            precision -= 3            # account for length of exponent
+            precision -= len("0.e+")  # account for new characters
+            precision -= (1 if self.decimal.as_tuple().sign == 1 else 0)
+            self.string = ("%." + str(precision) + "e") % (self.decimal)
+
+    def add_character(self, nextchar):
         """
         Add a character to the running string of the number being entered on
         the stack. Return True if successful, False if the stack width has
         been exceeded.
         """
-
-        assert not self.isEntered, "Number already entered!"
-        if len(self.entry) < STACKWIDTH:
-            self.entry += nextchar
+        assert not self.is_entered, "Number already entered!"
+        if len(self.string) < STACKWIDTH:
+            self.string += nextchar
             return True
         else:
             return False
 
-    def finishEntry(self):
+    def backspace(self, num_chars=1):
         """
-        Convert an entered string to a Decimal value. If successful, return
-        True; if the entered string does not form a valid number, return False.
-        This should be called from ss.enterNumber() and probably nowhere
-        else.
+        Remove the last character from the string being entered. Calling
+        backspace() is illegal if the number has already been entered completely
+        (backspacing a number is a nonsensical operation).
         """
+        assert not self.is_entered, "Cannot backspace an already-entered string!"
+        self.string = self.string[0:-1*num_chars]
 
+    def finish_entry(self):
+        """
+        Signal that the user is done entering a string and it should be
+        converted to a Decimal value. If successful, return True; if the
+        entered string does not form a valid number, return False. This
+        should be called from ss.enterNumber() and probably nowhere else.
+        """
         try:
-            self.value = Decimal(self.entry)
+            self.decimal = Decimal(self.string)
         except decimal.InvalidOperation:
             return False
         else:
-            self._entryFromVal()  # convert string rep to internal display rep
-            self.isEntered = True
+            self._string_repr_from_value()
+            self.is_entered = True
             return True
-
-    def _entryFromVal(self):
-        "(Re)set the /entry/ string based on the attribute /value/."
-
-        self.entry = str(util.remove_exponent(
-            self.value.normalize())).replace('E', 'e')
-
-        # if we weren't using scientific notation but the new value is too
-        # long to fit in the stack window, convert it, knocking down the
-        # displayed precision to fit
-        if len(self.entry) > STACKWIDTH:
-            precision = STACKWIDTH
-            precision -= 3            # account for length of exponent
-            precision -= len("0.e+")  # account for new characters
-            precision -= (1 if self.value.as_tuple().sign == 1 else 0)
-            self.entry = ("%." + str(precision) + "e") % (self.value)
 
 
 class StackState(object):
@@ -116,13 +152,12 @@ class StackState(object):
         character was backspaced, 1 if the whole item was wiped out, and -1 if
         a stack item was not being edited at all.
         """
-
         if self.editingStack:
             if self.cursorPosn == 1:
                 # remove the stack item in progress
                 self.deleteEndOfStack()
                 return 1
-            self.s[self.stackPosn].entry = self.s[self.stackPosn].entry[0:-1]
+            self.s[self.stackPosn].backspace()
             self.cursorPosn -= 1
             return 0
         return -1
@@ -143,7 +178,7 @@ class StackState(object):
         history.hs.checkpointState(self)
 
         if self.editingStack:
-            if self.s[self.stackPosn].finishEntry():
+            if self.s[self.stackPosn].finish_entry():
                 self.editingStack = False
                 self.cursorPosn = 0
                 return True
@@ -212,7 +247,7 @@ class StackState(object):
         self.stackPosn -= num
         oldStack = copy.deepcopy(self.s)
         try:
-            return [self.s.pop().value for i in range(num)]
+            return [self.s.pop().decimal for i in range(num)]
         except IndexError:
             self.s = oldStack
             self.stackPosn += num

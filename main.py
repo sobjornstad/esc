@@ -46,7 +46,7 @@ def try_add_to_number(c, ss):
         if char == '_':
             char = '-' # negative sign, like dc
         if ss.editingStack:
-            if not ss.s[ss.stackPosn].addChar(char):
+            if not ss.s[ss.stackPosn].add_character(char):
                 # no more stack width left
                 screen().set_status_msg(
                     "No more precision available. Consider scientific notation.")
