@@ -1,10 +1,7 @@
 import decimal
 
 def isNumber(c):
-    if (c >= '0' and c <= '9') or c == '.' or c == '_' or c == "e":
-        return True
-    else:
-        return False
+    return (c >= '0' and c <= '9') or (c in ('.', '_', 'e'))
 
 def remove_exponent(d):
     """
