@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #TODO:
 # History section.
@@ -7,7 +7,7 @@
 # Also, make sure descriptions are not too long to fit
 # Dev documentation (maybe program some of my own functions)
 
-import curses.wrapper
+import curses
 import curses.ascii
 
 import display

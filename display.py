@@ -28,8 +28,8 @@ def redrawStackWin(ss):
         try:
             stackw.addstr(1 + i, 1, ss.s[i].entry)
         except AttributeError:
-            print type(ss.s[i])
-            print dir(ss.s[i])
+            print((type(ss.s[i])))
+            print((dir(ss.s[i])))
             sleep(5)
 
 def defaultStackCursorPos(ss):
