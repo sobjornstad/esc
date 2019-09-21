@@ -8,28 +8,31 @@ class HistoricalStack(object):
     """
 
     def __init__(self):
-        self.undoStack = []
-        self.redoStack = []
+        self.undo_stack = []
+        self.redo_stack = []
 
     def checkpointState(self, ss):
-        if self.redoStack:
-            self.redoStack = []
-        self.undoStack.append(copy.deepcopy(ss))
+        if self.redo_stack:
+            self.redo_stack = []
+        self.undo_stack.append(ss.memento())
 
-    def lastCheckpoint(self, ss):
-        if self.undoStack:
-            undo = self.undoStack.pop()
-            self.redoStack.append(ss)
-            return undo
+    def undo_to_checkpoint(self, ss, checkpoint_index=-1):
+        if self.undo_stack:
+            restore_memento = self.undo_stack.pop(checkpoint_index)
+            self.redo_stack.append(ss.memento())
+            ss.restore(restore_memento)
+            return True
         else:
-            return None
-    def nextCheckpoint(self, ss):
-        if self.redoStack:
-            redo = self.redoStack.pop()
-            self.undoStack.append(ss)
-            return redo
+            return False
+
+    def redo_to_checkpoint(self, ss, checkpoint_index=-1):
+        if self.redo_stack:
+            restore_memento = self.redo_stack.pop(checkpoint_index)
+            self.undo_stack.append(ss.memento())
+            ss.restore(restore_memento)
+            return True
         else:
-            return None
+            return False
 
 # make available as a module global
 hs = HistoricalStack()

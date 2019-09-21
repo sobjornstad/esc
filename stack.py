@@ -2,7 +2,7 @@ import decimal
 from decimal import Decimal
 import copy
 
-import display
+from display import screen
 import history
 import util
 from consts import STACKDEPTH, STACKWIDTH
@@ -151,8 +151,8 @@ class StackState(object):
                 if runningOp:
                     msg = 'Cannot run "%s": invalid value on bos.' % runningOp
                 else:
-                    msg = 'Invalid entry.'
-                display.set_status_msg(msg)
+                    msg = 'Bottom of stack is not a valid number.'
+                screen().set_status_msg(msg)
                 return False
 
     def openNewStackItem(self, c):
@@ -217,3 +217,17 @@ class StackState(object):
             self.s = oldStack
             self.stackPosn += num
             return None
+
+    def memento(self):
+        """
+        Generate a memento object for the current state of the stack.
+        """
+        return copy.deepcopy(self.__dict__)
+
+    def restore(self, memento):
+        """
+        Restore the current object to a prior state checkpointed by calling
+        memento().
+        """
+        self.__dict__.clear()
+        self.__dict__.update(memento)
