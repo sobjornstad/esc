@@ -111,7 +111,7 @@ def yankBos(s):
     # is-there-a-way-to-directly-send-a-python-output-to-clipboard
     from subprocess import Popen, PIPE
     p = Popen(['xsel', '-bi'], stdin=PIPE)
-    p.communicate(input=str(s[0]))
+    p.communicate(input=str(s[0]).encode())
     display.changeStatusMsg('"%s" placed on system clipboard.' % str(s[0]))
     fm.setStatusDisplayRequested()
     return s[0] # put back onto stack
