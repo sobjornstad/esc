@@ -86,7 +86,7 @@ class StackState(object):
     """
     An object containing the current state of the stack: a stack pointer, the
     screen cursor's position across on the current value, the stack itself as a
-    list, and whether we are currently editing a number. 
+    list, and whether we are currently editing a number.
 
     Values may be manipulated directly as convenient. There are also several
     helper methods for convenience.
@@ -193,7 +193,7 @@ class StackState(object):
             decval = i
             # it's legal for functions to return data types that need to be
             # coerced to Decimal
-            if type(decval) != Decimal:
+            if not isinstance(decval, Decimal):
                 try:
                     decval = Decimal(i)
                 except decimal.InvalidOperation as e:

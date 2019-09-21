@@ -1,11 +1,7 @@
 import copy
-import math
 from consts import STACKDEPTH, QUIT_CHARACTER, CONSTANT_MENU_CHARACTER
 import display
-import history
-from time import sleep #debug
 
-#TODO: Possibility to provide one's own error wrapper function (for instance, for '-' with zero/one item on stack?)
 
 class ModeStorage(object):
     """
@@ -33,6 +29,7 @@ class FunctionManager(object):
         self.menuFns = {}
         self.curMenu = None
         self.quitAfter = False
+        self.statusDisplayRequested = False
         self.MAX_TEXT_FUNCTIONS = STACKDEPTH
 
     def setStatusDisplayRequested(self):
@@ -159,7 +156,7 @@ class FunctionManager(object):
 
     ##### Function registration and use #####
     def registerFunction(self, fn, numPop, numPush, commandChar,
-            commandDescr=None, menu=None):
+                         commandDescr=None, menu=None):
         if menu:
             assert menu in self.menuNames, \
                     "That menu doesn't exist (try registerMenu())."
@@ -178,7 +175,7 @@ class FunctionManager(object):
         self.registerFunction(fn, 0, 0, commandChar, commandDescr, menu)
 
     def registerConstant(self, cst, commandChar, commandDescr,
-            menu=CONSTANT_MENU_CHARACTER):
+                         menu=CONSTANT_MENU_CHARACTER):
         """
         Constants are handled as functions which pop zero values off the stack
         and push one (predefined) value onto the stack. This function creates
@@ -193,7 +190,7 @@ class FunctionManager(object):
             self.registerMenu(cmc, "insert constant")
 
         self.registerFunction(lambda discard: cst, 0, 1,
-                commandChar, commandDescr, menu)
+                              commandChar, commandDescr, menu)
 
     def runFunction(self, commandChar, ss):
         """

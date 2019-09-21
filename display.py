@@ -1,14 +1,14 @@
 import curses
 from consts import STACKDEPTH, STACKWIDTH, PROGRAM_NAME
-from time import sleep #debug
 
-# module globals defined for each of the windows: statusw, stackw, commandsw
-# (two other windows I'm not currently using them will presumably join these
-# eventually)
+statusw = None
+stackw = None
+commandsw = None
+
 
 def changeStatusChar(c):
     """Place the indicated character /c/ in the status bracket."""
-    statusw.addstr(0,1,c, curses.color_pair(1))
+    statusw.addstr(0, 1, c, curses.color_pair(1))
     statusw.refresh()
 
 def cursorInStatusBar():
@@ -25,12 +25,7 @@ def redrawStackWin(ss):
     stackw.border()
     stackw.addstr(0, 9, "Stack")
     for i in range(len(ss.s)):
-        try:
-            stackw.addstr(1 + i, 1, ss.s[i].entry)
-        except AttributeError:
-            print((type(ss.s[i])))
-            print((dir(ss.s[i])))
-            sleep(5)
+        stackw.addstr(1 + i, 1, ss.s[i].entry)
 
 def defaultStackCursorPos(ss):
     stackw.move(1 + ss.stackPosn, ss.cursorPosn + 1)

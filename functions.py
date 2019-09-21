@@ -1,7 +1,8 @@
-from functionmanagement import fm, modes
-import display
-import math
 from decimal import Decimal
+import math
+
+import display
+from functionmanagement import fm, modes
 
 
 ####################
@@ -25,7 +26,7 @@ fm.registerFunction(lambda s: (s[0], s[0]), 1, 2, 'd', 'duplicate bos')
 fm.registerFunction(lambda s: (s[1], s[0]), 2, 2, 'x', 'exchange bos, sos')
 fm.registerFunction(lambda s: None, 1, 0, 'p', 'pop off bos')
 fm.registerFunction(lambda s: [i.value for i in s[:-1]], -1, 0,
-        'r', 'roll off tos')
+                    'r', 'roll off tos')
 fm.registerFunction(lambda s: None, -1, 0, 'c', 'clear stack')
 
 
@@ -64,15 +65,15 @@ fm.registerFunction(lambda s: trigWrapper(s, math.sin), 1, 1, 's', 'sine', 't')
 fm.registerFunction(lambda s: trigWrapper(s, math.cos), 1, 1, 'c', 'cosine', 't')
 fm.registerFunction(lambda s: trigWrapper(s, math.tan), 1, 1, 't', 'tangent', 't')
 fm.registerFunction(lambda s: trigWrapper(s, math.asin, True),
-        1, 1, 'i', 'arc sin', 't')
+                    1, 1, 'i', 'arc sin', 't')
 fm.registerFunction(lambda s: trigWrapper(s, math.acos, True),
-        1, 1, 'o', 'arc cos', 't')
+                    1, 1, 'o', 'arc cos', 't')
 fm.registerFunction(lambda s: trigWrapper(s, math.atan, True),
-        1, 1, 'a', 'arc tan', 't')
+                    1, 1, 'a', 'arc tan', 't')
 
-def toDegrees(discard):
+def toDegrees(_):
     modes.trigMode = 'degrees'
-def toRadians(discard):
+def toRadians(_):
     modes.trigMode = 'radians'
 fm.registerModeChange(toDegrees, 'd', 'degree mode', 't')
 fm.registerModeChange(toRadians, 'r', 'radian mode', 't')
