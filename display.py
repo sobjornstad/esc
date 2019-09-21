@@ -16,7 +16,7 @@ def cursorInStatusBar():
     statusw.move(0, 1)
 
 def changeStatusMsg(msg):
-    statusw.addstr(0, 16, ' ' * (80 - 15), curses.color_pair(1))
+    statusw.addstr(0, 16, ' ' * (79 - 15), curses.color_pair(1))
     statusw.addstr(0, 16, msg, curses.color_pair(1))
     statusw.refresh()
 
@@ -88,8 +88,7 @@ def setup(stdscr):
 
     statusw = curses.newwin(1, maxx, 0, 0)
     #statusw.addstr(0, 0, (' ' * (maxx - 1)), curses.color_pair(1))
-    #DEBUG, to see where 80 cols is:
-    statusw.addstr(0, 0, (' ' * 80), curses.color_pair(1))
+    statusw.addstr(0, 0, (' ' * 79), curses.color_pair(1))
     statusw.addstr(0, 0, "[ ] %s |" % PROGRAM_NAME, curses.color_pair(1))
     statusw.move(0, 1)
 
