@@ -94,7 +94,7 @@ def try_special(c, ss):
     if chr(c) in ('\n', ' '):
         if enter_new_number(ss) is False:
             # could also be None, which would be different
-            return False
+            return True
     elif c in (curses.KEY_BACKSPACE, 127):
         r = ss.backspace()
         screen().backspace(ss, r)
