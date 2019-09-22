@@ -9,12 +9,12 @@ from functionmanagement import fm, modes
 # BASIC OPERATIONS #
 ####################
 
-fm.registerFunction(lambda s: s[1] + s[0], 2, 1, '+')
-fm.registerFunction(lambda s: s[1] - s[0], 2, 1, '-')
-fm.registerFunction(lambda s: s[1] * s[0], 2, 1, '*')
-fm.registerFunction(lambda s: s[1] / s[0], 2, 1, '/')
-fm.registerFunction(lambda s: s[1] ** s[0], 2, 1, '^')
-fm.registerFunction(lambda s: s[1] % s[0], 2, 1, '%')
+fm.registerFunction(lambda s: s[0] + s[1], 2, 1, '+')
+fm.registerFunction(lambda s: s[0] - s[1], 2, 1, '-')
+fm.registerFunction(lambda s: s[0] * s[1], 2, 1, '*')
+fm.registerFunction(lambda s: s[0] / s[1], 2, 1, '/')
+fm.registerFunction(lambda s: s[0] ** s[1], 2, 1, '^')
+fm.registerFunction(lambda s: s[0] % s[1], 2, 1, '%')
 fm.registerFunction(lambda s: math.sqrt(s[0]), 1, 1, 's')
 
 

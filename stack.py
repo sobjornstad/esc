@@ -256,9 +256,7 @@ class StackState:
         if not self.has_push_space(len(vals)):
             return False
 
-        # We need to take it in reverse because it's like we're popping from
-        # the provided slice of stack.
-        for i in reversed(vals):
+        for i in vals:
             self.s.append(StackItem(decval=i))
         self.stack_posn += len(vals)
         return True
@@ -270,7 +268,7 @@ class StackState:
         self.stack_posn -= num
         oldStack = copy.deepcopy(self.s)
         try:
-            return [self.s.pop().decimal for i in range(num)]
+            return list(reversed([self.s.pop().decimal for _ in range(num)]))
         except IndexError:
             self.s = oldStack
             self.stack_posn += num
