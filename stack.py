@@ -4,6 +4,7 @@ import copy
 
 from display import screen
 import history
+import status
 import util
 from consts import STACKDEPTH, STACKWIDTH
 
@@ -135,7 +136,7 @@ class StackState:
         self.s = []
         self.stack_posn = -1
         self.cursor_posn = 0
-        self.editing_last_item = False
+        self._editing_last_item = False
 
     def __repr__(self):
         vals = [item if idx != self.stack_posn else f"({item})"
@@ -147,6 +148,20 @@ class StackState:
     def __iter__(self):
         for i in self.s:
             yield i
+
+    @property
+    def editing_last_item(self):
+        return self._editing_last_item
+    
+    @editing_last_item.setter
+    def editing_last_item(self, value):
+        self._editing_last_item = value
+        #TODO: This really shouldn't be here but we can't put the status logic
+        # in display either or we have a circular dependency
+        if self._editing_last_item:
+            status.entering_number()
+        else:
+            status.ready()
 
     @property
     def bos(self):
@@ -197,7 +212,8 @@ class StackState:
             return -1
 
         assert self.bos is not None, "Editing last item without an item on the stack"
-        if self.cursor_posn == 1:  # remove the stack item in progress
+        if self.cursor_posn == 1:
+            # remove the stack item in progress
             del self.bos
             return 1
         else:
@@ -287,3 +303,4 @@ class StackState:
         """
         self.__dict__.clear()
         self.__dict__.update(memento)
+        self.editing_last_item = self._editing_last_item  # force property logic to run

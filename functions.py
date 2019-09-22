@@ -11,6 +11,7 @@ from consts import CONSTANT_MENU_CHARACTER
 from display import screen
 from functionmanagement import Constant, Function, Menu, Mode, ModeChange, main_menu
 import modes
+import status
 
 
 ####################
@@ -177,7 +178,7 @@ def yankBos(s):
     from subprocess import Popen, PIPE
     p = Popen(['xsel', '-bi'], stdin=PIPE)
     p.communicate(input=str(s[0]).encode())
-    screen().set_status_msg('"%s" placed on system clipboard.' % str(s[0]))
+    status.advisory('"%s" placed on system clipboard.' % str(s[0]))
     #FIXME: disabled
     #fm.setStatusDisplayRequested()
     return s[0] # put back onto stack
@@ -190,7 +191,6 @@ def addMnSalesTax(s):
 
 
 ##TODO:
-# Reenable setStatusDisplayRequested() but do it in a cleaner way than before
 # Avoid circular dependency? (See chalkboard)
 # Menus should have a description for the status bar, and should be able to display mode
 # Clean up all the old functionmanager crap no longer needed

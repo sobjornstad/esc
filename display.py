@@ -72,11 +72,9 @@ class StackWindow(Window):
     def set_cursor_posn(self):
         if self.ss.editing_last_item:
             self.window.move(1 + self.ss.stack_posn, self.ss.cursor_posn + 1)
-            self.scr.set_status_char('i')
         else:
             # when not editing a number, cursor goes on *next line*
             self.window.move(2 + self.ss.stack_posn, self.ss.cursor_posn + 1)
-            self.scr.set_status_char(' ')
 
     def backspace(self, status):
         if status == 0:  # character backspaced

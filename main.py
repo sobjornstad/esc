@@ -8,6 +8,7 @@ from display import screen
 import functionmanagement
 import history
 import stack
+import status
 import util
 from consts import UNDO_CHARACTER, REDO_CHARACTER
 from oops import FunctionExecutionError, NotInMenuError
@@ -31,9 +32,8 @@ def try_add_to_number(c, ss):
     stack item in /ss/ (or create a new stack item).
     
     Return:
-        True if this addition was successful.
-        False if this addition caused an error.
-        None if the character was not handled by this function.
+        True if this addition was handled (whether it succeeded or not).
+        False if this addition was unhandled.
     
     State change:
         If the character is handled, the StackState is updated to include
@@ -49,21 +49,21 @@ def try_add_to_number(c, ss):
             char = '-' # negative sign, like dc
         if ss.editing_last_item:
             if not ss.s[ss.stack_posn].add_character(char):
-                # no more stack width left
-                screen().set_status_msg(
-                    "No more precision available. Consider scientific notation.")
-                return False
+                # No more stack width left.
+                status.error("No more precision available. "
+                             "Consider scientific notation.")
+                return True
         else:
             ok = ss.add_partial(char)
             if not ok: # no more space on the stack
-                screen().set_status_msg("Stack is full.")
-                return False
+                status.error("Stack is full.")
+                return True
             screen().place_cursor(ss)
 
         screen().putch_stack(char)
         ss.cursor_posn += 1
         return True
-    return None
+    return False
 
 
 def enter_new_number(ss):
@@ -76,8 +76,7 @@ def enter_new_number(ss):
         # calculator displays it as 3
         screen().refresh_stack(ss)
     else:
-        screen().set_status_msg(
-            "No number to finish adding. (Use 'd' to duplicate bos.)")
+        status.error("No number to finish adding. (Use 'd' to duplicate bos.)")
         r = False
     return r
 
@@ -86,32 +85,29 @@ def try_special(c, ss):
     """
     Handle special values that aren't digits to be entered or
     functions/operations to be called, e.g., Enter, Backspace, and undo.
+
+    Returns True if the value was handled, False if not.
     """
     if chr(c) in ('\n', ' '):
         if enter_new_number(ss) is False:
             # could also be None, which would be different
             return False
-        return True
     elif c in (curses.KEY_BACKSPACE, 127):
         r = ss.backspace()
         screen().backspace(ss, r)
-        return True
     elif chr(c) == UNDO_CHARACTER:
         if history.hs.undo_to_checkpoint(ss):
             screen().refresh_stack(ss)
-            return True
         else:
-            screen().set_status_msg("Nothing to undo.")
-            return False
+            status.error("Nothing to undo.")
     elif curses.ascii.unctrl(c) == REDO_CHARACTER:
         if history.hs.redo_to_checkpoint(ss):
             screen().refresh_stack(ss)
-            return True
         else:
-            screen().set_status_msg("Nothing to redo.")
-            return False
+            status.error("Nothing to redo.")
     else:
-        return None
+        return False
+    return True
 
 
 def main():
@@ -119,16 +115,13 @@ def main():
     Where the magic happens. Initializes the important constructs and manages
     the main loop.
     """
-    errorState = False
     ss = stack.StackState()
     menu = None
 
     # Main loop.
     while True:
-        # Restore status bar after one successful action.
-        if not errorState:
-            screen().set_status_msg("Ready")
-        errorState = False
+        status.mark_seen()
+        status.redraw()
 
         if menu is None:
             menu = functionmanagement.main_menu
@@ -136,33 +129,32 @@ def main():
 
         # Update cursor posn and fetch one char of input.
         screen().place_cursor(ss)
-        c = fetch_input(menu is not functionmanagement.main_menu)
-
         if menu is functionmanagement.main_menu:
+            c = fetch_input(False)
+
             # Are we entering a number?
             r = try_add_to_number(c, ss)
-            if r is not None:
-                errorState = not r
+            if r:
                 continue
 
             # Or a special value like backspace or undo?
             r = try_special(c, ss)
-            if r is not None:
-                errorState = not r
+            if r:
                 continue
+        else:
+            status.in_menu()
+            status.redraw()
+            c = fetch_input(True)
 
-        # If it wasn't one of those, try to interpret it as a function.
+        # Try to interpret the input as a function.
         try:
             menu = menu.execute(chr(c), ss)
-            screen().refresh_stack(ss)
         except (NotInMenuError, FunctionExecutionError) as e:
-            errorState = True
-            screen().set_status_msg(str(e))
-
-        # If we chose to quit, quit. This is managed within 'fm' because it's
-        # used both for leaving menus and for quitting the whole program.
-        #if fm.quitAfter:
-        #    return
+            status.error(str(e))
+            status.redraw()
+        else:
+            screen().refresh_stack(ss)
+            status.ready()
 
 
 def bootstrap(stdscr):
