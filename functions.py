@@ -2,7 +2,8 @@ from decimal import Decimal
 import math
 
 from display import screen
-from functionmanagement import function, constant, main_menu, Menu
+from functionmanagement import function, constant, mode_change, menu, main_menu
+import modes
 
 
 ####################
@@ -67,102 +68,69 @@ def clear(s):
 ## TRIG FUNCTIONS #
 ###################
 
-trig_menu = Menu('t', 'trig menu')
-main_menu.register_child(trig_menu)
-#def trigWrapper(s, func, arc=False):
-#    """
-#    Used anytime a trig function is called. Performs any conversions from
-#    degrees to radians and vice versa, as called for by modes.trigMode (all
-#    Python math module functions use only radians).
-#
-#    Takes the requested stack item, a function to be called on the value
-#    after/before the appropriate conversion, and a boolean indicating whether
-#    this is an arc/inverse function (requiring radian->degree after
-#    computation) or a forward one (requiring degree->radian before
-#    computation).
-#
-#    Returns the new value of the stack as passed out by the provided function,
-#    after possible conversion to degrees.
-#    """
-#
-#    bos = s[0]
-#
-#    # orig had 'ss and': not sure why that was necessary; probably isn't here
-#    if modes.trigMode == 'degrees' and not arc:
-#        bos = math.radians(bos)
-#    ret = func(bos)
-#    if modes.trigMode == 'degrees' and arc:
-#        ret = math.degrees(ret)
-#    return ret
-#
-#fm.registerFunction(lambda s: trigWrapper(s, math.sin), 1, 1, 's', 'sine', 't')
-#fm.registerFunction(lambda s: trigWrapper(s, math.cos), 1, 1, 'c', 'cosine', 't')
-#fm.registerFunction(lambda s: trigWrapper(s, math.tan), 1, 1, 't', 'tangent', 't')
-#fm.registerFunction(lambda s: trigWrapper(s, math.asin, True),
-#                    1, 1, 'i', 'arc sin', 't')
-#fm.registerFunction(lambda s: trigWrapper(s, math.acos, True),
-#                    1, 1, 'o', 'arc cos', 't')
-#fm.registerFunction(lambda s: trigWrapper(s, math.atan, True),
-#                    1, 1, 'a', 'arc tan', 't')
-#
-#def toDegrees(_):
-#    modes.trigMode = 'degrees'
-#def toRadians(_):
-#    modes.trigMode = 'radians'
-#fm.registerModeChange(toDegrees, 'd', 'degree mode', 't')
-#fm.registerModeChange(toRadians, 'r', 'radian mode', 't')
+trig_menu = menu('t', 'trig menu', parent=main_menu)
 
-#fm.registerMenu('t', 'trig menu', dynDisp=lambda: 'trig [%s]' % modes.trigMode)
-#def trigWrapper(s, func, arc=False):
-#    """
-#    Used anytime a trig function is called. Performs any conversions from
-#    degrees to radians and vice versa, as called for by modes.trigMode (all
-#    Python math module functions use only radians).
-#
-#    Takes the requested stack item, a function to be called on the value
-#    after/before the appropriate conversion, and a boolean indicating whether
-#    this is an arc/inverse function (requiring radian->degree after
-#    computation) or a forward one (requiring degree->radian before
-#    computation).
-#
-#    Returns the new value of the stack as passed out by the provided function,
-#    after possible conversion to degrees.
-#    """
-#
-#    bos = s[0]
-#
-#    # orig had 'ss and': not sure why that was necessary; probably isn't here
-#    if modes.trigMode == 'degrees' and not arc:
-#        bos = math.radians(bos)
-#    ret = func(bos)
-#    if modes.trigMode == 'degrees' and arc:
-#        ret = math.degrees(ret)
-#    return ret
-#
-#fm.registerFunction(lambda s: trigWrapper(s, math.sin), 1, 1, 's', 'sine', 't')
-#fm.registerFunction(lambda s: trigWrapper(s, math.cos), 1, 1, 'c', 'cosine', 't')
-#fm.registerFunction(lambda s: trigWrapper(s, math.tan), 1, 1, 't', 'tangent', 't')
-#fm.registerFunction(lambda s: trigWrapper(s, math.asin, True),
-#                    1, 1, 'i', 'arc sin', 't')
-#fm.registerFunction(lambda s: trigWrapper(s, math.acos, True),
-#                    1, 1, 'o', 'arc cos', 't')
-#fm.registerFunction(lambda s: trigWrapper(s, math.atan, True),
-#                    1, 1, 'a', 'arc tan', 't')
-#
-#def toDegrees(_):
-#    modes.trigMode = 'degrees'
-#def toRadians(_):
-#    modes.trigMode = 'radians'
-#fm.registerModeChange(toDegrees, 'd', 'degree mode', 't')
-#fm.registerModeChange(toRadians, 'r', 'radian mode', 't')
+def trig_wrapper(s, func, arc=False):
+    """
+    Used anytime a trig function is called. Performs any conversions from
+    degrees to radians and vice versa, as called for by modes.trigMode (all
+    Python math module functions use only radians).
+
+    Takes the requested stack item, a function to be called on the value
+    after/before the appropriate conversion, and a boolean indicating whether
+    this is an arc/inverse function (requiring radian->degree after
+    computation) or a forward one (requiring degree->radian before
+    computation).
+
+    Returns the new value of the stack as passed out by the provided function,
+    after possible conversion to degrees.
+    """
+    bos = s[0]
+    if modes.get('trig_mode') == 'degrees' and not arc:
+        bos = math.radians(bos)
+    ret = func(bos)
+    if modes.get('trig_mode') == 'degrees' and arc:
+        ret = math.degrees(ret)
+    return ret
+
+@function('s', menu=trig_menu, pop=1, push=1, description='sine')
+def sine(s):
+    return trig_wrapper(s, math.sin)
+
+@function('c', menu=trig_menu, pop=1, push=1, description='cosine')
+def cosine(s):
+    return trig_wrapper(s, math.cos)
+
+@function('t', menu=trig_menu, pop=1, push=1, description='tangent')
+def tangent(s):
+    return trig_wrapper(s, math.tan)
+
+@function('i', menu=trig_menu, pop=1, push=1, description='arc sin')
+def arc_sine(s):
+    return trig_wrapper(s, math.sin)
+
+@function('o', menu=trig_menu, pop=1, push=1, description='arc cos')
+def arc_cosine(s):
+    return trig_wrapper(s, math.cos)
+
+@function('a', menu=trig_menu, pop=1, push=1, description='arc tan')
+def arc_tangent(s):
+    return trig_wrapper(s, math.tan)
+
+modes.register(name='trig_mode',
+               default_value='radians',
+               allowable_values=('degrees', 'radians'))
+mode_change(key='d', description='degrees', menu=trig_menu, mode_name='trig_mode',
+            to_value='degrees')
+mode_change(key='r', description='radians', menu=trig_menu, mode_name='trig_mode',
+            to_value='radians')
 
 
 ##############
 # LOGARITHMS #
 ##############
 
-log_menu = Menu('l', 'log menu')
-main_menu.register_child(log_menu)
+log_menu = menu('l', 'log menu', parent=main_menu)
 
 @function('l', menu=log_menu, pop=1, push=1, description='log x')
 def log(s):
@@ -187,7 +155,7 @@ def etothex(s):
 constant(math.pi, 'p', 'pi')
 constant(math.e, 'e', 'e')
 
-# 
+
 #################
 # MISCELLANEOUS #
 #################
@@ -217,8 +185,7 @@ def addMnSalesTax(s):
 
 ##TODO:
 # Get constants menu to display in the right spot
-# Reenable trig menu and modes
 # Reenable setStatusDisplayRequested() but do it in a cleaner way than before
+# Avoid circular dependency? (See chalkboard)
+# Menus should have a description for the status bar, and should be able to display mode
 # Clean up all the old functionmanager crap no longer needed
-# Avoid circular dependency?
-# Menus should have a description for the status bar

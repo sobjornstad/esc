@@ -4,37 +4,33 @@ import decimal
 
 from consts import STACKDEPTH, QUIT_CHARACTER, CONSTANT_MENU_CHARACTER
 from display import screen
+import modes
 from oops import NotInMenuError, ProgrammingError, FunctionExecutionError
-
-
-class ModeStorage(object):
-    """
-    This object allows you to store static variables (or calculator "modes").
-    It is instantiated in the functions file as 'modes' and can be modified by
-    a function. It has no methods; simply assign to any attributes that are not
-    being used by another function. If there should be a default value, you can
-    add it to __init__.
-    """
-
-    def __init__(self):
-        self.trigMode = 'degrees'
 
 
 class EscFunction:
     """
-    Class for some esc functionality or operation the user can activate. The
-    functionality can be executed when the use activates it. Execution takes
-    any action that might be associated with it, throwing an exception if
-    something didn't work right, then returns the menu that the interface
-    should return to. A return value of None means to return to the main
-    menu.
+    Class for some esc functionality or operation the user can activate.
+
+    When the user activates this item, execute() is called. Execution takes
+    any action associated with the item, throwing an exception if something
+    didn't work right. It then returns the menu that the interface should
+    return to. A return value of None returns to the main menu.
     """
     def __init__(self, key, description):
         self.key = key
         self.description = description
+        self.parent = None
 
     def execute(self, access_key, ss):
         return NotImplementedError
+
+    def register_child(self, child):
+        """
+        Register a new child of this menu (whether a menu or an operation).
+        """
+        child.parent = self
+        self.children[child.key] = child
 
 
 class Menu(EscFunction):
@@ -44,7 +40,6 @@ class Menu(EscFunction):
     def __init__(self, key, description):
         super().__init__(key, description)
         self.children = OrderedDict()
-        self.parent = None  # set by register_child, except of course on the main menu
 
     def __repr__(self):
         return (f"<Menu '{self.key}': [" +
@@ -53,6 +48,13 @@ class Menu(EscFunction):
 
     @property
     def is_main_menu(self):
+        """
+        This is the main menu if it has no parent.
+
+        Obviously a menu that's wrongly never been connected to anything
+        could cause a false positive, but then we normally would not be able
+        to obtain a reference to it anyway.
+        """
         return self.parent is None
 
     @property
@@ -104,14 +106,7 @@ class Menu(EscFunction):
             else:
                 return self
         else:
-            self.find_menu(remaining_keys[1:])
-
-    def register_child(self, esc_function):
-        """
-        Register a new child of this menu (whether a menu or an operation).
-        """
-        esc_function.parent = self
-        self.children[esc_function.key] = esc_function
+            return self.find_menu(remaining_keys[1:])
 
 
 class Operation(EscFunction):
@@ -120,7 +115,6 @@ class Operation(EscFunction):
         self.function = func
         self.pop = pop
         self.push = push
-        self.menu = menu
 
     def __repr__(self):
         return f"<Operation '{self.key}': {self.description}"
@@ -211,11 +205,24 @@ def function(key, menu, push, pop, description=None):
     return function_decorator
 
 def constant(value, key, description, menu=None):
+    "Create a new constant. Syntactic sugar for registering a function."
     if menu is None:
         menu = constants_menu
     op = Operation(key=key, func=lambda _: value, pop=0, push=1,
                    description=description, menu=menu)
     menu.register_child(op)
+
+def mode_change(key, description, menu, mode_name, to_value):
+    "Create a new mode change. Syntactic sugar for registering a function."
+    op = Operation(key=key, func=lambda _: modes.set(mode_name, to_value),
+                   pop=0, push=0, description=description, menu=menu)
+    menu.register_child(op)
+
+def menu(key, description, parent):
+    "Create a new menu and register it with its parent."
+    menu = Menu(key, description)
+    parent.register_child(menu)
+    return menu
 
 import functions
 
