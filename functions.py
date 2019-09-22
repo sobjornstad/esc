@@ -76,7 +76,11 @@ def clear(_):
 ## TRIG FUNCTIONS #
 ###################
 
-trig_menu = Menu('t', 'trig menu', parent=main_menu)
+TRIG_MODE_NAME = 'trig_mode'
+def trig_mode_display():
+    return f"[{modes.get(TRIG_MODE_NAME)}]"
+trig_menu = Menu('t', 'trig menu', parent=main_menu, mode_display=trig_mode_display)
+
 
 def trig_wrapper(s, func, arc=False):
     """
@@ -94,10 +98,10 @@ def trig_wrapper(s, func, arc=False):
     after possible conversion to degrees.
     """
     bos = s[0]
-    if modes.get('trig_mode') == 'degrees' and not arc:
+    if modes.get(TRIG_MODE_NAME) == 'degrees' and not arc:
         bos = math.radians(bos)
     ret = func(bos)
-    if modes.get('trig_mode') == 'degrees' and arc:
+    if modes.get(TRIG_MODE_NAME) == 'degrees' and arc:
         ret = math.degrees(ret)
     return ret
 
@@ -125,10 +129,11 @@ def arc_cosine(s):
 def arc_tangent(s):
     return trig_wrapper(s, math.tan)
 
-Mode(name='trig_mode', default_value='radians', allowable_values=('degrees', 'radians'))
-ModeChange(key='d', description='degrees', menu=trig_menu, mode_name='trig_mode',
+Mode(name=TRIG_MODE_NAME, default_value='radians',
+     allowable_values=('degrees', 'radians'))
+ModeChange(key='d', description='degrees', menu=trig_menu, mode_name=TRIG_MODE_NAME,
            to_value='degrees')
-ModeChange(key='r', description='radians', menu=trig_menu, mode_name='trig_mode',
+ModeChange(key='r', description='radians', menu=trig_menu, mode_name=TRIG_MODE_NAME,
            to_value='radians')
 
 
@@ -192,5 +197,4 @@ def addMnSalesTax(s):
 
 ##TODO:
 # Avoid circular dependency? (See chalkboard)
-# Menus should have a description for the status bar, and should be able to display mode
 # Clean up all the old functionmanager crap no longer needed

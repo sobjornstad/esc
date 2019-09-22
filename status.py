@@ -99,7 +99,7 @@ def redraw():
         screen().set_status_msg('Insert')
     elif _STATE & StatusState.IN_MENU:
         screen().set_status_char('m')
-        screen().set_status_msg('Expecting menu selection: press any available key')
+        screen().set_status_msg('Expecting menu selection')
 
     if _STATE & StatusState.ERROR:
         screen().set_status_char('E')

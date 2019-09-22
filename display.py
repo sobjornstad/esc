@@ -126,6 +126,10 @@ class CommandsWindow(Window):
         ctrxpos = (STACKWIDTH - len(text)) // 2 + 1
         self.add_command('', text, yposn, ctrxpos)
 
+    def add_mode_display(self, text, yposn, xposn):
+        ctrxpos = (STACKWIDTH - len(text)) // 2 + 1
+        self.add_command('', text, yposn, ctrxpos)
+
     def add_command(self, char, descr, yposn, xposn):
         self.commands.append((yposn, xposn, char, curses.color_pair(2), descr))
 
@@ -206,6 +210,9 @@ class EscScreen:
     ### Commands ###
     def add_menu(self, text, yposn, xposn):
         self.commandsw.add_menu(text, yposn, xposn)
+
+    def add_mode_display(self, text, yposn, xposn):
+        self.commandsw.add_mode_display(text, yposn, xposn)
 
     def add_command(self, char, descr, yposn, xposn):
         self.commandsw.add_command(char, descr, yposn, xposn)

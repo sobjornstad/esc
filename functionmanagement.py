@@ -39,6 +39,10 @@ class EscMenu(EscFunction):
     """
     A type of EscFunction that serves as a container for other menus and operations.
     """
+    def __init__(self, key, description, mode_display=None):
+        super().__init__(key, description)
+        self.mode_display = mode_display
+
     def __repr__(self):
         return (f"<EscMenu '{self.key}': [" +
                 ", ".join(repr(i) for i in self.children.values()) +
@@ -187,9 +191,9 @@ class EscOperation(EscFunction):
 
 
 ### Constructor/registration functions to be used in functions.py ###
-def Menu(key, description, parent):
+def Menu(key, description, parent, mode_display=None):
     "Create a new menu under the existing menu /parent/."
-    menu = EscMenu(key, description)
+    menu = EscMenu(key, description, mode_display)
     parent.register_child(menu)
     return menu
 
@@ -244,7 +248,9 @@ def display_menu(menu):
     # Print menu title.
     if not menu.is_main_menu:
         screen().add_menu(menu.description, yposn, xposn-1)
-        yposn += 1
+        if menu.mode_display:
+            screen().add_mode_display(menu.mode_display(), yposn+1, xposn-1)
+        yposn += 2
 
     # Print anonymous functions to the screen.
     for i in menu.anonymous_children:
