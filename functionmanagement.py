@@ -104,7 +104,7 @@ class Menu(EscFunction):
             else:
                 return self
         else:
-            self.find_menu(self.remaining_keys[1:])
+            self.find_menu(remaining_keys[1:])
 
     def register_child(self, esc_function):
         """
@@ -210,8 +210,12 @@ def function(key, menu, push, pop, description=None):
         return func
     return function_decorator
 
-def constant(key, description):
-    return function(key, menu=constants_menu, push=1, pop=0, description=description)
+def constant(value, key, description, menu=None):
+    if menu is None:
+        menu = constants_menu
+    op = Operation(key=key, func=lambda _: value, pop=0, push=1,
+                   description=description, menu=menu)
+    menu.register_child(op)
 
 import functions
 

@@ -184,13 +184,8 @@ def etothex(s):
 # CONSTANTS #
 #############
 
-@constant('p', 'pi')
-def pi(s):
-    return math.pi
-
-@constant('e', 'e')
-def e(s):
-    return math.e
+constant(math.pi, 'p', 'pi')
+constant(math.e, 'e', 'e')
 
 # 
 #################
@@ -221,10 +216,9 @@ def addMnSalesTax(s):
 
 
 ##TODO:
-# Don't throw an exception and quit esc when typing an invalid character
 # Get constants menu to display in the right spot
-# Don't make constants decorators, because that's dumb
 # Reenable trig menu and modes
 # Reenable setStatusDisplayRequested() but do it in a cleaner way than before
 # Clean up all the old functionmanager crap no longer needed
 # Avoid circular dependency?
+# Menus should have a description for the status bar
