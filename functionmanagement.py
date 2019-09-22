@@ -1,6 +1,9 @@
 import copy
+import decimal
+
 from consts import STACKDEPTH, QUIT_CHARACTER, CONSTANT_MENU_CHARACTER
 from display import screen
+from oops import ProgrammingError
 
 
 class ModeStorage(object):
@@ -232,16 +235,19 @@ class FunctionManager(object):
         # If all of those passed, we're going to run an operation, so enter the
         # number currently being edited, if any, stopping if it is invalid.
         # Note that this also checkpoints the state of the stack for us.
-        if ss.enterNumber(fnName) is False:
+        try:
+            ss.enter_number(fnName)
+        except ValueError as e:
+            screen().set_status_msg(str(e))
             return False
 
         # make sure there will be space to push the results
         # if requesting the whole stack, it's function's responsibility to check
         numToPop = self.fnattrs[commandChar]['pop']
         numToPush = self.fnattrs[commandChar]['push']
-        if not ss.enoughPushSpace(numToPush - numToPop) and numToPop != -1:
+        if not ss.has_push_space(numToPush - numToPop) and numToPop != -1:
             msg = "'%s': stack is too full (short %i space%s)."
-            numShort = numToPush - numToPop - ss.freeStackSpaces()
+            numShort = numToPush - numToPop - ss.freeStackSpaces
             msg = msg % (fnName, numShort, 's' if numShort != 1 else '')
             screen().set_status_msg(msg)
             return False
@@ -251,7 +257,7 @@ class FunctionManager(object):
             sr = copy.deepcopy(ss.s)
             sr.reverse()
             args = sr
-            ss.clearStack()
+            ss.clear()
         else:
             #print ss.s
             args = ss.pop(numToPop)
@@ -282,7 +288,23 @@ class FunctionManager(object):
         if numToPush > 0 or (numToPop == -1 and retvals is not None):
             if not hasattr(retvals, '__iter__'):
                 retvals = (retvals,)
-            ss.push(retvals)
+
+            coerced_retvals = []
+            for i in retvals:
+                # It's legal for functions to return data types that can be converted
+                # to Decimal.
+                if not isinstance(i, decimal.Decimal):
+                    try:
+                        coerced_retvals.append(decimal.Decimal(i))
+                    except decimal.InvalidOperation as e:
+                        raise ProgrammingError(
+                            "An esc function returned a value that cannot be "
+                            "converted to a Decimal. The original error message is as "
+                            "follows:\n%r" % e)
+                else:
+                    coerced_retvals.append(i)
+
+            ss.push(coerced_retvals)
         return True if not self.statusDisplayRequested else False
 
 # global module objects

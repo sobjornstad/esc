@@ -106,7 +106,7 @@ class StackItem:
         Signal that the user is done entering a string and it should be
         converted to a Decimal value. If successful, return True; if the
         entered string does not form a valid number, return False. This
-        should be called from ss.enterNumber() and probably nowhere else.
+        should be called from ss.enter_number() and probably nowhere else.
         """
         try:
             self.decimal = Decimal(self.string)
@@ -118,7 +118,7 @@ class StackItem:
             return True
 
 
-class StackState(object):
+class StackState:
     """
     An object containing the current state of the stack: a stack pointer, the
     screen cursor's position across on the current value, the stack itself as a
@@ -127,24 +127,65 @@ class StackState(object):
     Values may be manipulated directly as convenient. There are also several
     helper methods for convenience.
 
-    Generally, a StackState object should be initialized at the beginning of
-    execution and used until the program exits. Checkpointing and undoing
-    operate by copying and restoring the stack state object.
+    Generally, a StackState should be initialized at the beginning of execution
+    and used until the program exits. Checkpointing and undoing operate by
+    exporting and restoring mementos consisting of this object's __dict__.
     """
-
     def __init__(self):
-        self.clearStack()
+        self.s = []
+        self.stack_posn = -1
+        self.cursor_posn = 0
+        self.editing_last_item = False
+
+    def __repr__(self):
+        vals = [item if idx != self.stack_posn else f"({item})"
+                for idx, item in enumerate(self.s)]
+        if self.editing_last_item:
+            vals[-1] += "..."
+        return f"<StackState: {', '.join(vals)}>"
 
     def __iter__(self):
         for i in self.s:
             yield i
 
-    def clearStack(self):
-        "Set up an empty stack, or clear the stack."
-        self.s = []
-        self.stackPosn = -1
-        self.cursorPosn = 0
-        self.editingStack = False # whether we are editing a number
+    @property
+    def bos(self):
+        try:
+            return self.s[self.stack_posn]
+        except IndexError:
+            return None
+
+    @bos.setter
+    def bos(self, value):
+        try:
+            self.s[self.stack_posn] = value
+        except IndexError:
+            self.s.append(value)
+
+    @bos.deleter
+    def bos(self):
+        self.editing_last_item = False
+        self.s.pop()
+        self.stack_posn -= 1
+        self.cursor_posn = 0
+
+    @property
+    def free_stack_spaces(self):
+        return STACKDEPTH - self.stack_posn - 1
+
+    def add_partial(self, c):
+        """
+        Start a new item on the stack with the given character /c/. Return
+        False if we have exceeded the maximum capacity of the stack.
+        """
+        if not self.has_push_space(1):
+            return False
+
+        self.stack_posn += 1
+        self.cursor_posn = 0
+        self.s.append(StackItem(firstchar=c))
+        self.editing_last_item = True
+        return True
 
     def backspace(self):
         """
@@ -152,105 +193,87 @@ class StackState(object):
         character was backspaced, 1 if the whole item was wiped out, and -1 if
         a stack item was not being edited at all.
         """
-        if self.editingStack:
-            if self.cursorPosn == 1:
-                # remove the stack item in progress
-                self.deleteEndOfStack()
-                return 1
-            self.s[self.stackPosn].backspace()
-            self.cursorPosn -= 1
-            return 0
-        return -1
+        if not self.editing_last_item:
+            return -1
 
-    def enterNumber(self, runningOp=None):
+        assert self.bos is not None, "Editing last item without an item on the stack"
+        if self.cursor_posn == 1:  # remove the stack item in progress
+            del self.bos
+            return 1
+        else:
+            self.bos.backspace()
+            self.cursor_posn -= 1
+            return 0
+
+    def clear(self):
+        "Clear the stack."
+        self.s.clear()
+        self.stack_posn = -1
+        self.cursor_posn = 0
+        self.editing_last_item = False
+
+    def enter_number(self, runningOp=None):
         """
-        Finish the entry of a number. Returns True if done, False if the value
-        was invalid, and None if we were not editing the stack in the first
-        place.
+        Finish the entry of a number.
+
+        Return:
+            True if a number was finished.
+            False if bos was already finished.
+
+        Raises:
+            ValueError if the value was invalid and the number couldn't be
+            finished. The exception message can be displayed on the status bar.
 
         Set runningOp to an operation name if you're entering prior to running
         an operation (go figure) for a more helpful error message in that case.
         """
-
         # Even if we were *not* editing the stack, checkpoint the stack state.
         # This ensures that we will get a checkpoint anytime we call an
         # operation as well as when we enter a number onto the stack.
         history.hs.checkpointState(self)
 
-        if self.editingStack:
-            if self.s[self.stackPosn].finish_entry():
-                self.editingStack = False
-                self.cursorPosn = 0
+        if self.editing_last_item:
+            if self.s[self.stack_posn].finish_entry():
+                self.editing_last_item = False
+                self.cursor_posn = 0
                 return True
             else:
                 if runningOp:
                     msg = 'Cannot run "%s": invalid value on bos.' % runningOp
                 else:
                     msg = 'Bottom of stack is not a valid number.'
-                screen().set_status_msg(msg)
-                return False
-
-    def openNewStackItem(self, c):
-        """
-        Start a new item on the stack with the given character /c/. Return
-        False if we have exceeded the maximum capacity of the stack.
-        """
-
-        if not self.enoughPushSpace(1):
+                raise ValueError(msg)
+        else:
             return False
 
-        self.stackPosn += 1
-        self.cursorPosn = 0
-        self.s.append(StackItem(firstchar=c))
-        self.editingStack = True
-        return True
-
-    def deleteEndOfStack(self):
-        """
-        Delete the last item on the stack, for use when it is backspaced
-        completely.
-        """
-
-        self.stackPosn -= 1
-        self.s.pop()
-        self.editingStack = False
-        self.cursorPosn = 0
-
-    def enoughPushSpace(self, num):
-        return STACKDEPTH >= len(self.s) + num
-    def freeStackSpaces(self):
-        return STACKDEPTH - self.stackPosn - 1
-
+    def has_push_space(self, spaces):
+        return STACKDEPTH >= len(self.s) + spaces
 
     def push(self, vals):
-        if not self.enoughPushSpace(len(vals)):
+        """
+        Push an iterable of numbers onto the stack.
+        """
+        if not self.has_push_space(len(vals)):
             return False
 
-        # we need to take it in reverse because it's like we're popping from
-        # the provided slice of stack
+        # We need to take it in reverse because it's like we're popping from
+        # the provided slice of stack.
         for i in reversed(vals):
-            decval = i
-            # it's legal for functions to return data types that need to be
-            # coerced to Decimal
-            if not isinstance(decval, Decimal):
-                try:
-                    decval = Decimal(i)
-                except decimal.InvalidOperation as e:
-                    assert False, "That operation returned a value that cannot"\
-                            " be converted to a Decimal. The original error"   \
-                            " message is as follows: %r" % e
-            self.s.append(StackItem(decval=decval))
-        self.stackPosn += len(vals)
+            self.s.append(StackItem(decval=i))
+        self.stack_posn += len(vals)
         return True
 
     def pop(self, num=1):
-        self.stackPosn -= num
+        """
+        Pop /num/ numbers off the end of the stack and return them as a list.
+        """
+        self.stack_posn -= num
         oldStack = copy.deepcopy(self.s)
         try:
             return [self.s.pop().decimal for i in range(num)]
         except IndexError:
             self.s = oldStack
-            self.stackPosn += num
+            self.stack_posn += num
             return None
 
     def memento(self):

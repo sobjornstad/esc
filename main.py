@@ -45,21 +45,21 @@ def try_add_to_number(c, ss):
     if util.isNumber(char):
         if char == '_':
             char = '-' # negative sign, like dc
-        if ss.editingStack:
-            if not ss.s[ss.stackPosn].add_character(char):
+        if ss.editing_last_item:
+            if not ss.s[ss.stack_posn].add_character(char):
                 # no more stack width left
                 screen().set_status_msg(
                     "No more precision available. Consider scientific notation.")
                 return False
         else:
-            ok = ss.openNewStackItem(char)
+            ok = ss.add_partial(char)
             if not ok: # no more space on the stack
                 screen().set_status_msg("Stack is full.")
                 return False
             screen().place_cursor(ss)
 
         screen().putch_stack(char)
-        ss.cursorPosn += 1
+        ss.cursor_posn += 1
         return True
     return None
 
@@ -68,8 +68,8 @@ def enter_new_number(ss):
     """
     Add any digits that are being entered to a new item on the Stack.
     """
-    if ss.editingStack:
-        r = ss.enterNumber()
+    if ss.editing_last_item:
+        r = ss.enter_number()
         # representation might have changed; e.g. user enters 3.0,
         # calculator displays it as 3
         screen().refresh_stack(ss)
