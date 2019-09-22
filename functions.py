@@ -2,7 +2,7 @@ from decimal import Decimal
 import math
 
 from display import screen
-from functionmanagement import function, constant, mode_change, menu, main_menu
+from functionmanagement import Constant, Function, Menu, Mode, ModeChange, main_menu
 import modes
 
 
@@ -10,32 +10,32 @@ import modes
 # BASIC OPERATIONS #
 ####################
 
-@function('+', menu=main_menu, pop=2, push=1)
+@Function('+', menu=main_menu, pop=2, push=1)
 def add(s):
     return s[0] + s[1]
 
-@function('-', menu=main_menu, pop=2, push=1)
+@Function('-', menu=main_menu, pop=2, push=1)
 def subtract(s):
     return s[0] - s[1]
 
-@function('*', menu=main_menu, pop=2, push=1)
+@Function('*', menu=main_menu, pop=2, push=1)
 def multiply(s):
     return s[0] * s[1]
 
-@function('/', menu=main_menu, pop=2, push=1)
+@Function('/', menu=main_menu, pop=2, push=1)
 def divide(s):
     return s[0] / s[1]
 
-@function('^', menu=main_menu, pop=2, push=1)
+@Function('^', menu=main_menu, pop=2, push=1)
 def exponentiate(s):
     return s[0] ** s[1]
 
-@function('%', menu=main_menu, pop=2, push=1)
+@Function('%', menu=main_menu, pop=2, push=1)
 def modulus(s):
     return s[0] * s[1]
 
-@function('s', menu=main_menu, pop=1, push=1)
-def modulus(s):
+@Function('s', menu=main_menu, pop=1, push=1)
+def sqrt(s):
     return math.sqrt(s[0])
 
 
@@ -43,23 +43,23 @@ def modulus(s):
 # STACK OPERATIONS #
 ####################
 
-@function('d', menu=main_menu, pop=1, push=2, description='duplicate bos')
+@Function('d', menu=main_menu, pop=1, push=2, description='duplicate bos')
 def duplicate(s):
     return s[0], s[0]
 
-@function('x', menu=main_menu, pop=2, push=2, description='exchange bos, sos')
+@Function('x', menu=main_menu, pop=2, push=2, description='exchange bos, sos')
 def exchange(s):
     return s[1], s[0]
 
-@function('p', menu=main_menu, pop=1, push=0, description='pop off bos')
+@Function('p', menu=main_menu, pop=1, push=0, description='pop off bos')
 def pop(s):
     return None
 
-@function('r', menu=main_menu, pop=-1, push=-1, description='roll off tos')
+@Function('r', menu=main_menu, pop=-1, push=-1, description='roll off tos')
 def roll(s):
     return [i.decimal for i in s[1:]]
 
-@function('c', menu=main_menu, pop=-1, push=0, description='clear stack')
+@Function('c', menu=main_menu, pop=-1, push=0, description='clear stack')
 def clear(s):
     return None
 
@@ -68,21 +68,21 @@ def clear(s):
 ## TRIG FUNCTIONS #
 ###################
 
-trig_menu = menu('t', 'trig menu', parent=main_menu)
+trig_menu = Menu('t', 'trig menu', parent=main_menu)
 
 def trig_wrapper(s, func, arc=False):
     """
-    Used anytime a trig function is called. Performs any conversions from
+    Used anytime a trig Function is called. Performs any conversions from
     degrees to radians and vice versa, as called for by modes.trigMode (all
     Python math module functions use only radians).
 
-    Takes the requested stack item, a function to be called on the value
+    Takes the requested stack item, a Function to be called on the value
     after/before the appropriate conversion, and a boolean indicating whether
-    this is an arc/inverse function (requiring radian->degree after
+    this is an arc/inverse Function (requiring radian->degree after
     computation) or a forward one (requiring degree->radian before
     computation).
 
-    Returns the new value of the stack as passed out by the provided function,
+    Returns the new value of the stack as passed out by the provided Function,
     after possible conversion to degrees.
     """
     bos = s[0]
@@ -93,58 +93,56 @@ def trig_wrapper(s, func, arc=False):
         ret = math.degrees(ret)
     return ret
 
-@function('s', menu=trig_menu, pop=1, push=1, description='sine')
+@Function('s', menu=trig_menu, pop=1, push=1, description='sine')
 def sine(s):
     return trig_wrapper(s, math.sin)
 
-@function('c', menu=trig_menu, pop=1, push=1, description='cosine')
+@Function('c', menu=trig_menu, pop=1, push=1, description='cosine')
 def cosine(s):
     return trig_wrapper(s, math.cos)
 
-@function('t', menu=trig_menu, pop=1, push=1, description='tangent')
+@Function('t', menu=trig_menu, pop=1, push=1, description='tangent')
 def tangent(s):
     return trig_wrapper(s, math.tan)
 
-@function('i', menu=trig_menu, pop=1, push=1, description='arc sin')
+@Function('i', menu=trig_menu, pop=1, push=1, description='arc sin')
 def arc_sine(s):
     return trig_wrapper(s, math.sin)
 
-@function('o', menu=trig_menu, pop=1, push=1, description='arc cos')
+@Function('o', menu=trig_menu, pop=1, push=1, description='arc cos')
 def arc_cosine(s):
     return trig_wrapper(s, math.cos)
 
-@function('a', menu=trig_menu, pop=1, push=1, description='arc tan')
+@Function('a', menu=trig_menu, pop=1, push=1, description='arc tan')
 def arc_tangent(s):
     return trig_wrapper(s, math.tan)
 
-modes.register(name='trig_mode',
-               default_value='radians',
-               allowable_values=('degrees', 'radians'))
-mode_change(key='d', description='degrees', menu=trig_menu, mode_name='trig_mode',
-            to_value='degrees')
-mode_change(key='r', description='radians', menu=trig_menu, mode_name='trig_mode',
-            to_value='radians')
+Mode(name='trig_mode', default_value='radians', allowable_values=('degrees', 'radians'))
+ModeChange(key='d', description='degrees', menu=trig_menu, mode_name='trig_mode',
+           to_value='degrees')
+ModeChange(key='r', description='radians', menu=trig_menu, mode_name='trig_mode',
+           to_value='radians')
 
 
 ##############
 # LOGARITHMS #
 ##############
 
-log_menu = menu('l', 'log menu', parent=main_menu)
+log_menu = Menu('l', 'log menu', parent=main_menu)
 
-@function('l', menu=log_menu, pop=1, push=1, description='log x')
+@Function('l', menu=log_menu, pop=1, push=1, description='log x')
 def log(s):
     return s[0].log10()
 
-@function('1', menu=log_menu, pop=1, push=1, description='10^x')
+@Function('1', menu=log_menu, pop=1, push=1, description='10^x')
 def tentothex(s):
     return 10 ** s[0]
 
-@function('n', menu=log_menu, pop=1, push=1, description='ln x')
+@Function('n', menu=log_menu, pop=1, push=1, description='ln x')
 def ln(s):
     return s[0].ln()
 
-@function('n', menu=log_menu, pop=1, push=1, description='e^x')
+@Function('n', menu=log_menu, pop=1, push=1, description='e^x')
 def etothex(s):
     return s[0].exp()
 
@@ -152,15 +150,15 @@ def etothex(s):
 # CONSTANTS #
 #############
 
-constant(math.pi, 'p', 'pi')
-constant(math.e, 'e', 'e')
+Constant(math.pi, 'p', 'pi')
+Constant(math.e, 'e', 'e')
 
 
 #################
 # MISCELLANEOUS #
 #################
 
-@function('y', menu=main_menu, pop=1, push=1, description='yank bos to cboard')
+@Function('y', menu=main_menu, pop=1, push=1, description='yank bos to cboard')
 def yankBos(s):
     """
     Use xsel to yank bottom of stack. This probably only works on Unix-like
@@ -176,7 +174,7 @@ def yankBos(s):
     #fm.setStatusDisplayRequested()
     return s[0] # put back onto stack
 
-@function('T', menu=main_menu, pop=1, push=1, description='add MN sales tax')
+@Function('T', menu=main_menu, pop=1, push=1, description='add MN sales tax')
 def addMnSalesTax(s):
     tax = Decimal(.07375) * s[0]
     return s[0] + tax

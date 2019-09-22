@@ -21,7 +21,9 @@ class EscFunction:
         self.key = key
         self.description = description
         self.parent = None
+        self.children = OrderedDict()
 
+    # pylint: disable=unused-argument
     def execute(self, access_key, ss):
         return NotImplementedError
 
@@ -33,16 +35,12 @@ class EscFunction:
         self.children[child.key] = child
 
 
-class Menu(EscFunction):
+class EscMenu(EscFunction):
     """
     A type of EscFunction that serves as a container for other menus and operations.
     """
-    def __init__(self, key, description):
-        super().__init__(key, description)
-        self.children = OrderedDict()
-
     def __repr__(self):
-        return (f"<Menu '{self.key}': [" +
+        return (f"<EscMenu '{self.key}': [" +
                 ", ".join(repr(i) for i in self.children.values()) +
                 "]>")
 
@@ -87,7 +85,7 @@ class Menu(EscFunction):
             raise NotInMenuError(
                 f"There's no option '{access_key}' in this menu.")
 
-        if isinstance(child, Menu):
+        if isinstance(child, EscMenu):
             return child
         else:
             return child.execute(access_key, ss)
@@ -109,15 +107,16 @@ class Menu(EscFunction):
             return self.find_menu(remaining_keys[1:])
 
 
-class Operation(EscFunction):
+class EscOperation(EscFunction):
     def __init__(self, key, func, pop, push, description, menu):
         super().__init__(key, description)
         self.function = func
         self.pop = pop
         self.push = push
+        self.parent = menu
 
     def __repr__(self):
-        return f"<Operation '{self.key}': {self.description}"
+        return f"<EscOperation '{self.key}': {self.description}"
 
     def execute(self, access_key, ss):
         checkpoint = ss.memento()
@@ -187,42 +186,49 @@ class Operation(EscFunction):
             ss.push(coerced_retvals)
 
 
+### Constructor/registration functions to be used in functions.py ###
+def Menu(key, description, parent):
+    "Create a new menu under the existing menu /parent/."
+    menu = EscMenu(key, description)
+    parent.register_child(menu)
+    return menu
 
 
-main_menu = Menu('', "Main Menu")
-constants_menu = Menu(CONSTANT_MENU_CHARACTER, 'insert constant')
-main_menu.register_child(constants_menu)
+main_menu = EscMenu('', "Main Menu")
+constants_menu = Menu(CONSTANT_MENU_CHARACTER, 'insert constant', main_menu)
 
-def function(key, menu, push, pop, description=None):
+
+def Constant(value, key, description, menu=None):
+    "Create a new constant. Syntactic sugar for registering a function."
+    if menu is None:
+        menu = constants_menu
+    op = EscOperation(key=key, func=lambda _: value, pop=0, push=1,
+                      description=description, menu=menu)
+    menu.register_child(op)
+
+
+def Function(key, menu, push, pop, description=None):
     """
     Decorator to register a function on a given menu.
     """
     def function_decorator(func):
-        op = Operation(key=key, func=func, pop=pop, push=push,
-                       description=description, menu=menu)
+        op = EscOperation(key=key, func=func, pop=pop, push=push,
+                          description=description, menu=menu)
         menu.register_child(op)
         return func
     return function_decorator
 
-def constant(value, key, description, menu=None):
-    "Create a new constant. Syntactic sugar for registering a function."
-    if menu is None:
-        menu = constants_menu
-    op = Operation(key=key, func=lambda _: value, pop=0, push=1,
-                   description=description, menu=menu)
-    menu.register_child(op)
 
-def mode_change(key, description, menu, mode_name, to_value):
+def Mode(name, default_value, allowable_values=None):
+    return modes.register(name, default_value, allowable_values)
+
+
+def ModeChange(key, description, menu, mode_name, to_value):
     "Create a new mode change. Syntactic sugar for registering a function."
-    op = Operation(key=key, func=lambda _: modes.set(mode_name, to_value),
-                   pop=0, push=0, description=description, menu=menu)
+    op = EscOperation(key=key, func=lambda _: modes.set(mode_name, to_value),
+                      pop=0, push=0, description=description, menu=menu)
     menu.register_child(op)
 
-def menu(key, description, parent):
-    "Create a new menu and register it with its parent."
-    menu = Menu(key, description)
-    parent.register_child(menu)
-    return menu
 
 import functions
 
