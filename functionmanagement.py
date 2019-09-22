@@ -195,13 +195,10 @@ def Menu(key, description, parent):
 
 
 main_menu = EscMenu('', "Main Menu")
-constants_menu = Menu(CONSTANT_MENU_CHARACTER, 'insert constant', main_menu)
 
 
-def Constant(value, key, description, menu=None):
+def Constant(value, key, description, menu):
     "Create a new constant. Syntactic sugar for registering a function."
-    if menu is None:
-        menu = constants_menu
     op = EscOperation(key=key, func=lambda _: value, pop=0, push=1,
                       description=description, menu=menu)
     menu.register_child(op)

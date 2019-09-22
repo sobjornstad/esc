@@ -1,6 +1,13 @@
+"""
+functions.py -- default calculator functions
+"""
+
+# pylint: disable=invalid-name
+
 from decimal import Decimal
 import math
 
+from consts import CONSTANT_MENU_CHARACTER
 from display import screen
 from functionmanagement import Constant, Function, Menu, Mode, ModeChange, main_menu
 import modes
@@ -52,7 +59,7 @@ def exchange(s):
     return s[1], s[0]
 
 @Function('p', menu=main_menu, pop=1, push=0, description='pop off bos')
-def pop(s):
+def pop(_):
     return None
 
 @Function('r', menu=main_menu, pop=-1, push=-1, description='roll off tos')
@@ -60,7 +67,7 @@ def roll(s):
     return [i.decimal for i in s[1:]]
 
 @Function('c', menu=main_menu, pop=-1, push=0, description='clear stack')
-def clear(s):
+def clear(_):
     return None
 
 
@@ -150,8 +157,9 @@ def etothex(s):
 # CONSTANTS #
 #############
 
-Constant(math.pi, 'p', 'pi')
-Constant(math.e, 'e', 'e')
+constants_menu = Menu(CONSTANT_MENU_CHARACTER, 'insert constant', main_menu)
+Constant(math.pi, 'p', description='pi', menu=constants_menu)
+Constant(math.e, 'e', description='e', menu=constants_menu)
 
 
 #################
@@ -182,7 +190,6 @@ def addMnSalesTax(s):
 
 
 ##TODO:
-# Get constants menu to display in the right spot
 # Reenable setStatusDisplayRequested() but do it in a cleaner way than before
 # Avoid circular dependency? (See chalkboard)
 # Menus should have a description for the status bar, and should be able to display mode
