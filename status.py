@@ -2,11 +2,14 @@
 status.py - manage the status bar
 """
 
-from enum import IntFlag, auto
+from enum import IntFlag
 
 from display import screen
 
 
+#TODO: This is bugly as an Enum. It looked nice and elegant at the start but
+# gradually got worse and worse! We need to make it into a normal class
+# containing a couple of state enums or bools.
 class StatusState(IntFlag):
     """
     Calculator state for purpose of displaying a status.
@@ -57,7 +60,7 @@ def advisory(msg):
     touching any other status icon set by the state.
     """
     global _STATE, _MSG
-    _STATE &= ~(StatusState.ERROR)
+    _STATE &= ~StatusState.ERROR
     _STATE &= ~StatusState.SEEN
     _STATE |= StatusState.ADVISORY
     _MSG = msg

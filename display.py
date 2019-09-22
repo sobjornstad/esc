@@ -1,10 +1,19 @@
+"""
+display.py - drive the curses interface
+
+Other modules call into the EscScreen singleton defined here when they need
+to update the screen.
+"""
+
 import curses
 from consts import STACKDEPTH, STACKWIDTH, PROGRAM_NAME
 
+# pylint: disable=invalid-name
 _screen = None
 
 
 class Window:
+    "One of the curses windows making up esc's interface."
     def __init__(self, scr):
         self.scr = scr
         self.window = None
@@ -21,6 +30,7 @@ class Window:
 
 
 class StatusWindow(Window):
+    "Window for the status bar at the top of the screen."
     def __init__(self, scr, max_x):
         super().__init__(scr)
 
@@ -51,6 +61,7 @@ class StatusWindow(Window):
 
 
 class StackWindow(Window):
+    "Window for the stack, where the numbers go."
     def __init__(self, scr):
         super().__init__(scr)
         self.ss = None
@@ -70,6 +81,10 @@ class StackWindow(Window):
         super().refresh()
 
     def set_cursor_posn(self):
+        """
+        Place the cursor after the current character or on the next available
+        line, as appropriate.
+        """
         if self.ss.editing_last_item:
             self.window.move(1 + self.ss.stack_posn, self.ss.cursor_posn + 1)
         else:
@@ -77,6 +92,10 @@ class StackWindow(Window):
             self.window.move(2 + self.ss.stack_posn, self.ss.cursor_posn + 1)
 
     def backspace(self, status):
+        """
+        Update the screen to show that a character was backspaced off the
+        stack line being edited.
+        """
         if status == 0:  # character backspaced
             self.window.addstr(1 + self.ss.stack_posn, self.ss.cursor_posn + 1, ' ')
             self.window.move(1 + self.ss.stack_posn, self.ss.cursor_posn + 1)
@@ -88,6 +107,7 @@ class StackWindow(Window):
 
 
 class HistoryWindow(Window):
+    "Window displaying a history of past actions."
     def __init__(self, scr):
         super().__init__(scr)
         self.window = curses.newwin(3 + STACKDEPTH, 32, 1, 24)
@@ -97,6 +117,7 @@ class HistoryWindow(Window):
 
 
 class CommandsWindow(Window):
+    "Window displaying available commands/actions."
     def __init__(self, scr):
         super().__init__(scr)
         self.window = curses.newwin(3 + STACKDEPTH, 24, 1, 56)
@@ -121,12 +142,12 @@ class CommandsWindow(Window):
                 pass
         super().refresh()
 
-    def add_menu(self, text, yposn, xposn):
+    def add_menu(self, text, yposn):
         text = "(%s)" % text
         ctrxpos = (STACKWIDTH - len(text)) // 2 + 1
         self.add_command('', text, yposn, ctrxpos)
 
-    def add_mode_display(self, text, yposn, xposn):
+    def add_mode_display(self, text, yposn):
         ctrxpos = (STACKWIDTH - len(text)) // 2 + 1
         self.add_command('', text, yposn, ctrxpos)
 
@@ -138,6 +159,7 @@ class CommandsWindow(Window):
 
 
 class RegistersWindow(Window):
+    "Window displaying registers/variables currently defined."
     def __init__(self, scr, max_y):
         super().__init__(scr)
         self.window = curses.newwin(max_y - 1 - (3 + STACKDEPTH), 80, 4 + STACKDEPTH, 0)
@@ -147,6 +169,9 @@ class RegistersWindow(Window):
 
 
 class EscScreen:
+    """
+    Facade bringing together display functions for all of the windows.
+    """
     def __init__(self, stdscr):
         self.stdscr = stdscr
         self.statusw = None
@@ -157,6 +182,10 @@ class EscScreen:
         self._setup()
 
     def _setup(self):
+        """
+        Initialize all the windows making up the esc interface,
+        as well as curses settings.
+        """
         max_y, max_x = self.stdscr.getmaxyx()
 
         curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_GREEN)
@@ -208,11 +237,11 @@ class EscScreen:
 
 
     ### Commands ###
-    def add_menu(self, text, yposn, xposn):
-        self.commandsw.add_menu(text, yposn, xposn)
+    def add_menu(self, text, yposn):
+        self.commandsw.add_menu(text, yposn)
 
-    def add_mode_display(self, text, yposn, xposn):
-        self.commandsw.add_mode_display(text, yposn, xposn)
+    def add_mode_display(self, text, yposn):
+        self.commandsw.add_mode_display(text, yposn)
 
     def add_command(self, char, descr, yposn, xposn):
         self.commandsw.add_command(char, descr, yposn, xposn)
@@ -221,9 +250,15 @@ class EscScreen:
         self.commandsw.reset()
 
 def screen():
+    """
+    It seems that if we don't define this as a function, we won't be able to
+    access it with an import from another module because it won't have been
+    defined at that time.
+    """
     return _screen
 
 
 def init(stdscr):
+    "Initialize the screen() from curses' stdscr."
     global _screen
     _screen = EscScreen(stdscr)

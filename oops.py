@@ -1,3 +1,7 @@
+"""
+oops.py - custom exceptions for esc
+"""
+
 class EscError(Exception):
     pass
 

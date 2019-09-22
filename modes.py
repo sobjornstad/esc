@@ -13,6 +13,14 @@ MODES = {}
 
 @dataclass
 class Mode:
+    """
+    esc modes implement basic calculator state like a degrees/radians switch.
+    In esc, they are created and used by menus with families of related
+    functions, where they can also be displayed. They have a name, a current
+    value, and optionally a set of allowable values; if something ever causes
+    the value to be set to a non-allowable value, a ProgrammingError will be
+    raised, hopefully identifying the issue before it leads to wrong results.
+    """
     name: str
     _value: Any
     allowable_values: Optional[Sequence[Any]]

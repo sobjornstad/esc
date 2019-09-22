@@ -9,7 +9,7 @@ import math
 
 from consts import CONSTANT_MENU_CHARACTER
 from display import screen
-from functionmanagement import Constant, Function, Menu, Mode, ModeChange, main_menu
+from menus import Constant, Function, Menu, Mode, ModeChange, main_menu
 import modes
 import status
 
@@ -184,17 +184,9 @@ def yankBos(s):
     p = Popen(['xsel', '-bi'], stdin=PIPE)
     p.communicate(input=str(s[0]).encode())
     status.advisory('"%s" placed on system clipboard.' % str(s[0]))
-    #FIXME: disabled
-    #fm.setStatusDisplayRequested()
-    return s[0] # put back onto stack
+    return s[0] # return to stack
 
 @Function('T', menu=main_menu, pop=1, push=1, description='add MN sales tax')
 def addMnSalesTax(s):
     tax = Decimal(.07375) * s[0]
     return s[0] + tax
-
-
-
-##TODO:
-# Avoid circular dependency? (See chalkboard)
-# Clean up all the old functionmanager crap no longer needed

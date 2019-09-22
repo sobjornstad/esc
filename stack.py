@@ -1,8 +1,14 @@
+"""
+stack.py - the stack maintains all the numbers the calculator is handling
+
+The stack is the heart of the RPN calculator; it's what all the functions
+operate on.
+"""
+
 import decimal
 from decimal import Decimal
 import copy
 
-from display import screen
 import history
 import status
 import util
@@ -152,7 +158,7 @@ class StackState:
     @property
     def editing_last_item(self):
         return self._editing_last_item
-    
+
     @editing_last_item.setter
     def editing_last_item(self, value):
         self._editing_last_item = value
@@ -165,6 +171,7 @@ class StackState:
 
     @property
     def bos(self):
+        "Bottom of Stack -- the last item, or None if the stack is empty."
         try:
             return self.s[self.stack_posn]
         except IndexError:
@@ -228,7 +235,7 @@ class StackState:
         self.cursor_posn = 0
         self.editing_last_item = False
 
-    def enter_number(self, runningOp=None):
+    def enter_number(self, running_op=None):
         """
         Finish the entry of a number.
 
@@ -240,7 +247,7 @@ class StackState:
             ValueError if the value was invalid and the number couldn't be
             finished. The exception message can be displayed on the status bar.
 
-        Set runningOp to an operation name if you're entering prior to running
+        Set running_op to an operation name if you're entering prior to running
         an operation (go figure) for a more helpful error message in that case.
         """
         # Even if we were *not* editing the stack, checkpoint the stack state.
@@ -254,8 +261,8 @@ class StackState:
                 self.cursor_posn = 0
                 return True
             else:
-                if runningOp:
-                    msg = 'Cannot run "%s": invalid value on bos.' % runningOp
+                if running_op:
+                    msg = 'Cannot run "%s": invalid value on bos.' % running_op
                 else:
                     msg = 'Bottom of stack is not a valid number.'
                 raise ValueError(msg)
@@ -282,13 +289,15 @@ class StackState:
         Pop /num/ numbers off the end of the stack and return them as a list.
         """
         self.stack_posn -= num
-        oldStack = copy.deepcopy(self.s)
+        checkpoint = self.memento()
         try:
             return list(reversed([self.s.pop().decimal for _ in range(num)]))
         except IndexError:
-            self.s = oldStack
-            self.stack_posn += num
+            self.restore(checkpoint)
             return None
+        except Exception:
+            self.restore(checkpoint)
+            raise
 
     def memento(self):
         """

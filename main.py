@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
+"""
+main.py - startup code and main loop for esc
+"""
 
 import curses
 import curses.ascii
 
 import display
 from display import screen
-import functionmanagement
+import menus
 import history
 import stack
 import status
@@ -30,11 +33,11 @@ def try_add_to_number(c, ss):
     """
     Try to interpret the character /c/ as a digit and add it to the current
     stack item in /ss/ (or create a new stack item).
-    
+
     Return:
         True if this addition was handled (whether it succeeded or not).
         False if this addition was unhandled.
-    
+
     State change:
         If the character is handled, the StackState is updated to include
         the newly entered digit.
@@ -44,7 +47,7 @@ def try_add_to_number(c, ss):
     except ValueError:
         return False
 
-    if util.isNumber(char):
+    if util.is_number(char):
         if char == '_':
             char = '-' # negative sign, like dc
         if ss.editing_last_item:
@@ -124,12 +127,12 @@ def main():
         status.redraw()
 
         if menu is None:
-            menu = functionmanagement.main_menu
-        functionmanagement.display_menu(menu)
+            menu = menus.main_menu
+        menus.display_menu(menu)
 
         # Update cursor posn and fetch one char of input.
         screen().place_cursor(ss)
-        if menu is functionmanagement.main_menu:
+        if menu is menus.main_menu:
             c = fetch_input(False)
 
             # Are we entering a number?
@@ -154,6 +157,8 @@ def main():
             status.redraw()
         else:
             screen().refresh_stack(ss)
+            #TODO: This shouldn't go to ready() if there was an advisory or
+            # error within the function
             status.ready()
 
 

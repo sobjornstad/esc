@@ -1,8 +1,23 @@
+"""
+menus.py - implement menus of functions
+
+We use menus to register and keep track of the functions the user can call.
+Actual functions are defined in functions.py (and in a future
+user-defined-functions file).
+
+First come EscFunction and its subclasses, which implement both the menus and
+the functions in a sort of recursive tree pattern. Then come
+faux-constructors (actually functions) which can be imported from
+functions.py and called to register functions (we import functions.py from
+here so that it gets run). Through these constructors, all registered
+functions and submenus end up reachable from the main menu.
+"""
+
 from collections import OrderedDict
 import copy
 import decimal
 
-from consts import STACKDEPTH, QUIT_CHARACTER, CONSTANT_MENU_CHARACTER
+from consts import QUIT_CHARACTER
 from display import screen
 import modes
 from oops import NotInMenuError, ProgrammingError, FunctionExecutionError
@@ -112,6 +127,9 @@ class EscMenu(EscFunction):
 
 
 class EscOperation(EscFunction):
+    """
+    A type of EscFunction that can be run to make some changes on the stack.
+    """
     def __init__(self, key, func, pop, push, description, menu):
         super().__init__(key, description)
         self.function = func
@@ -132,7 +150,8 @@ class EscOperation(EscFunction):
                 # illegal operation; restore original args to stack and return
                 raise FunctionExecutionError("Domain error! Stack unchanged.")
             except ZeroDivisionError:
-                raise FunctionExecutionError("Sorry, division by zero is against the law.")
+                raise FunctionExecutionError(
+                    "Sorry, division by zero is against the law.")
             self.store_results(ss, retvals)
         except Exception:
             ss.restore(checkpoint)
@@ -140,19 +159,23 @@ class EscOperation(EscFunction):
         return None
 
     def retrieve_arguments(self, ss):
+        """
+        Get a slice of stack from /ss/ of the size requested by the function
+        we're calling, throwing an exception if this can't be completed.
+        """
         # Enter the number currently being edited, if any, stopping if it is
         # invalid.
         try:
-            ss.enter_number(runningOp=self.key)
+            ss.enter_number(running_op=self.key)
         except ValueError as e:
             raise FunctionExecutionError(str(e))
 
         # Make sure there will be space to push the results.
         # If requesting the whole stack, it's the function's responsibility to check.
         if not ss.has_push_space(self.push - self.pop) and self.pop != -1:
-            numShort = self.push - self.pop - ss.freeStackSpaces
-            spaces = 'space' if numShort == 1 else 'spaces'
-            msg = f"'{self.key}': stack is too full (short {numShort} {spaces}."
+            num_short = self.push - self.pop - ss.free_stack_spaces
+            spaces = 'space' if num_short == 1 else 'spaces'
+            msg = f"'{self.key}': stack is too full (short {num_short} {spaces})."
             raise FunctionExecutionError(msg)
 
         if self.pop == -1:
@@ -169,6 +192,9 @@ class EscOperation(EscFunction):
         return args
 
     def store_results(self, ss, return_values):
+        """
+        Return the values computed by our function to the stack.
+        """
         if self.push > 0 or (self.push == -1 and return_values is not None):
             if not hasattr(return_values, '__iter__'):
                 return_values = (return_values,)
@@ -191,24 +217,24 @@ class EscOperation(EscFunction):
 
 
 ### Constructor/registration functions to be used in functions.py ###
-def Menu(key, description, parent, mode_display=None):
+def Menu(key, description, parent, mode_display=None):  # pylint: disable=invalid-name
     "Create a new menu under the existing menu /parent/."
     menu = EscMenu(key, description, mode_display)
     parent.register_child(menu)
     return menu
 
 
-main_menu = EscMenu('', "Main Menu")
+main_menu = EscMenu('', "Main Menu")  # pylint: disable=invalid-name
 
 
-def Constant(value, key, description, menu):
+def Constant(value, key, description, menu):  # pylint: disable=invalid-name
     "Create a new constant. Syntactic sugar for registering a function."
     op = EscOperation(key=key, func=lambda _: value, pop=0, push=1,
                       description=description, menu=menu)
     menu.register_child(op)
 
 
-def Function(key, menu, push, pop, description=None):
+def Function(key, menu, push, pop, description=None):  # pylint: disable=invalid-name
     """
     Decorator to register a function on a given menu.
     """
@@ -220,11 +246,11 @@ def Function(key, menu, push, pop, description=None):
     return function_decorator
 
 
-def Mode(name, default_value, allowable_values=None):
+def Mode(name, default_value, allowable_values=None):  # pylint: disable=invalid-name
     return modes.register(name, default_value, allowable_values)
 
 
-def ModeChange(key, description, menu, mode_name, to_value):
+def ModeChange(key, description, menu, mode_name, to_value):  # pylint: disable=invalid-name
     "Create a new mode change. Syntactic sugar for registering a function."
     op = EscOperation(key=key, func=lambda _: modes.set(mode_name, to_value),
                       pop=0, push=0, description=description, menu=menu)
@@ -240,29 +266,29 @@ def display_menu(menu):
     """
     screen().reset_commands_window()
 
-    MIN_XPOSN = 2
-    MAX_XPOSN = 22
+    min_xposn = 2
+    max_xposn = 22
     xposn = 2
     yposn = 1
 
     # Print menu title.
     if not menu.is_main_menu:
-        screen().add_menu(menu.description, yposn, xposn-1)
+        screen().add_menu(menu.description, yposn)
         if menu.mode_display:
-            screen().add_mode_display(menu.mode_display(), yposn+1, xposn-1)
+            screen().add_mode_display(menu.mode_display(), yposn+1)
         yposn += 2
 
     # Print anonymous functions to the screen.
     for i in menu.anonymous_children:
         screen().add_command(i.key, None, yposn, xposn)
         xposn += 2
-        if xposn >= MAX_XPOSN - 2:
+        if xposn >= max_xposn - 2:
             yposn += 1
-            xposn = MIN_XPOSN
+            xposn = min_xposn
 
     # Now normal functions and menus.
     yposn += 1
-    xposn = MIN_XPOSN
+    xposn = min_xposn
     for i in menu.named_children:
         screen().add_command(i.key, i.description, yposn, xposn)
         yposn += 1
@@ -274,8 +300,8 @@ def display_menu(menu):
         yposn += 1
 
     # then the quit option, which is always there but is not a function
-    quitName = 'quit' if menu.is_main_menu else 'cancel'
-    screen().add_command(QUIT_CHARACTER, quitName, yposn, xposn)
+    quit_name = 'quit' if menu.is_main_menu else 'cancel'
+    screen().add_command(QUIT_CHARACTER, quit_name, yposn, xposn)
 
     # finally, make curses figure out how it's supposed to draw this
     screen().commandsw.refresh()

@@ -1,7 +1,11 @@
+"""
+util.py - miscellaneous numeric utility functions
+"""
+
 import decimal
 
-def isNumber(c):
-    return (c >= '0' and c <= '9') or (c in ('.', '_', 'e'))
+def is_number(c):
+    return ('0' <= c <= '9') or (c in ('.', '_', 'e'))
 
 def remove_exponent(d):
     """

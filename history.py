@@ -3,7 +3,7 @@ history.py - manage a history of calculations
 """
 
 
-class HistoricalStack(object):
+class HistoricalStack:
     """
     Manages the stack's history over time, as well as a list of the functions
     the user has invoked. Responsible for undoing as well.
@@ -54,4 +54,5 @@ class HistoricalStack(object):
             return False
 
 # Make a single HistoricalStack available as a module global.
+# pylint: disable=invalid-name
 hs = HistoricalStack()
