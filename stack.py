@@ -230,7 +230,7 @@ class StackState:
         # Even if we were *not* editing the stack, checkpoint the stack state.
         # This ensures that we will get a checkpoint anytime we call an
         # operation as well as when we enter a number onto the stack.
-        history.hs.checkpointState(self)
+        history.hs.checkpoint_stack(self)
 
         if self.editing_last_item:
             if self.s[self.stack_posn].finish_entry():
