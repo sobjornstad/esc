@@ -10,7 +10,7 @@ import history
 import stack
 import util
 from consts import UNDO_CHARACTER, REDO_CHARACTER
-from oops import FunctionExecutionError
+from oops import FunctionExecutionError, NotInMenuError
 
 
 def fetch_input(in_menu):
@@ -155,7 +155,7 @@ def main():
         try:
             menu = menu.execute(chr(c), ss)
             screen().refresh_stack(ss)
-        except FunctionExecutionError as e:
+        except (NotInMenuError, FunctionExecutionError) as e:
             errorState = True
             screen().set_status_msg(str(e))
 

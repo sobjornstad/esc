@@ -83,7 +83,7 @@ class Menu(EscFunction):
             child = self.children[access_key]
         except KeyError:
             raise NotInMenuError(
-                f"Key '{access_key}' is not an access key in this menu: {repr(self)}")
+                f"There's no option '{access_key}' in this menu.")
 
         if isinstance(child, Menu):
             return child
