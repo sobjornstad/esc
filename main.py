@@ -5,10 +5,12 @@ import curses.ascii
 
 import display
 from display import screen
+import functionmanagement
 import history
 import stack
 import util
 from consts import UNDO_CHARACTER, REDO_CHARACTER
+from oops import FunctionExecutionError
 
 
 def fetch_input(in_menu):
@@ -80,7 +82,7 @@ def enter_new_number(ss):
     return r
 
 
-def try_special(c, fm, ss):
+def try_special(c, ss):
     """
     Handle special values that aren't digits to be entered or
     functions/operations to be called, e.g., Enter, Backspace, and undo.
@@ -119,9 +121,7 @@ def main():
     """
     errorState = False
     ss = stack.StackState()
-
-    from functions import fm # adds all functions in functions.py to fm
-    fm.displayMenu()
+    menu = None
 
     # Main loop.
     while True:
@@ -130,11 +130,15 @@ def main():
             screen().set_status_msg("Ready")
         errorState = False
 
+        if menu is None:
+            menu = functionmanagement.main_menu
+        functionmanagement.display_menu(menu)
+
         # Update cursor posn and fetch one char of input.
         screen().place_cursor(ss)
-        c = fetch_input(fm.curMenu)
+        c = fetch_input(menu is not functionmanagement.main_menu)
 
-        if not fm.curMenu:
+        if menu is functionmanagement.main_menu:
             # Are we entering a number?
             r = try_add_to_number(c, ss)
             if r is not None:
@@ -142,23 +146,23 @@ def main():
                 continue
 
             # Or a special value like backspace or undo?
-            r = try_special(c, fm, ss)
+            r = try_special(c, ss)
             if r is not None:
                 errorState = not r
                 continue
 
         # If it wasn't one of those, try to interpret it as a function.
-        if fm.runFunction(chr(c), ss):
+        try:
+            menu = menu.execute(chr(c), ss)
             screen().refresh_stack(ss)
-        else:
-            # If fm.runFunction returned False,
-            # either there was an error or we wanted to display output on the status bar.
+        except FunctionExecutionError as e:
             errorState = True
+            screen().set_status_msg(str(e))
 
         # If we chose to quit, quit. This is managed within 'fm' because it's
         # used both for leaving menus and for quitting the whole program.
-        if fm.quitAfter:
-            return
+        #if fm.quitAfter:
+        #    return
 
 
 def bootstrap(stdscr):

@@ -3,3 +3,9 @@ class EscError(Exception):
 
 class ProgrammingError(EscError):
     pass
+
+class NotInMenuError(EscError):
+    pass
+
+class FunctionExecutionError(EscError):
+    pass
