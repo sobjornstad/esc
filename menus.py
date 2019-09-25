@@ -109,22 +109,6 @@ class EscMenu(EscFunction):
         else:
             return child.execute(access_key, ss)
 
-    def find_menu(self, key_sequence, remaining_keys=None):
-        """
-        Recursively get a menu object by the key sequence leading to it.
-        """
-        if remaining_keys is None:
-            remaining_keys = key_sequence
-
-        if len(remaining_keys) == 1:
-            if self.key != remaining_keys[0]:
-                raise NotInMenuError(
-                    f"The key sequence {key_sequence} does not lead to a menu.")
-            else:
-                return self
-        else:
-            return self.find_menu(remaining_keys[1:])
-
 
 class EscOperation(EscFunction):
     """
