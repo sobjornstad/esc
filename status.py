@@ -25,11 +25,12 @@ class StatusState(IntFlag):
     READY = 1
     ENTERING_NUMBER = 2
     IN_MENU = 4
+    EXPECTING_REGISTER = 8
 
-    ADVISORY = 8
-    ERROR = 16
+    ADVISORY = 16
+    ERROR = 32
 
-    SEEN = 32
+    SEEN = 64
 
 
 # pylint: disable=invalid-name
@@ -53,6 +54,11 @@ def in_menu():
     # these are more important than saying we're in a menu.
     _STATE &= (StatusState.ADVISORY | StatusState.ERROR)
     _STATE |= StatusState.IN_MENU
+
+def expecting_register():
+    "Clear errors and put calculator in a state to select a register."
+    global _STATE
+    _STATE = StatusState.EXPECTING_REGISTER
 
 def advisory(msg):
     """
@@ -103,6 +109,9 @@ def redraw():
     elif _STATE & StatusState.IN_MENU:
         screen().set_status_char('m')
         screen().set_status_msg('Expecting menu selection')
+    elif _STATE & StatusState.EXPECTING_REGISTER:
+        screen().set_status_char('r')
+        screen().set_status_msg('Expecting register identifier')
 
     if _STATE & StatusState.ERROR:
         screen().set_status_char('E')

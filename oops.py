@@ -13,3 +13,6 @@ class NotInMenuError(EscError):
 
 class FunctionExecutionError(EscError):
     pass
+
+class InvalidNameError(EscError):
+    pass

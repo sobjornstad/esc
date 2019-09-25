@@ -9,6 +9,7 @@ import curses.ascii
 import display
 from display import screen
 import menus
+from oops import InvalidNameError
 import history
 import registers
 import stack
@@ -19,11 +20,12 @@ from consts import (UNDO_CHARACTER, REDO_CHARACTER, STORE_REG_CHARACTER,
 from oops import FunctionExecutionError, NotInMenuError
 
 
-def fetch_input(in_menu):
+def fetch_input(in_menu) -> int:
     """
     Get one character of input, the location of the window to fetch from
     depending on whether we currently have a menu open (with a menu open, the
-    cursor sits in the status bar).
+    cursor sits in the status bar). The character is returned as an int for
+    compatibility with curses functions; use chr() to turn it into a string.
     """
     if in_menu:
         return screen().getch_status()
@@ -111,12 +113,29 @@ def try_special(c, ss, registry):
         else:
             status.error("Nothing to redo.")
     elif chr(c) == STORE_REG_CHARACTER:
-        registry['x'] = ss.bos
+        status.expecting_register()
+        status.redraw()
+        reg_char: str = chr(fetch_input(True))
+        try:
+            registry[reg_char] = ss.bos
+        except InvalidNameError as e:
+            status.error(str(e))
+            return False
         screen().update_registers(registry)
+        status.ready()
     elif chr(c) == RETRIEVE_REG_CHARACTER:
-        ss.push((registry['x'],))
+        status.expecting_register()
+        status.redraw()
+        reg_char = chr(fetch_input(True))
+        try:
+            stack_item = registry[reg_char]
+        except KeyError:
+            status.error(f"Register '{reg_char}' does not exist.")
+            return False
+        ss.push((stack_item,))
         screen().update_registers(registry)
         screen().refresh_stack(ss)
+        status.ready()
     else:
         return False
     return True

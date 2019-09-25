@@ -187,21 +187,27 @@ class RegistersWindow(Window):
 
     def __init__(self, scr, max_y):
         self.height = max_y - 1 - (3 + STACKDEPTH)
+        self.register_pairs = []
         super().__init__(scr)
-        self.window.border()
-        self.window.addstr(0, 24, "Registers")
         self.refresh()
 
-    def update_registers(self, registry):
-        """
-        Update the registers window to show the current registry values.
-        """
-        for yposn, (register, stack_item) in enumerate(registry.items(), 1):
+    def refresh(self):
+        self.window.clear()
+        self.window.border()
+        self.window.addstr(0, 24, "Registers")
+
+        for yposn, (register, stack_item) in enumerate(self.register_pairs, 1):
             assert len(register) == 1
             self.window.addstr(yposn, 1, register, curses.color_pair(2))
             self.window.addstr(yposn, 3, str(stack_item))
 
-        self.refresh()
+        super().refresh()
+
+    def update_registry(self, registry):
+        """
+        Store the new register pairs to be used on a refresh().
+        """
+        self.register_pairs = list(registry.items())
 
 
 class EscScreen:
@@ -288,7 +294,8 @@ class EscScreen:
 
     ### Registers ###
     def update_registers(self, registry):
-        self.registersw.update_registers(registry)
+        self.registersw.update_registry(registry)
+        self.registersw.refresh()
 
 def screen():
     """
