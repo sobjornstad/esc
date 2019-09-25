@@ -136,11 +136,11 @@ class HistoryWindow(Window):
 class CommandsWindow(Window):
     "Window displaying available commands/actions."
     width = 24
-    height = 3 + STACKDEPTH
     start_x = 56
     start_y = 1
 
-    def __init__(self, scr):
+    def __init__(self, scr, max_y):
+        self.height = max_y - 1
         super().__init__(scr)
         self.commands = []
         self.refresh()
@@ -181,16 +181,15 @@ class CommandsWindow(Window):
 
 class RegistersWindow(Window):
     "Window displaying registers/variables currently defined."
-    width = 80
+    width = 56
     start_x = 0
-    start_y = 0
+    start_y = 4 + STACKDEPTH
 
     def __init__(self, scr, max_y):
         self.height = max_y - 1 - (3 + STACKDEPTH)
         super().__init__(scr)
-        self.window = curses.newwin(max_y - 1 - (3 + STACKDEPTH), 80, 4 + STACKDEPTH, 0)
         self.window.border()
-        self.window.addstr(0, 36, "Registers")
+        self.window.addstr(0, 24, "Registers")
         self.refresh()
 
 
@@ -220,7 +219,7 @@ class EscScreen:
         self.statusw = StatusWindow(self, max_x)
         self.stackw = StackWindow(self)
         self.historyw = HistoryWindow(self)
-        self.commandsw = CommandsWindow(self)
+        self.commandsw = CommandsWindow(self, max_y)
         self.registersw = RegistersWindow(self, max_y)
 
 
