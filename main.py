@@ -10,10 +10,12 @@ import display
 from display import screen
 import menus
 import history
+import registers
 import stack
 import status
 import util
-from consts import UNDO_CHARACTER, REDO_CHARACTER
+from consts import (UNDO_CHARACTER, REDO_CHARACTER, STORE_REG_CHARACTER,
+                    RETRIEVE_REG_CHARACTER)
 from oops import FunctionExecutionError, NotInMenuError
 
 
@@ -84,7 +86,7 @@ def enter_new_number(ss):
     return r
 
 
-def try_special(c, ss):
+def try_special(c, ss, registry):
     """
     Handle special values that aren't digits to be entered or
     functions/operations to be called, e.g., Enter, Backspace, and undo.
@@ -108,6 +110,13 @@ def try_special(c, ss):
             screen().refresh_stack(ss)
         else:
             status.error("Nothing to redo.")
+    elif chr(c) == STORE_REG_CHARACTER:
+        registry['x'] = ss.bos
+        screen().update_registers(registry)
+    elif chr(c) == RETRIEVE_REG_CHARACTER:
+        ss.push((registry['x'],))
+        screen().update_registers(registry)
+        screen().refresh_stack(ss)
     else:
         return False
     return True
@@ -119,6 +128,7 @@ def main():
     the main loop.
     """
     ss = stack.StackState()
+    registry = registers.Registry()
     menu = None
 
     # Main loop.
@@ -141,7 +151,7 @@ def main():
                 continue
 
             # Or a special value like backspace or undo?
-            r = try_special(c, ss)
+            r = try_special(c, ss, registry)
             if r:
                 continue
         else:

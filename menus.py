@@ -17,7 +17,8 @@ from collections import OrderedDict
 import copy
 import decimal
 
-from consts import QUIT_CHARACTER
+from consts import (QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
+                    RETRIEVE_REG_CHARACTER, STORE_REG_CHARACTER)
 from display import screen
 import modes
 from oops import NotInMenuError, ProgrammingError, FunctionExecutionError
@@ -277,11 +278,13 @@ def display_menu(menu):
         screen().add_command(i.key, i.description, yposn, xposn)
         yposn += 1
 
-    # then the undo option, if on the main menu
+    # then the special options, if on the main menu
     if menu.is_main_menu:
-        screen().add_command('u', 'undo (', yposn, xposn)
-        screen().add_command('^r', 'redo)', yposn, xposn + 8)
-        yposn += 1
+        screen().add_command(STORE_REG_CHARACTER, 'store bos to reg', yposn, xposn)
+        screen().add_command(RETRIEVE_REG_CHARACTER, 'get bos from reg', yposn+1, xposn)
+        screen().add_command(UNDO_CHARACTER, 'undo (', yposn+2, xposn)
+        screen().add_command(REDO_CHARACTER.lower(), 'redo)', yposn+2, xposn + 8)
+        yposn += 3
 
     # then the quit option, which is always there but is not a function
     quit_name = 'quit' if menu.is_main_menu else 'cancel'

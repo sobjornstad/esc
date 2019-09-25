@@ -192,6 +192,17 @@ class RegistersWindow(Window):
         self.window.addstr(0, 24, "Registers")
         self.refresh()
 
+    def update_registers(self, registry):
+        """
+        Update the registers window to show the current registry values.
+        """
+        for yposn, (register, stack_item) in enumerate(registry.items(), 1):
+            assert len(register) == 1
+            self.window.addstr(yposn, 1, register, curses.color_pair(2))
+            self.window.addstr(yposn, 3, str(stack_item))
+
+        self.refresh()
+
 
 class EscScreen:
     """
@@ -273,6 +284,11 @@ class EscScreen:
 
     def reset_commands_window(self):
         self.commandsw.reset()
+
+
+    ### Registers ###
+    def update_registers(self, registry):
+        self.registersw.update_registers(registry)
 
 def screen():
     """

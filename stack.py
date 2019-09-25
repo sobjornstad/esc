@@ -274,13 +274,16 @@ class StackState:
 
     def push(self, vals):
         """
-        Push an iterable of numbers onto the stack.
+        Push an iterable of numbers or StackItems onto the stack.
         """
         if not self.has_push_space(len(vals)):
             return False
 
         for i in vals:
-            self.s.append(StackItem(decval=i))
+            if isinstance(i, StackItem):
+                self.s.append(i)
+            else:
+                self.s.append(StackItem(decval=i))
         self.stack_posn += len(vals)
         return True
 
