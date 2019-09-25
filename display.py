@@ -14,9 +14,14 @@ _screen = None
 
 class Window:
     "One of the curses windows making up esc's interface."
+    width = None
+    height = None
+    start_x = None
+    start_y = None
+
     def __init__(self, scr):
         self.scr = scr
-        self.window = None
+        self.window = curses.newwin(self.height, self.width, self.start_y, self.start_x)
 
     def refresh(self):
         if self.window is not None:
@@ -31,13 +36,17 @@ class Window:
 
 class StatusWindow(Window):
     "Window for the status bar at the top of the screen."
+    height = 1
+    start_x = 0
+    start_y = 0
+
     def __init__(self, scr, max_x):
+        self.width = max_x
         super().__init__(scr)
 
         self.status_char = ' '
         self.status_msg = ''
 
-        self.window = curses.newwin(1, max_x, 0, 0)
         self.window.addstr(0, 0, (' ' * 79), curses.color_pair(1))
         self.window.addstr(0, 0, f"[{self.status_char}] {PROGRAM_NAME} |",
                            curses.color_pair(1))
@@ -62,11 +71,15 @@ class StatusWindow(Window):
 
 class StackWindow(Window):
     "Window for the stack, where the numbers go."
+    width = 24
+    height = 3 + STACKDEPTH
+    start_x = 0
+    start_y = 1
+
     def __init__(self, scr):
         super().__init__(scr)
         self.ss = None
 
-        self.window = curses.newwin(3 + STACKDEPTH, 24, 1, 0)
         self.window.border()
         self.window.addstr(0, 9, "Stack")
         self.refresh()
@@ -108,9 +121,13 @@ class StackWindow(Window):
 
 class HistoryWindow(Window):
     "Window displaying a history of past actions."
+    width = 32
+    height = 3 + STACKDEPTH
+    start_x = 24
+    start_y = 1
+
     def __init__(self, scr):
         super().__init__(scr)
-        self.window = curses.newwin(3 + STACKDEPTH, 32, 1, 24)
         self.window.border()
         self.window.addstr(0, 13, "History")
         self.refresh()
@@ -118,9 +135,13 @@ class HistoryWindow(Window):
 
 class CommandsWindow(Window):
     "Window displaying available commands/actions."
+    width = 24
+    height = 3 + STACKDEPTH
+    start_x = 56
+    start_y = 1
+
     def __init__(self, scr):
         super().__init__(scr)
-        self.window = curses.newwin(3 + STACKDEPTH, 24, 1, 56)
         self.commands = []
         self.refresh()
 
@@ -160,7 +181,12 @@ class CommandsWindow(Window):
 
 class RegistersWindow(Window):
     "Window displaying registers/variables currently defined."
+    width = 80
+    start_x = 0
+    start_y = 0
+
     def __init__(self, scr, max_y):
+        self.height = max_y - 1 - (3 + STACKDEPTH)
         super().__init__(scr)
         self.window = curses.newwin(max_y - 1 - (3 + STACKDEPTH), 80, 4 + STACKDEPTH, 0)
         self.window.border()
