@@ -169,7 +169,6 @@ class StackState:
         if self._editing_last_item:
             status.entering_number()
         else:
-            pass
             status.ready()
 
     @property

@@ -124,7 +124,8 @@ def retrieve_register(ss, registry):
         except KeyError:
             raise RollbackTransaction(f"Register '{reg_char}' does not exist.")
         else:
-            ss.push((stack_item,))
+            if not ss.push((stack_item,)):
+                raise RollbackTransaction("Stack is full.")
             screen().refresh_stack(ss)
             status.ready()
 
