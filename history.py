@@ -19,7 +19,8 @@ class HistoricalStack:
         """
         if self.redo_stack:
             self.redo_stack = []
-        self.undo_stack.append(ss.memento())
+        if (not self.undo_stack) or self.undo_stack[-1] != ss.memento():
+            self.undo_stack.append(ss.memento())
 
     def undo_to_checkpoint(self, ss, checkpoint_index=-1):
         """
