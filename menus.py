@@ -23,7 +23,7 @@ from consts import (QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
                     RETRIEVE_REG_CHARACTER, STORE_REG_CHARACTER, DELETE_REG_CHARACTER)
 from display import screen
 import modes
-from oops import NotInMenuError, ProgrammingError, FunctionExecutionError
+from oops import NotInMenuError, ProgrammingError, FunctionExecutionError, InsufficientItemsError
 
 BINOP = 'binop'
 
@@ -130,6 +130,15 @@ class EscOperation(EscFunction):
     def __repr__(self):
         return f"<EscOperation '{self.key}': {self.description}"
 
+    def _insufficient_items_on_stack(self, pops_requested=None):
+        "Call for a FunctionExecutionError() if the stack is too empty."
+        if pops_requested is None:
+            pops_requested = self.pop
+            assert pops_requested != -1  # caller needs to reset the value if it is
+        pops = 'item' if pops_requested == 1 else 'items'
+        msg = f"'{self.key}' needs at least {pops_requested} {pops} on stack."
+        return FunctionExecutionError(msg)
+
     def describe_operation(self, args, retvals):
         """
         Given the values popped from the stack (args) and the values pushed
@@ -153,9 +162,9 @@ class EscOperation(EscFunction):
             except ZeroDivisionError:
                 raise FunctionExecutionError(
                     "Sorry, division by zero is against the law.")
+            except InsufficientItemsError as e:
+                raise self._insufficient_items_on_stack(e.number_required)
             self.store_results(ss, args, retvals)
-        #TODO: We want to put an entry in the HistoricalStack if successful.
-        # We might also convert this to a context manager while we're at it.
         return None
 
     def retrieve_arguments(self, ss):
@@ -185,9 +194,7 @@ class EscOperation(EscFunction):
         else:
             args = ss.pop(self.pop)
             if (not args) and self.pop != 0:
-                pops = 'item' if self.pop == 1 else 'items'
-                msg = f"'{self.key}' needs at least {self.pop} {pops} on stack."
-                raise FunctionExecutionError(msg)
+                raise self._insufficient_items_on_stack()
 
         return args
 

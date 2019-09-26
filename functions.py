@@ -11,6 +11,7 @@ from consts import CONSTANT_MENU_CHARACTER
 from display import screen
 from menus import BINOP, Constant, Function, Menu, Mode, ModeChange, main_menu
 import modes
+from oops import InsufficientItemsError
 import status
 
 
@@ -69,11 +70,15 @@ def pop(_):
 @Function('r', menu=main_menu, pop=-1, push=-1, description='roll off tos',
           log_as="roll off tos {0}")
 def roll(s):
+    if not s:
+        raise InsufficientItemsError(number_required=1)
     return [i.decimal for i in s[1:]]
 
 @Function('c', menu=main_menu, pop=-1, push=0, description='clear stack',
           log_as="clear stack")
-def clear(_):
+def clear(s):
+    if not s:
+        raise InsufficientItemsError(number_required=1)
     return None
 
 

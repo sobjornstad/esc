@@ -330,7 +330,9 @@ class StackState:
 
     def memento(self):
         """
-        Generate a memento object for the current state of the stack.
+        Generate a memento object for the current state of the stack. The
+        stack can later be restored to this state by calling restore() on
+        the memento.
         """
         return copy.deepcopy(self.__dict__)
 

@@ -17,6 +17,14 @@ class FunctionExecutionError(EscError):
 class InvalidNameError(EscError):
     pass
 
+class InsufficientItemsError(EscError):
+    """
+    Raised by functions that use pop=-1 to indicate not enough items are on
+    the stack to finish their work.
+    """
+    def __init__(self, number_required):
+        self.number_required = number_required
+
 
 class RollbackTransaction(Exception):
     def __init__(self, status_message=None):
