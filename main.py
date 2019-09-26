@@ -99,6 +99,10 @@ def store_register(ss, registry):
     """
     Copy the bottom of the stack into a register of the user's choice.
     """
+    if ss.is_empty:
+        status.error("You must have an item on the stack to store to a register.")
+        return
+
     with ss.transaction():
         ss.enter_number()
         reg_char = _get_register_char()

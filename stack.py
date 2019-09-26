@@ -197,6 +197,10 @@ class StackState:
     def free_stack_spaces(self):
         return STACKDEPTH - self.stack_posn - 1
 
+    @property
+    def is_empty(self):
+        return not bool(self.s)
+
     def add_partial(self, c):
         """
         Start a new item on the stack with the given character /c/. Return
