@@ -126,8 +126,7 @@ class EscOperation(EscFunction):
         return f"<EscOperation '{self.key}': {self.description}"
 
     def execute(self, access_key, ss):
-        checkpoint = ss.memento()
-        try:
+        with ss.transaction():
             args = self.retrieve_arguments(ss)
             try:
                 retvals = self.function(args)
@@ -138,9 +137,8 @@ class EscOperation(EscFunction):
                 raise FunctionExecutionError(
                     "Sorry, division by zero is against the law.")
             self.store_results(ss, retvals)
-        except Exception:
-            ss.restore(checkpoint)
-            raise
+        #TODO: We want to put an entry in the HistoricalStack if successful.
+        # We might also convert this to a context manager while we're at it.
         return None
 
     def retrieve_arguments(self, ss):
