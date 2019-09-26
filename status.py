@@ -112,7 +112,7 @@ def redraw():
         screen().set_status_msg('Expecting menu selection')
     elif _STATE & StatusState.EXPECTING_REGISTER:
         screen().set_status_char('r')
-        screen().set_status_msg('Expecting register identifier')
+        screen().set_status_msg('Expecting register identifier (any letter)')
 
     if _STATE & StatusState.ERROR:
         screen().set_status_char('E')
