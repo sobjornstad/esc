@@ -18,7 +18,7 @@ import copy
 import decimal
 
 from consts import (QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
-                    RETRIEVE_REG_CHARACTER, STORE_REG_CHARACTER)
+                    RETRIEVE_REG_CHARACTER, STORE_REG_CHARACTER, DELETE_REG_CHARACTER)
 from display import screen
 import modes
 from oops import NotInMenuError, ProgrammingError, FunctionExecutionError
@@ -282,9 +282,10 @@ def display_menu(menu):
     if menu.is_main_menu:
         screen().add_command(STORE_REG_CHARACTER, 'store bos to reg', yposn, xposn)
         screen().add_command(RETRIEVE_REG_CHARACTER, 'get bos from reg', yposn+1, xposn)
-        screen().add_command(UNDO_CHARACTER, 'undo (', yposn+2, xposn)
-        screen().add_command(REDO_CHARACTER.lower(), 'redo)', yposn+2, xposn + 8)
-        yposn += 3
+        screen().add_command(DELETE_REG_CHARACTER, 'delete register', yposn+2, xposn)
+        screen().add_command(UNDO_CHARACTER, 'undo (', yposn+3, xposn)
+        screen().add_command(REDO_CHARACTER.lower(), 'redo)', yposn+3, xposn + 8)
+        yposn += 4
 
     # then the quit option, which is always there but is not a function
     quit_name = 'quit' if menu.is_main_menu else 'cancel'

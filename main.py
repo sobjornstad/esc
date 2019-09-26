@@ -16,7 +16,7 @@ import stack
 import status
 import util
 from consts import (UNDO_CHARACTER, REDO_CHARACTER, STORE_REG_CHARACTER,
-                    RETRIEVE_REG_CHARACTER)
+                    RETRIEVE_REG_CHARACTER, DELETE_REG_CHARACTER)
 from oops import FunctionExecutionError, NotInMenuError
 
 
@@ -134,6 +134,21 @@ def retrieve_register(ss, registry):
             status.ready()
 
 
+def delete_register(ss, registry):
+    """
+    Delete a register of the user's choice.
+    """
+    with ss.transaction():
+        ss.enter_number()
+        reg_char = _get_register_char()
+        try:
+            del registry[reg_char]
+        except KeyError:
+            raise RollbackTransaction(f"Register '{reg_char}' does not exist.")
+        else:
+            screen().update_registers(registry)
+            status.ready()
+
 def try_special(c, ss, registry):
     """
     Handle special values that aren't digits to be entered or
@@ -162,6 +177,8 @@ def try_special(c, ss, registry):
         store_register(ss, registry)
     elif chr(c) == RETRIEVE_REG_CHARACTER:
         retrieve_register(ss, registry)
+    elif chr(c) == DELETE_REG_CHARACTER:
+        delete_register(ss, registry)
     else:
         return False
     return True

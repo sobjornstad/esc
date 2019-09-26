@@ -25,6 +25,9 @@ class Registry:
                 "Register names must be uppercase or lowercase letters.")
         self.registers[key] = value
 
+    def __delitem__(self, key):
+        del self.registers[key]
+
     @staticmethod
     def _valid_name(name: str):
         return len(name) == 1 and name.isalpha()
