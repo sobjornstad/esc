@@ -30,6 +30,9 @@ class HistoricalStack:
 
         Returns True if successful, False if no undo states are available.
         """
+        #TODO: Indices other than -1 are not safe here --
+        # they will corrupt the stack since they pop from the middle of the
+        # list and leave the rest.
         if self.undo_stack:
             restore_memento = self.undo_stack.pop(checkpoint_index)
             self.redo_stack.append(ss.memento())
@@ -46,6 +49,7 @@ class HistoricalStack:
 
         Returns True if successful, False if no redo states are available.
         """
+        #TODO: same problem as above
         if self.redo_stack:
             restore_memento = self.redo_stack.pop(checkpoint_index)
             self.undo_stack.append(ss.memento())
