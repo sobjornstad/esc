@@ -9,7 +9,7 @@ import curses.ascii
 import display
 from display import screen
 import menus
-from oops import InvalidNameError
+from oops import InvalidNameError, RollbackTransaction
 import history
 import registers
 import stack
@@ -88,6 +88,47 @@ def enter_new_number(ss):
     return r
 
 
+def _get_register_char():
+    "Retrieve a character representing a register."
+    status.expecting_register()
+    status.redraw()
+    return chr(fetch_input(True))
+
+
+def store_register(ss, registry):
+    """
+    Copy the bottom of the stack into a register of the user's choice.
+    """
+    with ss.transaction():
+        ss.enter_number()
+        reg_char = _get_register_char()
+        try:
+            registry[reg_char] = ss.bos
+        except InvalidNameError as e:
+            raise RollbackTransaction(str(e))
+        else:
+            screen().update_registers(registry)
+            status.ready()
+
+
+def retrieve_register(ss, registry):
+    """
+    Copy a register of the user's choice to a new item at the bottom of the
+    stack.
+    """
+    with ss.transaction():
+        ss.enter_number()
+        reg_char = _get_register_char()
+        try:
+            stack_item = registry[reg_char]
+        except KeyError:
+            raise RollbackTransaction(f"Register '{reg_char}' does not exist.")
+        else:
+            ss.push((stack_item,))
+            screen().refresh_stack(ss)
+            status.ready()
+
+
 def try_special(c, ss, registry):
     """
     Handle special values that aren't digits to be entered or
@@ -113,29 +154,9 @@ def try_special(c, ss, registry):
         else:
             status.error("Nothing to redo.")
     elif chr(c) == STORE_REG_CHARACTER:
-        status.expecting_register()
-        status.redraw()
-        reg_char: str = chr(fetch_input(True))
-        try:
-            registry[reg_char] = ss.bos
-        except InvalidNameError as e:
-            status.error(str(e))
-            return False
-        screen().update_registers(registry)
-        status.ready()
+        store_register(ss, registry)
     elif chr(c) == RETRIEVE_REG_CHARACTER:
-        status.expecting_register()
-        status.redraw()
-        reg_char = chr(fetch_input(True))
-        try:
-            stack_item = registry[reg_char]
-        except KeyError:
-            status.error(f"Register '{reg_char}' does not exist.")
-            return False
-        ss.push((stack_item,))
-        screen().update_registers(registry)
-        screen().refresh_stack(ss)
-        status.ready()
+        retrieve_register(ss, registry)
     else:
         return False
     return True

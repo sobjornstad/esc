@@ -16,3 +16,12 @@ class FunctionExecutionError(EscError):
 
 class InvalidNameError(EscError):
     pass
+
+
+class RollbackTransaction(Exception):
+    def __init__(self, status_message=None):
+        super().__init__()
+        self.status_message = status_message
+
+    def __str__(self):
+        return f"<RollbackTransaction: message {self.status_message}>"

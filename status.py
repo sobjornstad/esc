@@ -52,6 +52,7 @@ def in_menu():
     global _STATE
     # Preserve advisory or error markers;
     # these are more important than saying we're in a menu.
+    #TODO: Is this really necessary? I don't think it even actually does anything.
     _STATE &= (StatusState.ADVISORY | StatusState.ERROR)
     _STATE |= StatusState.IN_MENU
 

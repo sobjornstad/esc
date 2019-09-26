@@ -5,11 +5,13 @@ The stack is the heart of the RPN calculator; it's what all the functions
 operate on.
 """
 
+from contextlib import contextmanager
+import copy
 import decimal
 from decimal import Decimal
-import copy
 
 import history
+from oops import RollbackTransaction
 import status
 import util
 from consts import STACKDEPTH, STACKWIDTH
@@ -167,6 +169,7 @@ class StackState:
         if self._editing_last_item:
             status.entering_number()
         else:
+            pass
             status.ready()
 
     @property
@@ -316,3 +319,28 @@ class StackState:
         self.__dict__.clear()
         self.__dict__.update(memento)
         self.editing_last_item = self._editing_last_item  # force property logic to run
+
+    @contextmanager
+    def transaction(self):
+        """
+        Context manager to start a stack transaction. If an exception occurs
+        during the run, any changes made to the StackState will be rolled back
+        before re-raising the exception. Otherwise, changes will persist.
+
+        Raising the special exception RollbackTransaction causes the
+        transaction to be rolled back but no exception to be raised. In
+        addition, the message provided on RollbackTransaction will be set as
+        a status-bar error. It's difficult for the caller to do this
+        themselves because the act of rolling back will set the status to
+        "ready" or "insert".
+        """
+        checkpoint = self.memento()
+        try:
+            yield
+        except RollbackTransaction as e:
+            self.restore(checkpoint)
+            if e.status_message:
+                status.error(e.status_message)
+        except Exception:
+            self.restore(checkpoint)
+            raise

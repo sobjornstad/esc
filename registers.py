@@ -27,7 +27,7 @@ class Registry:
 
     @staticmethod
     def _valid_name(name: str):
-        return len(name) == 1 and name.isalnum()
+        return len(name) == 1 and name.isalpha()
 
     def items(self):
         return sorted(self.registers.items(), key=lambda i: i[0])
