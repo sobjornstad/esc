@@ -110,9 +110,8 @@ def store_register(ss, registry):
             registry[reg_char] = ss.bos
         except InvalidNameError as e:
             raise RollbackTransaction(str(e))
-        else:
-            screen().update_registers(registry)
-            status.ready()
+        screen().update_registers(registry)
+        status.ready()
 
 
 def retrieve_register(ss, registry):
@@ -127,11 +126,10 @@ def retrieve_register(ss, registry):
             stack_item = registry[reg_char]
         except KeyError:
             raise RollbackTransaction(f"Register '{reg_char}' does not exist.")
-        else:
-            if not ss.push((stack_item,)):
-                raise RollbackTransaction("Stack is full.")
-            screen().refresh_stack(ss)
-            status.ready()
+        if not ss.push((stack_item,)):
+            raise RollbackTransaction("Stack is full.")
+        screen().refresh_stack(ss)
+        status.ready()
 
 
 def delete_register(ss, registry):
@@ -145,9 +143,9 @@ def delete_register(ss, registry):
             del registry[reg_char]
         except KeyError:
             raise RollbackTransaction(f"Register '{reg_char}' does not exist.")
-        else:
-            screen().update_registers(registry)
-            status.ready()
+        screen().update_registers(registry)
+        status.ready()
+
 
 def try_special(c, ss, registry):
     """
