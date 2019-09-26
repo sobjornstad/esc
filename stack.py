@@ -142,6 +142,7 @@ class StackState:
     """
     def __init__(self):
         self.s = []
+        self.operation_history = []
         self.stack_posn = -1
         self.cursor_posn = 0
         self._editing_last_item = False
@@ -279,12 +280,18 @@ class StackState:
     def has_push_space(self, spaces):
         return STACKDEPTH >= len(self.s) + spaces
 
-    def push(self, vals):
+    def push(self, vals, description=None):
         """
         Push an iterable of numbers or StackItems onto the stack.
+
+        If a /description/ of the operation is specified, it will be recorded
+        for display as a step in the history pane.
         """
         if not self.has_push_space(len(vals)):
             return False
+
+        if description is not None:
+            self.operation_history.append(description)
 
         for i in vals:
             if isinstance(i, StackItem):

@@ -16,12 +16,16 @@ functions and submenus end up reachable from the main menu.
 from collections import OrderedDict
 import copy
 import decimal
+from enum import Enum
+import itertools
 
 from consts import (QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
                     RETRIEVE_REG_CHARACTER, STORE_REG_CHARACTER, DELETE_REG_CHARACTER)
 from display import screen
 import modes
 from oops import NotInMenuError, ProgrammingError, FunctionExecutionError
+
+BINOP = 'binop'
 
 
 class EscFunction:
@@ -115,15 +119,28 @@ class EscOperation(EscFunction):
     """
     A type of EscFunction that can be run to make some changes on the stack.
     """
-    def __init__(self, key, func, pop, push, description, menu):
+    def __init__(self, key, func, pop, push, description, menu, log_fmt_string=None):
         super().__init__(key, description)
         self.function = func
         self.pop = pop
         self.push = push
         self.parent = menu
+        self.log_fmt_string = log_fmt_string
 
     def __repr__(self):
         return f"<EscOperation '{self.key}': {self.description}"
+
+    def describe_operation(self, args, retvals):
+        """
+        Given the values popped from the stack (args) and the values pushed
+        back to the stack (retvals), return a string describing what was done.
+        """
+        if self.log_fmt_string is None:
+            return self.description
+        elif self.log_fmt_string == BINOP:
+            return f"{args[0]} {self.key} {args[1]} = {retvals[0]}"
+        else:
+            return self.log_fmt_string.format(*itertools.chain(args, retvals))
 
     def execute(self, access_key, ss):
         with ss.transaction():
@@ -136,7 +153,7 @@ class EscOperation(EscFunction):
             except ZeroDivisionError:
                 raise FunctionExecutionError(
                     "Sorry, division by zero is against the law.")
-            self.store_results(ss, retvals)
+            self.store_results(ss, args, retvals)
         #TODO: We want to put an entry in the HistoricalStack if successful.
         # We might also convert this to a context manager while we're at it.
         return None
@@ -174,7 +191,7 @@ class EscOperation(EscFunction):
 
         return args
 
-    def store_results(self, ss, return_values):
+    def store_results(self, ss, args, return_values):
         """
         Return the values computed by our function to the stack.
         """
@@ -196,7 +213,8 @@ class EscOperation(EscFunction):
                 else:
                     coerced_retvals.append(i)
 
-            ss.push(coerced_retvals)
+            #TODO: the description doesn't show up if return values is None and self.push is -1
+            ss.push(coerced_retvals, self.describe_operation(args, return_values))
 
 
 ### Constructor/registration functions to be used in functions.py ###
@@ -217,13 +235,13 @@ def Constant(value, key, description, menu):  # pylint: disable=invalid-name
     menu.register_child(op)
 
 
-def Function(key, menu, push, pop, description=None):  # pylint: disable=invalid-name
+def Function(key, menu, push, pop, description=None, log_as=None):  # pylint: disable=invalid-name
     """
     Decorator to register a function on a given menu.
     """
     def function_decorator(func):
         op = EscOperation(key=key, func=func, pop=pop, push=push,
-                          description=description, menu=menu)
+                          description=description, menu=menu, log_fmt_string=log_as)
         menu.register_child(op)
         return func
     return function_decorator

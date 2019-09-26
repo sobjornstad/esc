@@ -128,9 +128,19 @@ class HistoryWindow(Window):
 
     def __init__(self, scr):
         super().__init__(scr)
+        self.operations = []
+        self.refresh()
+
+    def update_history(self, ss):
+        self.operations = ss.operation_history[:]
+
+    def refresh(self):
+        self.window.clear()
         self.window.border()
         self.window.addstr(0, 13, "History")
-        self.refresh()
+        for yposn, description in enumerate(self.operations, 1):
+            self.window.addstr(yposn, 1, description)
+        super().refresh()
 
 
 class CommandsWindow(Window):
@@ -296,6 +306,13 @@ class EscScreen:
     def update_registers(self, registry):
         self.registersw.update_registry(registry)
         self.registersw.refresh()
+
+
+    ### History ###
+    def update_history(self, ss):
+        self.historyw.update_history(ss)
+        self.historyw.refresh()
+
 
 def screen():
     """

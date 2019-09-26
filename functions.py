@@ -9,7 +9,7 @@ import math
 
 from consts import CONSTANT_MENU_CHARACTER
 from display import screen
-from menus import Constant, Function, Menu, Mode, ModeChange, main_menu
+from menus import BINOP, Constant, Function, Menu, Mode, ModeChange, main_menu
 import modes
 import status
 
@@ -18,31 +18,31 @@ import status
 # BASIC OPERATIONS #
 ####################
 
-@Function('+', menu=main_menu, pop=2, push=1)
+@Function('+', menu=main_menu, pop=2, push=1, log_as=BINOP)
 def add(s):
     return s[0] + s[1]
 
-@Function('-', menu=main_menu, pop=2, push=1)
+@Function('-', menu=main_menu, pop=2, push=1, log_as=BINOP)
 def subtract(s):
     return s[0] - s[1]
 
-@Function('*', menu=main_menu, pop=2, push=1)
+@Function('*', menu=main_menu, pop=2, push=1, log_as=BINOP)
 def multiply(s):
     return s[0] * s[1]
 
-@Function('/', menu=main_menu, pop=2, push=1)
+@Function('/', menu=main_menu, pop=2, push=1, log_as=BINOP)
 def divide(s):
     return s[0] / s[1]
 
-@Function('^', menu=main_menu, pop=2, push=1)
+@Function('^', menu=main_menu, pop=2, push=1, log_as=BINOP)
 def exponentiate(s):
     return s[0] ** s[1]
 
-@Function('%', menu=main_menu, pop=2, push=1)
+@Function('%', menu=main_menu, pop=2, push=1, log_as=BINOP)
 def modulus(s):
     return s[0] * s[1]
 
-@Function('s', menu=main_menu, pop=1, push=1)
+@Function('s', menu=main_menu, pop=1, push=1, log_as="sqrt {0} = {1}")
 def sqrt(s):
     return math.sqrt(s[0])
 
@@ -51,23 +51,28 @@ def sqrt(s):
 # STACK OPERATIONS #
 ####################
 
-@Function('d', menu=main_menu, pop=1, push=2, description='duplicate bos')
+@Function('d', menu=main_menu, pop=1, push=2, description='duplicate bos',
+          log_as="duplicate {0}")
 def duplicate(s):
     return s[0], s[0]
 
-@Function('x', menu=main_menu, pop=2, push=2, description='exchange bos, sos')
+@Function('x', menu=main_menu, pop=2, push=2, description='exchange bos, sos',
+          log_as="{1} <=> {0}")
 def exchange(s):
     return s[1], s[0]
 
-@Function('p', menu=main_menu, pop=1, push=0, description='pop off bos')
+@Function('p', menu=main_menu, pop=1, push=0, description='pop off bos',
+          log_as="pop bos {0}")
 def pop(_):
     return None
 
-@Function('r', menu=main_menu, pop=-1, push=-1, description='roll off tos')
+@Function('r', menu=main_menu, pop=-1, push=-1, description='roll off tos',
+          log_as="roll off tos {0}")
 def roll(s):
     return [i.decimal for i in s[1:]]
 
-@Function('c', menu=main_menu, pop=-1, push=0, description='clear stack')
+@Function('c', menu=main_menu, pop=-1, push=0, description='clear stack',
+          log_as="clear stack")
 def clear(_):
     return None
 

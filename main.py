@@ -195,6 +195,7 @@ def main():
     while True:
         status.mark_seen()
         status.redraw()
+        screen().update_history(ss)
 
         if menu is None:
             menu = menus.main_menu
