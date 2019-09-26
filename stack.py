@@ -291,7 +291,7 @@ class StackState:
             return False
 
         if description is not None:
-            self.operation_history.append(description)
+            self.record_operation(description)
 
         for i in vals:
             if isinstance(i, StackItem):
@@ -315,6 +315,18 @@ class StackState:
         except Exception:
             self.restore(checkpoint)
             raise
+
+    def record_operation(self, description):
+        """
+        Record that an operation happened to the stack.
+
+        Typically this will be accomplished from the client by providing the
+        description as an argument to push() when pushing back results, but
+        the client may also wish to record an operation that doesn't push
+        anything (for instance, when clearing the stack, or mutating the
+        entire stack with a push=-1).
+        """
+        self.operation_history.append(description)
 
     def memento(self):
         """

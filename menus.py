@@ -213,8 +213,9 @@ class EscOperation(EscFunction):
                 else:
                     coerced_retvals.append(i)
 
-            #TODO: the description doesn't show up if return values is None and self.push is -1
             ss.push(coerced_retvals, self.describe_operation(args, return_values))
+        else:
+            ss.record_operation(self.describe_operation(args, ()))
 
 
 ### Constructor/registration functions to be used in functions.py ###
