@@ -278,13 +278,19 @@ class HelpWindow(Window):
                            textwrap.wrap(textwrap.dedent(self.docstring).strip(),
                                          self.width - 2 - len(indent)))
 
+        if self.results_info is not None:
+            rest = (
+                "",
+                "If you executed this command now...",
+                *(f"    {i}" for i in self.results_info))
+        else:
+            rest = (())
         display_iterable = itertools.chain(
             ("Description:",),
             docstring_lines,
             ("", "Signature:"),
             self.signature_info,
-            ("", "If you executed this command now..."),
-            (f"    {i}" for i in self.results_info)
+            rest
         )
         for yposn, text in enumerate(display_iterable, self.start_y+1):
             self.window.addstr(yposn, self.start_x + 1, text)

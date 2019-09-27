@@ -27,7 +27,7 @@ class InsufficientItemsError(FunctionExecutionError):
     a more useful message; a fallback message is provided in case this
     doesn't happen for some reason.
     """
-    def __init__(self, number_required=None, msg=None):
+    def __init__(self, number_required, msg=None):
         super().__init__()
         self.number_required = number_required
         self.msg = msg

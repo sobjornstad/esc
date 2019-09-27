@@ -53,7 +53,7 @@ class EscFunction:
         raise NotImplementedError
 
     def simulated_result(self, ss):
-        raise NotImplementedError
+        return None
 
     def execute(self, access_key, ss):
         raise NotImplementedError
@@ -79,8 +79,20 @@ class EscMenu(EscFunction):
                 ", ".join(repr(i) for i in self.children.values()) +
                 "]>")
 
+    @property
     def __doc__(self):
         return "This is the menu's help text. Feature not yet implemented."
+
+    @property
+    def help_title(self):
+        if self.description:
+            return f"{self.key} ({self.description})"
+        else:
+            return self.key
+
+    @property
+    def signature_info(self):
+        return ("    Type: Menu (categorizes operations)",)
 
     @property
     def is_main_menu(self):
@@ -173,7 +185,10 @@ class EscOperation(EscFunction):
             input_ = f"    Input: entire stack"
         else:
             input_ = f"    Input: {self.pop} {items} from the stack."
-        output = f"    Output: {self.push} {results} added to the stack."
+        if self.push < 1:
+            output = "    Output: no output"
+        else:
+            output = f"    Output: {self.push} {results} added to the stack."
         return (type_, input_, output)
 
     def simulated_result(self, ss):
@@ -188,9 +203,9 @@ class EscOperation(EscFunction):
             self.execute(None, ss)
             results = ss.s[-self.push:]
             operation_description = ss.last_operation
-        except InsufficientItemsError:
-            items = "item is" if self.pop == 1 else "items are"
-            return (f"An error would occur. (At least {self.pop} stack {items}",
+        except InsufficientItemsError as e:
+            items = "item is" if e.number_required == 1 else "items are"
+            return (f"An error would occur. (At least {e.number_required} stack {items}",
                     f"needed to run this function.)")
         except FunctionExecutionError:
             return ("An error would occur. (Most likely the values on ",
@@ -212,7 +227,7 @@ class EscOperation(EscFunction):
             assert pops_requested != -1  # caller needs to reset the value if it is
         pops = 'item' if pops_requested == 1 else 'items'
         msg = f"'{self.key}' needs at least {pops_requested} {pops} on stack."
-        return InsufficientItemsError(msg=msg)
+        return InsufficientItemsError(pops_requested, msg)
 
     def describe_operation(self, args, retvals):
         """
