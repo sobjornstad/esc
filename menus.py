@@ -119,13 +119,13 @@ class EscOperation(EscFunction):
     """
     A type of EscFunction that can be run to make some changes on the stack.
     """
-    def __init__(self, key, func, pop, push, description, menu, log_fmt_string=None):
+    def __init__(self, key, func, pop, push, description, menu, log_as=None):
         super().__init__(key, description)
         self.function = func
         self.pop = pop
         self.push = push
         self.parent = menu
-        self.log_fmt_string = log_fmt_string
+        self.log_as = log_as
 
     def __repr__(self):
         return f"<EscOperation '{self.key}': {self.description}"
@@ -144,12 +144,14 @@ class EscOperation(EscFunction):
         Given the values popped from the stack (args) and the values pushed
         back to the stack (retvals), return a string describing what was done.
         """
-        if self.log_fmt_string is None:
+        if self.log_as is None:
             return self.description
-        elif self.log_fmt_string == BINOP:
+        elif self.log_as == BINOP:
             return f"{args[0]} {self.key} {args[1]} = {retvals[0]}"
+        elif callable(self.log_as):
+            return self.log_as(args, retvals)
         else:
-            return self.log_fmt_string.format(*itertools.chain(args, retvals))
+            return self.log_as.format(*itertools.chain(args, retvals))
 
     def execute(self, access_key, ss):
         with ss.transaction():
@@ -249,7 +251,7 @@ def Function(key, menu, push, pop, description=None, log_as=None):  # pylint: di
     """
     def function_decorator(func):
         op = EscOperation(key=key, func=func, pop=pop, push=push,
-                          description=description, menu=menu, log_fmt_string=log_as)
+                          description=description, menu=menu, log_as=log_as)
         menu.register_child(op)
         return func
     return function_decorator

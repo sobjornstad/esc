@@ -196,6 +196,11 @@ def yankBos(s):
     status.advisory('"%s" placed on system clipboard.' % str(s[0]))
     return s[0] # return to stack
 
+@Function('S', menu=main_menu, pop=-1, push=1, description='sum entire stack',
+          log_as=(lambda _, retval: f"sum entire stack = {retval[0]}"))
+def sum_entire_stack(s):
+    return sum(i.decimal for i in s)
+
 @Function('T', menu=main_menu, pop=1, push=1, description='add MN sales tax')
 def addMnSalesTax(s):
     tax_rate = Decimal(.07375)
