@@ -8,7 +8,6 @@ to update the screen.
 import curses
 import itertools
 import textwrap
-import sys
 from typing import Sequence
 
 from consts import STACKDEPTH, STACKWIDTH, PROGRAM_NAME

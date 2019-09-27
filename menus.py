@@ -17,14 +17,13 @@ from collections import OrderedDict
 import copy
 import decimal
 import itertools
-import textwrap
 
 from consts import (QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
                     RETRIEVE_REG_CHARACTER, STORE_REG_CHARACTER, DELETE_REG_CHARACTER)
 from display import screen
 import modes
 from oops import (FunctionExecutionError, InsufficientItemsError, NotInMenuError,
-                  ProgrammingError, RollbackTransaction)
+                  ProgrammingError)
 
 BINOP = 'binop'
 UNOP = 'unop'
@@ -44,6 +43,10 @@ class EscFunction:
         self.description = description
         self.parent = None
         self.children = OrderedDict()
+
+    @property
+    def help_title(self):
+        raise NotImplementedError
 
     @property
     def signature_info(self):
@@ -165,7 +168,7 @@ class EscOperation(EscFunction):
     def signature_info(self):
         items = "item" if self.pop == 1 else "items"
         results = "result" if self.push == 1 else "results"
-        type_  = f"    Type: Function (performs calculations)"
+        type_ = f"    Type: Function (performs calculations)"
         if self.pop == -1:
             input_ = f"    Input: entire stack"
         else:
