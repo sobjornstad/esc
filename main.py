@@ -11,6 +11,7 @@ from consts import (UNDO_CHARACTER, REDO_CHARACTER, STORE_REG_CHARACTER,
                     RETRIEVE_REG_CHARACTER, DELETE_REG_CHARACTER, PRECISION)
 import display
 from display import screen
+from helpme import get_help
 import history
 import menus
 from oops import (FunctionExecutionError, InvalidNameError, NotInMenuError,
@@ -148,7 +149,7 @@ def delete_register(ss, registry):
         status.ready()
 
 
-def try_special(c, ss, registry):
+def try_special(c, ss, registry, menu):
     """
     Handle special values that aren't digits to be entered or
     functions/operations to be called, e.g., Enter, Backspace, and undo.
@@ -178,6 +179,8 @@ def try_special(c, ss, registry):
         retrieve_register(ss, registry)
     elif chr(c) == DELETE_REG_CHARACTER:
         delete_register(ss, registry)
+    elif c == curses.KEY_F1:
+        get_help(c, menu, ss)
     else:
         return False
     return True
@@ -223,7 +226,7 @@ def main():
                 continue
 
             # Or a special value like backspace or undo?
-            r = try_special(c, ss, registry)
+            r = try_special(c, ss, registry, menu)
             if r:
                 continue
         else:

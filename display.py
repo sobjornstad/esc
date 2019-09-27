@@ -6,6 +6,7 @@ to update the screen.
 """
 
 import curses
+import textwrap
 import sys
 
 from consts import STACKDEPTH, STACKWIDTH, PROGRAM_NAME
@@ -246,6 +247,29 @@ class RegistersWindow(Window):
         self.register_pairs = list(registry.items())
 
 
+class HelpWindow(Window):
+    "Temporary window displaying help messages."
+    width = StackWindow.width + HistoryWindow.width
+    start_x = StackWindow.start_x
+    start_y = StackWindow.start_y
+    heading = "Help"
+
+    def __init__(self, scr, msg, max_y):
+        self.height = max_y - 1
+        super().__init__(scr)
+        self.message = msg
+        self.refresh()
+
+    def refresh(self):
+        self.window.clear()
+        self.window.border()
+        message_lines = textwrap.wrap(textwrap.dedent(self.message).strip(),
+                                      self.width - 2)
+        for yposn, text in enumerate(message_lines, self.start_y):
+            self.window.addstr(yposn, self.start_x + 1, text)
+        super().refresh()
+
+
 class EscScreen:
     """
     Facade bringing together display functions for all of the windows.
@@ -257,6 +281,7 @@ class EscScreen:
         self.historyw = None
         self.commandsw = None
         self.registersw = None
+        self.helpw = None
         self._setup()
 
     def _setup(self):
@@ -276,6 +301,10 @@ class EscScreen:
         self.commandsw = CommandsWindow(self, max_y)
         self.registersw = RegistersWindow(self, max_y)
 
+    def refresh_all(self):
+        for i in (self.statusw, self.stackw, self.historyw, self.commandsw,
+                  self.registersw):
+            i.refresh()
 
     ### Status bar ###
     def set_status_char(self, c):
@@ -339,6 +368,15 @@ class EscScreen:
     def update_history(self, ss):
         self.historyw.update_history(ss)
         self.historyw.refresh()
+
+
+    ### Auxiliary windows ###
+    def show_help_window(self, msg):
+        max_y, _ = self.stdscr.getmaxyx()
+        self.helpw = HelpWindow(self, msg, max_y)
+        self.getch_status()
+        self.helpw = None
+        self.refresh_all()
 
 
 def screen():
