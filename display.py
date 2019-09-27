@@ -41,13 +41,15 @@ class StatusWindow(Window):
     height = 1
     start_x = 0
     start_y = 0
+    status_start = 16
+    max_width = 80
 
     def __init__(self, scr, max_x):
         self.width = max_x
         super().__init__(scr)
 
         self.status_char = ' '
-        self.status_msg = ''
+        self._status_msg = ''
 
         self.window.addstr(0, 0, (' ' * 79), curses.color_pair(1))
         self.window.addstr(0, 0, f"[{self.status_char}] {PROGRAM_NAME} |",
@@ -55,10 +57,18 @@ class StatusWindow(Window):
         self.window.move(0, 1)
         self.refresh()
 
+    @property
+    def status_msg(self):
+        return self._status_msg
+
+    @status_msg.setter
+    def status_msg(self, msg):
+        self._status_msg = truncate(msg, self.max_width - self.status_start)
+
     def refresh(self):
         self.window.addstr(0, 1, self.status_char, curses.color_pair(1))
-        self.window.addstr(0, 16, ' ' * (79 - 15), curses.color_pair(1))
-        self.window.addstr(0, 16, self.status_msg, curses.color_pair(1))
+        self.window.addstr(0, self.status_start, ' ' * (79 - 15), curses.color_pair(1))
+        self.window.addstr(0, self.status_start, self.status_msg, curses.color_pair(1))
         super().refresh()
 
     def emplace_cursor(self):
