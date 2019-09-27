@@ -26,6 +26,7 @@ import modes
 from oops import NotInMenuError, ProgrammingError, FunctionExecutionError, InsufficientItemsError
 
 BINOP = 'binop'
+UNOP = 'unop'
 
 
 class EscFunction:
@@ -146,6 +147,8 @@ class EscOperation(EscFunction):
         """
         if self.log_as is None:
             return self.description
+        elif self.log_as == UNOP:
+            return f"{self.description} {args[0]} = {retvals[0]}"
         elif self.log_as == BINOP:
             return f"{args[0]} {self.key} {args[1]} = {retvals[0]}"
         elif callable(self.log_as):

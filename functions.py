@@ -8,8 +8,7 @@ from decimal import Decimal
 import math
 
 from consts import CONSTANT_MENU_CHARACTER
-from display import screen
-from menus import BINOP, Constant, Function, Menu, Mode, ModeChange, main_menu
+from menus import UNOP, BINOP, Constant, Function, Menu, Mode, ModeChange, main_menu
 import modes
 from oops import InsufficientItemsError
 import status
@@ -74,8 +73,7 @@ def roll(s):
         raise InsufficientItemsError(number_required=1)
     return [i.decimal for i in s[1:]]
 
-@Function('c', menu=main_menu, pop=-1, push=0, description='clear stack',
-          log_as="clear stack")
+@Function('c', menu=main_menu, pop=-1, push=0, description='clear stack')
 def clear(s):
     if not s:
         raise InsufficientItemsError(number_required=1)
@@ -115,27 +113,27 @@ def trig_wrapper(s, func, arc=False):
         ret = math.degrees(ret)
     return ret
 
-@Function('s', menu=trig_menu, pop=1, push=1, description='sine')
+@Function('s', menu=trig_menu, pop=1, push=1, description='sine', log_as=UNOP)
 def sine(s):
     return trig_wrapper(s, math.sin)
 
-@Function('c', menu=trig_menu, pop=1, push=1, description='cosine')
+@Function('c', menu=trig_menu, pop=1, push=1, description='cosine', log_as=UNOP)
 def cosine(s):
     return trig_wrapper(s, math.cos)
 
-@Function('t', menu=trig_menu, pop=1, push=1, description='tangent')
+@Function('t', menu=trig_menu, pop=1, push=1, description='tangent', log_as=UNOP)
 def tangent(s):
     return trig_wrapper(s, math.tan)
 
-@Function('i', menu=trig_menu, pop=1, push=1, description='arc sin')
+@Function('i', menu=trig_menu, pop=1, push=1, description='arc sin', log_as=UNOP)
 def arc_sine(s):
     return trig_wrapper(s, math.sin)
 
-@Function('o', menu=trig_menu, pop=1, push=1, description='arc cos')
+@Function('o', menu=trig_menu, pop=1, push=1, description='arc cos', log_as=UNOP)
 def arc_cosine(s):
     return trig_wrapper(s, math.cos)
 
-@Function('a', menu=trig_menu, pop=1, push=1, description='arc tan')
+@Function('a', menu=trig_menu, pop=1, push=1, description='arc tan', log_as=UNOP)
 def arc_tangent(s):
     return trig_wrapper(s, math.tan)
 
@@ -153,21 +151,26 @@ ModeChange(key='r', description='radians', menu=trig_menu, mode_name=TRIG_MODE_N
 
 log_menu = Menu('l', 'log menu', parent=main_menu)
 
-@Function('l', menu=log_menu, pop=1, push=1, description='log x')
+@Function('l', menu=log_menu, pop=1, push=1, description='log x',
+          log_as="log {0} = {1}")
 def log(s):
     return s[0].log10()
 
-@Function('1', menu=log_menu, pop=1, push=1, description='10^x')
+@Function('1', menu=log_menu, pop=1, push=1, description='10^x',
+          log_as="10^{0} = {1}")
 def tentothex(s):
     return 10 ** s[0]
 
-@Function('n', menu=log_menu, pop=1, push=1, description='ln x')
+@Function('n', menu=log_menu, pop=1, push=1, description='ln x',
+          log_as="ln {0} = {1}")
 def ln(s):
     return s[0].ln()
 
-@Function('n', menu=log_menu, pop=1, push=1, description='e^x')
+@Function('n', menu=log_menu, pop=1, push=1, description='e^x',
+          log_as="e^{0} = {1}")
 def etothex(s):
     return s[0].exp()
+
 
 #############
 # CONSTANTS #
