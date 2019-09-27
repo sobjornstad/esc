@@ -8,7 +8,7 @@ import curses.ascii
 import decimal
 
 from consts import (UNDO_CHARACTER, REDO_CHARACTER, STORE_REG_CHARACTER,
-                    RETRIEVE_REG_CHARACTER, DELETE_REG_CHARACTER)
+                    RETRIEVE_REG_CHARACTER, DELETE_REG_CHARACTER, PRECISION)
 import display
 from display import screen
 import history
@@ -183,6 +183,15 @@ def try_special(c, ss, registry):
     return True
 
 
+def setup_decimal_context():
+    """
+    Set up the Context for decimal arithmetic for this thread.
+    """
+    context = decimal.getcontext()
+    context.prec = PRECISION
+    context.traps[decimal.Overflow] = 0  # return infinity
+
+
 def main():
     """
     Where the magic happens. Initializes the important constructs and manages
@@ -191,7 +200,7 @@ def main():
     ss = stack.StackState()
     registry = registers.Registry()
     menu = None
-    decimal.getcontext().prec = 12
+    setup_decimal_context()
 
     # Main loop.
     while True:

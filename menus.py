@@ -168,6 +168,9 @@ class EscOperation(EscFunction):
             except ZeroDivisionError:
                 raise FunctionExecutionError(
                     "Sorry, division by zero is against the law.")
+            except decimal.InvalidOperation:
+                raise FunctionExecutionError(
+                    "That operation is not defined by the rules of arithmetic.")
             except InsufficientItemsError as e:
                 raise self._insufficient_items_on_stack(e.number_required)
             self.store_results(ss, args, retvals)
