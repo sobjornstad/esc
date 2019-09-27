@@ -20,31 +20,37 @@ import status
 
 @Function('+', menu=main_menu, pop=2, push=1, log_as=BINOP)
 def add(s):
-    "Add two numbers together."
+    "Add sos and bos."
     return s[0] + s[1]
 
 @Function('-', menu=main_menu, pop=2, push=1, log_as=BINOP)
 def subtract(s):
+    "Subtract bos from sos."
     return s[0] - s[1]
 
 @Function('*', menu=main_menu, pop=2, push=1, log_as=BINOP)
 def multiply(s):
+    "Multiply sos and bos."
     return s[0] * s[1]
 
 @Function('/', menu=main_menu, pop=2, push=1, log_as=BINOP)
 def divide(s):
+    "Divide sos by bos."
     return s[0] / s[1]
 
 @Function('^', menu=main_menu, pop=2, push=1, log_as=BINOP)
 def exponentiate(s):
+    "Take sos to the power of bos."
     return s[0] ** s[1]
 
 @Function('%', menu=main_menu, pop=2, push=1, log_as=BINOP)
 def modulus(s):
+    "Take the remainder of sos divided by bos (a.k.a., sos mod bos)."
     return s[0] % s[1]
 
 @Function('s', menu=main_menu, pop=1, push=1, log_as="sqrt {0} = {1}")
 def sqrt(s):
+    "Take the square root of bos."
     return math.sqrt(s[0])
 
 
@@ -55,29 +61,41 @@ def sqrt(s):
 @Function('d', menu=main_menu, pop=1, push=2, description='duplicate bos',
           log_as="duplicate {0}")
 def duplicate(s):
+    """
+    Duplicate bos into a new stack entry. Useful if you want to hang onto the
+    value for another calculation later.
+    """
     return s[0], s[0]
 
 @Function('x', menu=main_menu, pop=2, push=2, description='exchange bos, sos',
           log_as="{1} <=> {0}")
 def exchange(s):
+    """
+    Swap bos and sos. Useful if you enter numbers in the wrong order or when
+    you need to divide a more recent result by an older one.
+    """
     return s[1], s[0]
 
 @Function('p', menu=main_menu, pop=1, push=0, description='pop off bos',
           log_as="pop bos {0}")
 def pop(_):
+    "Remove and discard the bottom item from the stack."
     return None
 
 @Function('r', menu=main_menu, pop=-1, push=-1, description='roll off tos',
           log_as="roll off tos {0}")
 def roll(s):
-    "Remove the top item from the stack."
+    "Remove and discard the top item from the stack."
     if not s:
         raise InsufficientItemsError(number_required=1)
     return [i.decimal for i in s[1:]]
 
 @Function('c', menu=main_menu, pop=-1, push=0, description='clear stack')
 def clear(s):  #pylint: disable=useless-return
-    "Clear all items from the stack."
+    """
+    Clear all items from the stack, giving you a clean slate but maintaining
+    your calculation history.
+    """
     if not s:
         raise InsufficientItemsError(number_required=1)
     return None
@@ -118,26 +136,50 @@ def trig_wrapper(s, func, arc=False):
 
 @Function('s', menu=trig_menu, pop=1, push=1, description='sine', log_as=UNOP)
 def sine(s):
+    """
+    Take the sine of bos. Affected by the mode 'degrees' or 'radians'
+    shown in the trig menu.
+    """
     return trig_wrapper(s, math.sin)
 
 @Function('c', menu=trig_menu, pop=1, push=1, description='cosine', log_as=UNOP)
 def cosine(s):
+    """
+    Take the cosine of bos. Affected by the mode 'degrees' or 'radians'
+    shown in the trig menu.
+    """
     return trig_wrapper(s, math.cos)
 
 @Function('t', menu=trig_menu, pop=1, push=1, description='tangent', log_as=UNOP)
 def tangent(s):
+    """
+    Take the tangent of bos. Affected by the mode 'degrees' or 'radians'
+    shown in the trig menu.
+    """
     return trig_wrapper(s, math.tan)
 
 @Function('i', menu=trig_menu, pop=1, push=1, description='arc sin', log_as=UNOP)
 def arc_sine(s):
+    """
+    Take the arc sine (a.k.a., inverse sine) of bos. Affected by the mode
+    'degrees' or 'radians' shown in the trig menu.
+    """
     return trig_wrapper(s, math.sin)
 
 @Function('o', menu=trig_menu, pop=1, push=1, description='arc cos', log_as=UNOP)
 def arc_cosine(s):
+    """
+    Take the arc cosine (a.k.a., inverse cosine) of bos. Affected by the mode
+    'degrees' or 'radians' shown in the trig menu.
+    """
     return trig_wrapper(s, math.cos)
 
 @Function('a', menu=trig_menu, pop=1, push=1, description='arc tan', log_as=UNOP)
 def arc_tangent(s):
+    """
+    Take the arc cosine (a.k.a., inverse cosine) of bos. Affected by the mode
+    'degrees' or 'radians' shown in the trig menu.
+    """
     return trig_wrapper(s, math.tan)
 
 Mode(name=TRIG_MODE_NAME, default_value='radians',
@@ -157,21 +199,25 @@ log_menu = Menu('l', 'log menu', parent=main_menu)
 @Function('l', menu=log_menu, pop=1, push=1, description='log x',
           log_as="log {0} = {1}")
 def log(s):
+    "Take the base-10 logarithm of bos."
     return s[0].log10()
 
 @Function('1', menu=log_menu, pop=1, push=1, description='10^x',
           log_as="10^{0} = {1}")
 def tentothex(s):
+    "Take 10 to the power of bos."
     return 10 ** s[0]
 
 @Function('n', menu=log_menu, pop=1, push=1, description='ln x',
           log_as="ln {0} = {1}")
 def ln(s):
+    "Take the base-e natural logarithm of bos."
     return s[0].ln()
 
 @Function('n', menu=log_menu, pop=1, push=1, description='e^x',
           log_as="e^{0} = {1}")
 def etothex(s):
+    "Take e to the power of bos."
     return s[0].exp()
 
 
@@ -192,9 +238,11 @@ Constant(math.e, 'e', description='e', menu=constants_menu)
           log_as="yank {0} to clipboard")
 def yank_bos(s):
     """
-    Use xsel to yank bottom of stack. This probably only works on Unix-like
-    systems.
+    Use the 'xsel' command to copy the value of bos to your system clipboard.
+    This probably only works on Unix-like systems, and only with a running X
+    server.
     """
+    #TODO: Make this work on Mac and Windows, there are appropriate shell functions.
     # help from: http://stackoverflow.com/questions/7606062/
     # is-there-a-way-to-directly-send-a-python-output-to-clipboard
     from subprocess import Popen, PIPE
@@ -206,6 +254,9 @@ def yank_bos(s):
 @Function('S', menu=main_menu, pop=-1, push=1, description='sum entire stack',
           log_as=(lambda _, retval: f"sum entire stack = {retval[0]}"))
 def sum_entire_stack(s):
+    "Sum every item on the stack into one value."
+    if not s:
+        raise InsufficientItemsError(number_required=2)
     return sum(i.decimal for i in s)
 
 @Function('T', menu=main_menu, pop=1, push=1, description='add MN sales tax',
@@ -219,4 +270,5 @@ def add_mn_sales_tax(s):
 @Function('I', menu=main_menu, pop=1, push=1,
           description='increment the value on the bottom', log_as=UNOP)
 def increment(s):
+    "Add 1 to bos."
     return s + 1
