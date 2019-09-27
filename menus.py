@@ -16,6 +16,7 @@ functions and submenus end up reachable from the main menu.
 from collections import OrderedDict
 import copy
 import decimal
+from inspect import signature, Parameter
 import itertools
 
 from consts import (QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
@@ -52,7 +53,7 @@ class EscFunction:
     def signature_info(self):
         raise NotImplementedError
 
-    def simulated_result(self, ss):
+    def simulated_result(self, ss):  # pylint: disable=no-self-use, unused-argument
         return None
 
     def execute(self, access_key, ss):
@@ -197,7 +198,7 @@ class EscOperation(EscFunction):
         change the state -- instead, provide a description of what would
         happen.
         """
-        used_args = ss.s[-self.pop:]
+        used_args = ss.s[-self.pop:] if self.pop != -1 else ss.s[:]
         checkpoint = ss.memento()
         try:
             self.execute(None, ss)
@@ -249,7 +250,7 @@ class EscOperation(EscFunction):
         with ss.transaction():
             args = self.retrieve_arguments(ss)
             try:
-                retvals = self.function(args)
+                retvals = self.function(*args)
             except ValueError:
                 # illegal operation; restore original args to stack and return
                 raise FunctionExecutionError("Domain error! Stack unchanged.")
@@ -286,7 +287,7 @@ class EscOperation(EscFunction):
 
         if self.pop == -1:
             # Whole stack requested; will push the whole stack back later.
-            args = copy.deepcopy(ss.s)
+            args = [i.decimal for i in ss.s]
             ss.clear()
         else:
             args = ss.pop(self.pop)
@@ -309,7 +310,7 @@ class EscOperation(EscFunction):
                 if not isinstance(i, decimal.Decimal):
                     try:
                         coerced_retvals.append(decimal.Decimal(i))
-                    except decimal.InvalidOperation as e:
+                    except (decimal.InvalidOperation, TypeError) as e:
                         raise ProgrammingError(
                             "An esc function returned a value that cannot be "
                             "converted to a Decimal. The original error message is as "
@@ -341,15 +342,27 @@ def Constant(value, key, description, menu):  # pylint: disable=invalid-name
     menu.register_child(op)
 
 
-def Function(key, menu, push, pop, description=None, log_as=None):  # pylint: disable=invalid-name
+def Function(key, menu, push, description=None, log_as=None):  # pylint: disable=invalid-name
     """
     Decorator to register a function on a given menu.
     """
     def function_decorator(func):
+        sig = signature(func)
+        parms = sig.parameters.values()
+        bind_all = [i for i in parms if i.kind == Parameter.VAR_POSITIONAL]
+        pop = len(parms) if not bind_all else -1
+
         op = EscOperation(key=key, func=func, pop=pop, push=push,
                           description=description, menu=menu, log_as=log_as)
         menu.register_child(op)
-        return func
+
+        def wrapper(stack):
+            if bind_all:
+                return func(*stack)
+            else:
+                stack_slice = stack[-(len(parms)):]
+                return func(*stack_slice)
+        return wrapper
     return function_decorator
 
 
