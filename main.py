@@ -180,7 +180,7 @@ def try_special(c, ss, registry, menu):
     elif chr(c) == DELETE_REG_CHARACTER:
         delete_register(ss, registry)
     elif c == curses.KEY_F1:
-        get_help(c, menu, ss)
+        get_help('+', menu, ss)
     else:
         return False
     return True

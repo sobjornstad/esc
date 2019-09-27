@@ -6,8 +6,10 @@ to update the screen.
 """
 
 import curses
+import itertools
 import textwrap
 import sys
+from typing import Sequence
 
 from consts import STACKDEPTH, STACKWIDTH, PROGRAM_NAME
 from util import truncate, quit_if_screen_too_small, centered_position
@@ -254,19 +256,43 @@ class HelpWindow(Window):
     start_y = StackWindow.start_y
     heading = "Help"
 
-    def __init__(self, scr, msg, max_y):
+    def __init__(self, scr, help_title, signature_info, docstring,
+                 results_info, max_y):
         self.height = max_y - 1
         super().__init__(scr)
-        self.message = msg
+        self.help_title = help_title
+        self.signature_info = signature_info
+        self.docstring = docstring
+        self.results_info = results_info
         self.refresh()
 
     def refresh(self):
         self.window.clear()
         self.window.border()
-        message_lines = textwrap.wrap(textwrap.dedent(self.message).strip(),
-                                      self.width - 2)
-        for yposn, text in enumerate(message_lines, self.start_y):
-            self.window.addstr(yposn, self.start_x + 1, text)
+        self.window.addstr(self.start_y,
+                           centered_position(self.help_title, self.width),
+                           self.help_title,
+                           curses.color_pair(2))
+
+        indent = "    "
+        docstring_lines = (indent + i for i in
+                           textwrap.wrap(textwrap.dedent(self.docstring).strip(),
+                                         self.width - 2 - len(indent)))
+
+        display_iterable = itertools.chain(
+            ("Description:",),
+            docstring_lines,
+            ("", "Signature:"),
+            self.signature_info,
+            self.results_info
+        )
+        for yposn, text in enumerate(display_iterable, self.start_y+1):
+            try:
+                self.window.addstr(yposn, self.start_x + 1, text)
+            except curses.error:
+                curses.endwin()
+                print(text)
+                raise SystemExit()
         super().refresh()
 
 
@@ -371,9 +397,11 @@ class EscScreen:
 
 
     ### Auxiliary windows ###
-    def show_help_window(self, msg):
+    def show_help_window(self, help_title: str, signature_info: Sequence[str],
+                         docstring: str, results_info: Sequence[str]) -> None:
         max_y, _ = self.stdscr.getmaxyx()
-        self.helpw = HelpWindow(self, msg, max_y)
+        self.helpw = HelpWindow(self, help_title, signature_info, docstring,
+                                results_info, max_y)
         self.getch_status()
         self.helpw = None
         self.refresh_all()

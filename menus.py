@@ -17,6 +17,7 @@ from collections import OrderedDict
 import copy
 import decimal
 import itertools
+import textwrap
 
 from consts import (QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
                     RETRIEVE_REG_CHARACTER, STORE_REG_CHARACTER, DELETE_REG_CHARACTER)
@@ -44,10 +45,15 @@ class EscFunction:
         self.parent = None
         self.children = OrderedDict()
 
-    # pylint: disable=unused-argument, no-self-use
-    # not sure why pylint is so unable to recognize this is an abstract method
+    @property
+    def signature_info(self):
+        raise NotImplementedError
+
+    def simulated_result(self, ss):
+        raise NotImplementedError
+
     def execute(self, access_key, ss):
-        return NotImplementedError
+        raise NotImplementedError
 
     def register_child(self, child):
         """
@@ -69,6 +75,9 @@ class EscMenu(EscFunction):
         return (f"<EscMenu '{self.key}': [" +
                 ", ".join(repr(i) for i in self.children.values()) +
                 "]>")
+
+    def __doc__(self):
+        return "This is the menu's help text. Feature not yet implemented."
 
     @property
     def is_main_menu(self):
@@ -98,6 +107,17 @@ class EscMenu(EscFunction):
             if i.description:
                 yield i
 
+    def child(self, access_key):
+        """
+        Return the child defined by /access_key/. Raises NotInMenuError
+        if it doesn't exist.
+        """
+        try:
+            return self.children[access_key]
+        except KeyError:
+            raise NotInMenuError(
+                f"There's no option '{access_key}' in this menu.")
+
     def execute(self, access_key, ss):
         if access_key == QUIT_CHARACTER:
             if self.is_main_menu:
@@ -105,12 +125,7 @@ class EscMenu(EscFunction):
             else:
                 return self.parent
 
-        try:
-            child = self.children[access_key]
-        except KeyError:
-            raise NotInMenuError(
-                f"There's no option '{access_key}' in this menu.")
-
+        child = self.child(access_key)
         if isinstance(child, EscMenu):
             return child
         else:
@@ -131,6 +146,26 @@ class EscOperation(EscFunction):
 
     def __repr__(self):
         return f"<EscOperation '{self.key}': {self.description}"
+
+    @property
+    def __doc__(self):
+        return self.function.__doc__ if self.function.__doc__ is not None else ""
+
+    @property
+    def help_title(self):
+        return f"{self.key} ({self.description})"
+
+    @property
+    def signature_info(self):
+        items = "item" if self.pop == 1 else "items"
+        results = "result" if self.push == 1 else "results"
+        signature = (f"    Type: Function (performs calculations)",
+                     f"    Input: {self.pop} {items} from the stack.",
+                     f"    Output: {self.push} {results} added to the stack.")
+        return signature
+
+    def simulated_result(self, ss):
+        return ""
 
     def _insufficient_items_on_stack(self, pops_requested=None):
         "Call for a FunctionExecutionError() if the stack is too empty."

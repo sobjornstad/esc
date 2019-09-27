@@ -20,6 +20,7 @@ import status
 
 @Function('+', menu=main_menu, pop=2, push=1, log_as=BINOP)
 def add(s):
+    "Add two numbers together."
     return s[0] + s[1]
 
 @Function('-', menu=main_menu, pop=2, push=1, log_as=BINOP)
@@ -215,6 +216,7 @@ def add_mn_sales_tax(s):
     tax = tax_rate * s[0]
     return s[0] + tax
 
-@Function('I', menu=main_menu, pop=1, push=1, description='increment the value on the bottom', log_as=UNOP)
+@Function('I', menu=main_menu, pop=1, push=1,
+          description='increment the value on the bottom', log_as=UNOP)
 def increment(s):
     return s + 1
