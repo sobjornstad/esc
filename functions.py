@@ -187,7 +187,8 @@ Constant(math.e, 'e', description='e', menu=constants_menu)
 # MISCELLANEOUS #
 #################
 
-@Function('y', menu=main_menu, pop=1, push=1, description='yank bos to cboard')
+@Function('y', menu=main_menu, pop=1, push=1, description='yank bos to cboard',
+          log_as="yank {0} to clipboard")
 def yank_bos(s):
     """
     Use xsel to yank bottom of stack. This probably only works on Unix-like
