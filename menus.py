@@ -165,10 +165,13 @@ class EscOperation(EscFunction):
     def signature_info(self):
         items = "item" if self.pop == 1 else "items"
         results = "result" if self.push == 1 else "results"
-        signature = (f"    Type: Function (performs calculations)",
-                     f"    Input: {self.pop} {items} from the stack.",
-                     f"    Output: {self.push} {results} added to the stack.")
-        return signature
+        type_  = f"    Type: Function (performs calculations)"
+        if self.pop == -1:
+            input_ = f"    Input: entire stack"
+        else:
+            input_ = f"    Input: {self.pop} {items} from the stack."
+        output = f"    Output: {self.push} {results} added to the stack."
+        return (type_, input_, output)
 
     def simulated_result(self, ss):
         """
@@ -181,8 +184,14 @@ class EscOperation(EscFunction):
         try:
             self.execute(None, ss)
             results = ss.s[-self.push:]
-            end_of_stack = ss.s[-(self.pop + 1):]
             operation_description = ss.last_operation
+        except InsufficientItemsError:
+            items = "item is" if self.pop == 1 else "items are"
+            return (f"An error would occur. (At least {self.pop} stack {items}",
+                    f"needed to run this function.)")
+        except FunctionExecutionError:
+            return ("An error would occur. (Most likely the values on ",
+                    "the stack are not valid.)")
         finally:
             ss.restore(checkpoint)
 
@@ -191,9 +200,7 @@ class EscOperation(EscFunction):
                 f"The following stack items would be consumed:",
                 *(f"    {i}" for i in used_args),
                 f"The following results would be returned:",
-                *(f"    {i}" for i in results),
-                f"The last {len(end_of_stack)} items on the stack would be:",
-                *(f"    {i.string}" for i in end_of_stack))
+                *(f"    {i}" for i in results))
 
     def _insufficient_items_on_stack(self, pops_requested=None):
         "Call for a FunctionExecutionError() if the stack is too empty."
@@ -202,7 +209,7 @@ class EscOperation(EscFunction):
             assert pops_requested != -1  # caller needs to reset the value if it is
         pops = 'item' if pops_requested == 1 else 'items'
         msg = f"'{self.key}' needs at least {pops_requested} {pops} on stack."
-        return FunctionExecutionError(msg)
+        return InsufficientItemsError(msg=msg)
 
     def describe_operation(self, args, retvals):
         """
@@ -257,7 +264,7 @@ class EscOperation(EscFunction):
             num_short = self.push - self.pop - ss.free_stack_spaces
             spaces = 'space' if num_short == 1 else 'spaces'
             msg = f"'{self.key}': stack is too full (short {num_short} {spaces})."
-            raise FunctionExecutionError(msg)
+            raise InsufficientItemsError(msg)
 
         if self.pop == -1:
             # Whole stack requested; will push the whole stack back later.

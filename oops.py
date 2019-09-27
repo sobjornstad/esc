@@ -17,14 +17,26 @@ class FunctionExecutionError(EscError):
 class InvalidNameError(EscError):
     pass
 
-class InsufficientItemsError(EscError):
+class InsufficientItemsError(FunctionExecutionError):
     """
     Raised by functions that use pop=-1 to indicate not enough items are on
     the stack to finish their work.
+
+    The function should raise an exception using the number_required
+    constructor parameter. The menu will normally reraise the exception with
+    a more useful message; a fallback message is provided in case this
+    doesn't happen for some reason.
     """
-    def __init__(self, number_required):
+    def __init__(self, number_required=None, msg=None):
         super().__init__()
         self.number_required = number_required
+        self.msg = msg
+
+    def __str__(self):
+        if self.msg:
+            return self.msg
+        else:
+            return f"Insufficient items: needs at least {self.number_required}"
 
 
 class RollbackTransaction(Exception):
