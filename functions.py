@@ -198,5 +198,6 @@ def yankBos(s):
 
 @Function('T', menu=main_menu, pop=1, push=1, description='add MN sales tax')
 def addMnSalesTax(s):
-    tax = Decimal(.07375) * s[0]
+    tax_rate = Decimal(.07375)
+    tax = tax_rate * s[0]
     return s[0] + tax
