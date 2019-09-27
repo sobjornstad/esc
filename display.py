@@ -9,7 +9,7 @@ import curses
 import sys
 
 from consts import STACKDEPTH, STACKWIDTH, PROGRAM_NAME
-from util import truncate, quit_if_screen_too_small
+from util import truncate, quit_if_screen_too_small, centered_position
 
 # pylint: disable=invalid-name
 _screen = None
@@ -21,13 +21,21 @@ class Window:
     height = None
     start_x = None
     start_y = None
+    heading = None
 
     def __init__(self, scr):
         self.scr = scr
         self.window = curses.newwin(self.height, self.width, self.start_y, self.start_x)
+        self.window.keypad(True)
+
+    def _display_heading(self):
+        if self.heading is not None:
+            x_posn = centered_position(self.heading, self.width)
+            self.window.addstr(0, x_posn, self.heading)
 
     def refresh(self):
         if self.window is not None:
+            self._display_heading()
             self.window.refresh()
 
     def getch(self):
@@ -88,19 +96,18 @@ class StackWindow(Window):
     height = 3 + STACKDEPTH
     start_x = 0
     start_y = 1
+    heading = "Stack"
 
     def __init__(self, scr):
         super().__init__(scr)
         self.ss = None
 
         self.window.border()
-        self.window.addstr(0, 9, "Stack")
         self.refresh()
 
     def refresh(self):
         self.window.clear()
         self.window.border()
-        self.window.addstr(0, 9, "Stack")
         if self.ss:
             for index, stack_item in enumerate(self.ss):
                 self.window.addstr(1 + index, 1, str(stack_item))
@@ -138,6 +145,7 @@ class HistoryWindow(Window):
     height = 3 + STACKDEPTH
     start_x = 24
     start_y = 1
+    heading = "History"
 
     def __init__(self, scr):
         super().__init__(scr)
@@ -150,7 +158,6 @@ class HistoryWindow(Window):
     def refresh(self):
         self.window.clear()
         self.window.border()
-        self.window.addstr(0, 13, "History")
 
         available_lines = self.height - 2
         visible_operations = self.operations[-available_lines:]
@@ -166,6 +173,7 @@ class CommandsWindow(Window):
     width = 24
     start_x = 56
     start_y = 1
+    heading = "Commands"
 
     def __init__(self, scr, max_y):
         self.height = max_y - 1
@@ -176,7 +184,6 @@ class CommandsWindow(Window):
     def refresh(self):
         self.window.clear()
         self.window.border()
-        self.window.addstr(0, 8, "Commands")
 
         # TODO: This is desperately ugly and is intended to be a hack until
         # commands are objects we can introspect.
@@ -196,12 +203,10 @@ class CommandsWindow(Window):
 
     def add_menu(self, text, yposn):
         text = "(%s)" % text
-        ctrxpos = (STACKWIDTH - len(text)) // 2 + 1
-        self.add_command('', text, yposn, ctrxpos)
+        self.add_command('', text, yposn, centered_position(text, STACKWIDTH))
 
     def add_mode_display(self, text, yposn):
-        ctrxpos = (STACKWIDTH - len(text)) // 2 + 1
-        self.add_command('', text, yposn, ctrxpos)
+        self.add_command('', text, yposn, centered_position(text, STACKWIDTH))
 
     def add_command(self, char, descr, yposn, xposn):
         self.commands.append((yposn, xposn, char, curses.color_pair(2), descr))
@@ -215,6 +220,7 @@ class RegistersWindow(Window):
     width = 56
     start_x = 0
     start_y = 4 + STACKDEPTH
+    heading = "Registers"
 
     def __init__(self, scr, max_y):
         self.height = max_y - 1 - (3 + STACKDEPTH)
@@ -225,7 +231,6 @@ class RegistersWindow(Window):
     def refresh(self):
         self.window.clear()
         self.window.border()
-        self.window.addstr(0, 24, "Registers")
 
         for yposn, (register, stack_item) in enumerate(self.register_pairs, 1):
             assert len(register) == 1

@@ -51,3 +51,11 @@ def quit_if_screen_too_small(max_y, max_x):
             f"{REQUIRED_TERM_WIDTH}x{REQUIRED_TERM_HEIGHT} terminal "
             f"(this terminal is {max_x}x{max_y}).\n")
         sys.exit(1)
+
+
+def centered_position(text: str, width: int) -> int:
+    """
+    Return the integer column to start writing a string /text/ at to
+    center it within a window of width /width/.
+    """
+    return (width - len(text)) // 2 + 1
