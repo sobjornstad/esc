@@ -78,16 +78,6 @@ class StackItem:
         self.string = \
             str(util.remove_exponent(self.decimal.normalize())).replace('E', 'e')
 
-        # If we weren't using scientific notation but the new value is too
-        # long to fit in the stack window, convert it, knocking down the
-        # displayed precision to fit.
-        if len(self.string) > STACKWIDTH:
-            precision = STACKWIDTH
-            precision -= 3            # account for length of exponent
-            precision -= len("0.e+")  # account for new characters
-            precision -= (1 if self.decimal.as_tuple().sign == 1 else 0)
-            self.string = ("%." + str(precision) + "e") % (self.decimal)
-
     def add_character(self, nextchar):
         """
         Add a character to the running string of the number being entered on

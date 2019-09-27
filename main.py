@@ -5,6 +5,7 @@ main.py - startup code and main loop for esc
 
 import curses
 import curses.ascii
+import decimal
 
 from consts import (UNDO_CHARACTER, REDO_CHARACTER, STORE_REG_CHARACTER,
                     RETRIEVE_REG_CHARACTER, DELETE_REG_CHARACTER)
@@ -190,6 +191,7 @@ def main():
     ss = stack.StackState()
     registry = registers.Registry()
     menu = None
+    decimal.getcontext().prec = 12
 
     # Main loop.
     while True:
