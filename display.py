@@ -139,6 +139,9 @@ class HistoryWindow(Window):
         self.window.border()
         self.window.addstr(0, 13, "History")
         for yposn, description in enumerate(self.operations, 1):
+            max_item_width = self.width - 2
+            if len(description) > max_item_width:
+                description = description[:max_item_width-3] + '...'
             self.window.addstr(yposn, 1, description)
         super().refresh()
 
