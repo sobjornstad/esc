@@ -235,7 +235,7 @@ Constant(math.e, 'e', description='e', menu=constants_menu)
 
 @Function('y', menu=main_menu, push=1, description='yank bos to cboard',
           log_as="yank {0} to clipboard")
-def yank_bos(bos):
+def yank_bos(bos_stackitem):
     """
     Use the 'xsel' command to copy the value of bos to your system clipboard.
     This probably only works on Unix-like systems, and only with a running X
@@ -246,9 +246,9 @@ def yank_bos(bos):
     # is-there-a-way-to-directly-send-a-python-output-to-clipboard
     from subprocess import Popen, PIPE
     p = Popen(['xsel', '-bi'], stdin=PIPE)
-    p.communicate(input=str(bos).encode())
-    status.advisory('"%s" placed on system clipboard.' % str(bos))
-    return bos # return to stack
+    p.communicate(input=bos_stackitem.string.encode())
+    status.advisory('"%s" placed on system clipboard.' % bos_stackitem.string)
+    return bos_stackitem.decimal # return to stack
 
 @Function('S', menu=main_menu, push=1, description='sum entire stack',
           log_as=(lambda _, retval: f"sum entire stack = {retval[0]}"))

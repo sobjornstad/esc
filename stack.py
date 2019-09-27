@@ -297,18 +297,20 @@ class StackState:
 
     def pop(self, num=1):
         """
-        Pop /num/ numbers off the end of the stack and return them as a list.
+        Pop /num/ StackItems off the end of the stack and return them as a
+        list. If there are too few items on the stack, return None.
         """
         self.stack_posn -= num
-        checkpoint = self.memento()
-        try:
-            return list(reversed([self.s.pop().decimal for _ in range(num)]))
-        except IndexError:
-            self.restore(checkpoint)
+        if len(self.s) < num:
             return None
-        except Exception:
-            self.restore(checkpoint)
-            raise
+        elif num == 0:
+            # Needs a special case, as s[:-0] will wipe out the stack
+            return []
+        else:
+            stack_slice = self.s[-num:]
+            self.s = self.s[:-num]
+            return stack_slice
+
 
     def record_operation(self, description):
         """

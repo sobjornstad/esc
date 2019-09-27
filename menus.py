@@ -14,8 +14,8 @@ functions and submenus end up reachable from the main menu.
 """
 
 from collections import OrderedDict
-import copy
 import decimal
+from functools import wraps
 from inspect import signature, Parameter
 import itertools
 
@@ -250,7 +250,7 @@ class EscOperation(EscFunction):
         with ss.transaction():
             args = self.retrieve_arguments(ss)
             try:
-                retvals = self.function(*args)
+                retvals = self.function(args)
             except ValueError:
                 # illegal operation; restore original args to stack and return
                 raise FunctionExecutionError("Domain error! Stack unchanged.")
@@ -283,11 +283,12 @@ class EscOperation(EscFunction):
             num_short = self.push - self.pop - ss.free_stack_spaces
             spaces = 'space' if num_short == 1 else 'spaces'
             msg = f"'{self.key}': stack is too full (short {num_short} {spaces})."
+            #TODO: "Insufficient" doesn't seem like the right word here!
             raise InsufficientItemsError(msg)
 
         if self.pop == -1:
             # Whole stack requested; will push the whole stack back later.
-            args = [i.decimal for i in ss.s]
+            args = ss.s[:]
             ss.clear()
         else:
             args = ss.pop(self.pop)
@@ -312,9 +313,10 @@ class EscOperation(EscFunction):
                         coerced_retvals.append(decimal.Decimal(i))
                     except (decimal.InvalidOperation, TypeError) as e:
                         raise ProgrammingError(
-                            "An esc function returned a value that cannot be "
-                            "converted to a Decimal. The original error message is as "
-                            "follows:\n%r" % e)
+                            f"The function '{self.function.__name__}' "
+                            f"(key {self.key}, description {self.description}) "
+                            "returned a value that cannot be converted to a Decimal. "
+                            "The original error message is as follows:\n%r" % e)
                 else:
                     coerced_retvals.append(i)
 
@@ -336,10 +338,13 @@ main_menu = EscMenu('', "Main Menu")  # pylint: disable=invalid-name
 
 def Constant(value, key, description, menu):  # pylint: disable=invalid-name
     "Create a new constant. Syntactic sugar for registering a function."
-    op = EscOperation(key=key, func=lambda _: value, pop=0, push=1,
-                      description=description, menu=menu,
-                      log_as=f"insert constant '{description}'")
-    menu.register_child(op)
+    @Function(key=key, menu=menu, push=1, description=description,
+              log_as=f"insert constant {description}")
+    def func():  # pylint: disable=unused-variable
+        f"""
+        Add the constant {description} = {value} to the stack.
+        """
+        return value
 
 
 def Function(key, menu, push, description=None, log_as=None):  # pylint: disable=invalid-name
@@ -347,22 +352,36 @@ def Function(key, menu, push, description=None, log_as=None):  # pylint: disable
     Decorator to register a function on a given menu.
     """
     def function_decorator(func):
+        #TODO: Should this logic actually be in the decorator, or should it be in the Operation class?
         sig = signature(func)
         parms = sig.parameters.values()
         bind_all = [i for i in parms if i.kind == Parameter.VAR_POSITIONAL]
         pop = len(parms) if not bind_all else -1
 
-        op = EscOperation(key=key, func=func, pop=pop, push=push,
-                          description=description, menu=menu, log_as=log_as)
-        menu.register_child(op)
+        def _bind_parm(stack_item, parm):
+            if parm.name.endswith('_stackitem'):
+                return stack_item
+            if parm.name.endswith('_str'):
+                return stack_item.string
+            else:
+                return stack_item.decimal
 
+        @wraps(func)
         def wrapper(stack):
             if bind_all:
-                return func(*stack)
+                binding = [_bind_parm(stack_item, bind_all[0])
+                           for stack_item in stack]
             else:
                 stack_slice = stack[-(len(parms)):]
-                return func(*stack_slice)
+                binding = [_bind_parm(stack_item, parm)
+                            for stack_item, parm in zip(stack_slice, parms)]
+            return func(*binding)
+
+        op = EscOperation(key=key, func=wrapper, pop=pop, push=push,
+                          description=description, menu=menu, log_as=log_as)
+        menu.register_child(op)
         return wrapper
+
     return function_decorator
 
 
