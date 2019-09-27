@@ -22,19 +22,6 @@ import status
 import util
 
 
-def fetch_input(in_menu) -> int:
-    """
-    Get one character of input, the location of the window to fetch from
-    depending on whether we currently have a menu open (with a menu open, the
-    cursor sits in the status bar). The character is returned as an int for
-    compatibility with curses functions; use chr() to turn it into a string.
-    """
-    if in_menu:
-        return screen().getch_status()
-    else:
-        return screen().getch_stack()
-
-
 def try_add_to_number(c, ss):
     """
     Try to interpret the character /c/ as a digit and add it to the current
@@ -94,14 +81,14 @@ def _get_register_char():
     "Retrieve a character representing a register."
     status.expecting_register()
     status.redraw()
-    return chr(fetch_input(True))
+    return chr(util.fetch_input(True))
 
 
 def _get_help_char():
     "Retrieve a character representing a register."
     status.expecting_help()
     status.redraw()
-    return chr(fetch_input(True))
+    return chr(util.fetch_input(True))
 
 
 def store_register(ss, registry):
@@ -226,7 +213,7 @@ def main():
         # Update cursor posn and fetch one char of input.
         screen().place_cursor(ss)
         if menu is menus.main_menu:
-            c = fetch_input(False)
+            c = util.fetch_input(False)
 
             # Are we entering a number?
             r = try_add_to_number(c, ss)
@@ -240,7 +227,7 @@ def main():
         else:
             status.in_menu()
             status.redraw()
-            c = fetch_input(True)
+            c = util.fetch_input(True)
 
         # Try to interpret the input as a function.
         try:

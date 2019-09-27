@@ -121,7 +121,7 @@ def redraw():
         screen().set_status_msg('Expecting register identifier (any letter)')
     elif _STATE & StatusState.EXPECTING_HELP:
         screen().set_status_char('h')
-        screen().set_status_msg('Expecting command to view help on')
+        screen().set_status_msg('Browsing help (select a command or menu)')
 
     if _STATE & StatusState.ERROR:
         screen().set_status_char('E')

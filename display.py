@@ -425,9 +425,6 @@ class EscScreen:
         max_y, _ = self.stdscr.getmaxyx()
         self.helpw = HelpWindow(self, is_menu, help_title, signature_info,
                                 docstring, results_info, max_y)
-        self.getch_status()
-        self.helpw = None
-        self.refresh_all()
 
 
 def screen():
