@@ -241,7 +241,8 @@ main_menu = EscMenu('', "Main Menu")  # pylint: disable=invalid-name
 def Constant(value, key, description, menu):  # pylint: disable=invalid-name
     "Create a new constant. Syntactic sugar for registering a function."
     op = EscOperation(key=key, func=lambda _: value, pop=0, push=1,
-                      description=description, menu=menu)
+                      description=description, menu=menu,
+                      log_as=f"insert constant '{description}'")
     menu.register_child(op)
 
 
