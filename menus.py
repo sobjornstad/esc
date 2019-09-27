@@ -202,7 +202,12 @@ class EscOperation(EscFunction):
         change the state -- instead, provide a description of what would
         happen.
         """
-        used_args = ss.s[-self.pop:] if self.pop != -1 else ss.s[:]
+        if self.pop == -1:
+            used_args = ss.s[:]
+        elif self.pop == 0:
+            used_args = []
+        else:
+            used_args = ss.s[-self.pop:]
         checkpoint = ss.memento()
         try:
             self.execute(None, ss)
@@ -218,12 +223,22 @@ class EscOperation(EscFunction):
         finally:
             ss.restore(checkpoint)
 
-        return (f"This calculation would occur:",
-                f"    {operation_description}",
-                f"The following stack items would be consumed:",
-                *(f"    {i}" for i in used_args),
-                f"The following results would be returned:",
-                *(f"    {i}" for i in results))
+        description = [f"This calculation would occur:",
+                       f"    {operation_description}",
+                       f"The following stack items would be consumed:"]
+        if used_args:
+            for i in used_args:
+                description.append(f"    {i}")
+        else:
+            description.append("    (none)")
+
+        description.append("The following results would be returned:")
+        if results:
+            for i in results:
+                description.append(f"    {i}")
+        else:
+            description.append("    (none)")
+        return description
 
     def _insufficient_items_on_stack(self, pops_requested=None):
         "Call for a FunctionExecutionError() if the stack is too empty."
