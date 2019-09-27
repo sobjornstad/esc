@@ -6,9 +6,10 @@ to update the screen.
 """
 
 import curses
+import sys
 
 from consts import STACKDEPTH, STACKWIDTH, PROGRAM_NAME
-from util import truncate
+from util import truncate, quit_if_screen_too_small
 
 # pylint: disable=invalid-name
 _screen = None
@@ -259,6 +260,7 @@ class EscScreen:
         as well as curses settings.
         """
         max_y, max_x = self.stdscr.getmaxyx()
+        quit_if_screen_too_small(max_y, max_x)
 
         curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_GREEN)
         curses.init_pair(2, curses.COLOR_BLUE, curses.COLOR_BLACK)

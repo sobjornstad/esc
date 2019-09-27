@@ -7,6 +7,9 @@ STACKDEPTH = 12
 PRECISION = 12
 STACKWIDTH = 21  # needs room for sci notation and labels on top of precision
 
+REQUIRED_TERM_WIDTH = 80
+REQUIRED_TERM_HEIGHT = 24
+
 QUIT_CHARACTER = 'q'
 UNDO_CHARACTER = 'u'
 REDO_CHARACTER = '^R'
