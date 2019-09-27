@@ -26,11 +26,12 @@ class StatusState(IntFlag):
     ENTERING_NUMBER = 2
     IN_MENU = 4
     EXPECTING_REGISTER = 8
+    EXPECTING_HELP = 16
 
-    ADVISORY = 16
-    ERROR = 32
+    ADVISORY = 32
+    ERROR = 64
 
-    SEEN = 64
+    SEEN = 128
 
 
 # pylint: disable=invalid-name
@@ -60,6 +61,11 @@ def expecting_register():
     "Clear errors and put calculator in a state to select a register."
     global _STATE
     _STATE = StatusState.EXPECTING_REGISTER
+
+def expecting_help():
+    "Clear errors and put calculator in a state to select a command to get help on."
+    global _STATE
+    _STATE = StatusState.EXPECTING_HELP
 
 def advisory(msg):
     """
@@ -113,6 +119,9 @@ def redraw():
     elif _STATE & StatusState.EXPECTING_REGISTER:
         screen().set_status_char('r')
         screen().set_status_msg('Expecting register identifier (any letter)')
+    elif _STATE & StatusState.EXPECTING_HELP:
+        screen().set_status_char('h')
+        screen().set_status_msg('Expecting command to view help on')
 
     if _STATE & StatusState.ERROR:
         screen().set_status_char('E')

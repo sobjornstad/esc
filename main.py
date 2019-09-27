@@ -97,6 +97,13 @@ def _get_register_char():
     return chr(fetch_input(True))
 
 
+def _get_help_char():
+    "Retrieve a character representing a register."
+    status.expecting_help()
+    status.redraw()
+    return chr(fetch_input(True))
+
+
 def store_register(ss, registry):
     """
     Copy the bottom of the stack into a register of the user's choice.
@@ -180,7 +187,8 @@ def try_special(c, ss, registry, menu):
     elif chr(c) == DELETE_REG_CHARACTER:
         delete_register(ss, registry)
     elif c == curses.KEY_F1:
-        get_help('+', menu, ss)
+        help_on = _get_help_char()
+        get_help(help_on, menu, ss)
     else:
         return False
     return True
