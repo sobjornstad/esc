@@ -69,12 +69,14 @@ def pop(_):
 @Function('r', menu=main_menu, pop=-1, push=-1, description='roll off tos',
           log_as="roll off tos {0}")
 def roll(s):
+    "Remove the top item from the stack."
     if not s:
         raise InsufficientItemsError(number_required=1)
     return [i.decimal for i in s[1:]]
 
 @Function('c', menu=main_menu, pop=-1, push=0, description='clear stack')
-def clear(s):
+def clear(s):  #pylint: disable=useless-return
+    "Clear all items from the stack."
     if not s:
         raise InsufficientItemsError(number_required=1)
     return None
@@ -186,7 +188,7 @@ Constant(math.e, 'e', description='e', menu=constants_menu)
 #################
 
 @Function('y', menu=main_menu, pop=1, push=1, description='yank bos to cboard')
-def yankBos(s):
+def yank_bos(s):
     """
     Use xsel to yank bottom of stack. This probably only works on Unix-like
     systems.
@@ -204,8 +206,10 @@ def yankBos(s):
 def sum_entire_stack(s):
     return sum(i.decimal for i in s)
 
-@Function('T', menu=main_menu, pop=1, push=1, description='add MN sales tax')
-def addMnSalesTax(s):
+@Function('T', menu=main_menu, pop=1, push=1, description='add MN sales tax',
+          log_as=lambda args, retval: f"+7.375% tax on {args[0]} = {retval[0]}")
+def add_mn_sales_tax(s):
+    "Add sales tax to bos, using the rate for the Minnesota locality where I live."
     tax_rate = Decimal(.07375)
     tax = tax_rate * s[0]
     return s[0] + tax

@@ -16,14 +16,14 @@ functions and submenus end up reachable from the main menu.
 from collections import OrderedDict
 import copy
 import decimal
-from enum import Enum
 import itertools
 
 from consts import (QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
                     RETRIEVE_REG_CHARACTER, STORE_REG_CHARACTER, DELETE_REG_CHARACTER)
 from display import screen
 import modes
-from oops import NotInMenuError, ProgrammingError, FunctionExecutionError, InsufficientItemsError
+from oops import (FunctionExecutionError, InsufficientItemsError, NotInMenuError,
+                  ProgrammingError)
 
 BINOP = 'binop'
 UNOP = 'unop'
@@ -44,7 +44,8 @@ class EscFunction:
         self.parent = None
         self.children = OrderedDict()
 
-    # pylint: disable=unused-argument
+    # pylint: disable=unused-argument, no-self-use
+    # not sure why pylint is so unable to recognize this is an abstract method
     def execute(self, access_key, ss):
         return NotImplementedError
 
@@ -156,7 +157,7 @@ class EscOperation(EscFunction):
         else:
             return self.log_as.format(*itertools.chain(args, retvals))
 
-    def execute(self, access_key, ss):
+    def execute(self, access_key, ss):  # pylint: disable=useless-return
         with ss.transaction():
             args = self.retrieve_arguments(ss)
             try:

@@ -6,18 +6,18 @@ main.py - startup code and main loop for esc
 import curses
 import curses.ascii
 
+from consts import (UNDO_CHARACTER, REDO_CHARACTER, STORE_REG_CHARACTER,
+                    RETRIEVE_REG_CHARACTER, DELETE_REG_CHARACTER)
 import display
 from display import screen
-import menus
-from oops import InvalidNameError, RollbackTransaction
 import history
+import menus
+from oops import (FunctionExecutionError, InvalidNameError, NotInMenuError,
+                  RollbackTransaction)
 import registers
 import stack
 import status
 import util
-from consts import (UNDO_CHARACTER, REDO_CHARACTER, STORE_REG_CHARACTER,
-                    RETRIEVE_REG_CHARACTER, DELETE_REG_CHARACTER)
-from oops import FunctionExecutionError, NotInMenuError
 
 
 def fetch_input(in_menu) -> int:

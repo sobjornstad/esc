@@ -23,10 +23,16 @@ class InsufficientItemsError(EscError):
     the stack to finish their work.
     """
     def __init__(self, number_required):
+        super().__init__()
         self.number_required = number_required
 
 
 class RollbackTransaction(Exception):
+    """
+    Raised during a StackState .transaction() to indicate that the transaction
+    should be rolled back due to an error. If status_message is provided, the
+    status bar will be set to display the message.
+    """
     def __init__(self, status_message=None):
         super().__init__()
         self.status_message = status_message
