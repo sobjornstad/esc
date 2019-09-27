@@ -5,6 +5,7 @@ Other modules call into the EscScreen singleton defined here when they need
 to update the screen.
 """
 
+from contextlib import contextmanager
 import curses
 import itertools
 import textwrap
@@ -34,6 +35,14 @@ class Window:
         if self.heading is not None:
             x_posn = centered_position(self.heading, self.width)
             self.window.addstr(0, x_posn, self.heading)
+
+    def clear(self):
+        """
+        Hide this window from the screen. Call refresh() to put it back again.
+        """
+        if self.window is not None:
+            self.window.clear()
+            self.window.refresh()
 
     def refresh(self):
         if self.window is not None:
@@ -250,14 +259,20 @@ class RegistersWindow(Window):
 
 class HelpWindow(Window):
     "Temporary window displaying help messages."
-    width = StackWindow.width + HistoryWindow.width
-    start_x = StackWindow.start_x
-    start_y = StackWindow.start_y
     heading = "Help"
 
-    def __init__(self, scr, help_title, signature_info, docstring,
+    def __init__(self, scr, is_menu, help_title, signature_info, docstring,
                  results_info, max_y):
         self.height = max_y - 1
+        if is_menu:
+            self.width = StackWindow.width + HistoryWindow.width
+            self.start_x = StackWindow.start_x
+            self.start_y = StackWindow.start_y
+        else:
+            self.width = HistoryWindow.width + CommandsWindow.width
+            self.start_x = HistoryWindow.start_x
+            self.start_y = HistoryWindow.start_y
+
         super().__init__(scr)
         self.help_title = help_title
         self.signature_info = signature_info
@@ -266,6 +281,7 @@ class HelpWindow(Window):
         self.refresh()
 
     def refresh(self):
+        self.scr.hide_registers_window()
         self.window.clear()
         self.window.border()
         self.window.addstr(self.start_y,
@@ -293,7 +309,7 @@ class HelpWindow(Window):
             rest
         )
         for yposn, text in enumerate(display_iterable, self.start_y+1):
-            self.window.addstr(yposn, self.start_x + 1, text)
+            self.window.addstr(yposn, 1, text)
             if yposn > self.height - 2:
                 break
         super().refresh()
@@ -392,6 +408,9 @@ class EscScreen:
         self.registersw.update_registry(registry)
         self.registersw.refresh()
 
+    def hide_registers_window(self):
+        self.registersw.clear()
+
 
     ### History ###
     def update_history(self, ss):
@@ -400,11 +419,12 @@ class EscScreen:
 
 
     ### Auxiliary windows ###
-    def show_help_window(self, help_title: str, signature_info: Sequence[str],
-                         docstring: str, results_info: Sequence[str]) -> None:
+    def show_help_window(self, is_menu: bool, help_title: str,
+                         signature_info: Sequence[str], docstring: str,
+                         results_info: Sequence[str]) -> None:
         max_y, _ = self.stdscr.getmaxyx()
-        self.helpw = HelpWindow(self, help_title, signature_info, docstring,
-                                results_info, max_y)
+        self.helpw = HelpWindow(self, is_menu, help_title, signature_info,
+                                docstring, results_info, max_y)
         self.getch_status()
         self.helpw = None
         self.refresh_all()

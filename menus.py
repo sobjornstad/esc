@@ -39,6 +39,8 @@ class EscFunction:
     didn't work right. It then returns the menu that the interface should
     return to. A return value of None returns to the main menu.
     """
+    is_menu = False
+
     def __init__(self, key, description):
         self.key = key
         self.description = description
@@ -71,6 +73,8 @@ class EscMenu(EscFunction):
     """
     A type of EscFunction that serves as a container for other menus and operations.
     """
+    is_menu = True
+
     def __init__(self, key, description, mode_display=None):
         super().__init__(key, description)
         self.mode_display = mode_display

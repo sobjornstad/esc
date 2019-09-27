@@ -19,7 +19,8 @@ def get_help(operation_key, menu, ss):
 
     status.advisory(f"Browsing help for '{operation_key}' (press any key to return)")
     status.redraw()
-    screen().show_help_window(esc_function.help_title,
+    screen().show_help_window(esc_function.is_menu,
+                              esc_function.help_title,
                               esc_function.signature_info,
                               esc_function.__doc__,
                               esc_function.simulated_result(ss))
