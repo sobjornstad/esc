@@ -41,7 +41,7 @@ def exponentiate(s):
 
 @Function('%', menu=main_menu, pop=2, push=1, log_as=BINOP)
 def modulus(s):
-    return s[0] * s[1]
+    return s[0] % s[1]
 
 @Function('s', menu=main_menu, pop=1, push=1, log_as="sqrt {0} = {1}")
 def sqrt(s):
