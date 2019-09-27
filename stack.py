@@ -192,6 +192,10 @@ class StackState:
     def is_empty(self):
         return not bool(self.s)
 
+    @property
+    def last_operation(self):
+        return self.operation_history[-1] if self.operation_history else None
+
     def add_partial(self, c):
         """
         Start a new item on the stack with the given character /c/. Return

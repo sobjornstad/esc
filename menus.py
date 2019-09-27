@@ -24,7 +24,7 @@ from consts import (QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
 from display import screen
 import modes
 from oops import (FunctionExecutionError, InsufficientItemsError, NotInMenuError,
-                  ProgrammingError)
+                  ProgrammingError, RollbackTransaction)
 
 BINOP = 'binop'
 UNOP = 'unop'
@@ -149,11 +149,17 @@ class EscOperation(EscFunction):
 
     @property
     def __doc__(self):
-        return self.function.__doc__ if self.function.__doc__ is not None else ""
+        if self.function.__doc__ is None:
+            return "The author of this function has not provided a description."
+        else:
+            return self.function.__doc__
 
     @property
     def help_title(self):
-        return f"{self.key} ({self.description})"
+        if self.description:
+            return f"{self.key} ({self.description})"
+        else:
+            return self.key
 
     @property
     def signature_info(self):
@@ -165,7 +171,29 @@ class EscOperation(EscFunction):
         return signature
 
     def simulated_result(self, ss):
-        return ""
+        """
+        Execute the operation on the provided StackState, but don't actually
+        change the state -- instead, provide a description of what would
+        happen.
+        """
+        used_args = ss.s[-self.pop:]
+        checkpoint = ss.memento()
+        try:
+            self.execute(None, ss)
+            results = ss.s[-self.push:]
+            end_of_stack = ss.s[-(self.pop + 1):]
+            operation_description = ss.last_operation
+        finally:
+            ss.restore(checkpoint)
+
+        return (f"This calculation would occur:",
+                f"    {operation_description}",
+                f"The following stack items would be consumed:",
+                *(f"    {i}" for i in used_args),
+                f"The following results would be returned:",
+                *(f"    {i}" for i in results),
+                f"The last {len(end_of_stack)} items on the stack would be:",
+                *(f"    {i.string}" for i in end_of_stack))
 
     def _insufficient_items_on_stack(self, pops_requested=None):
         "Call for a FunctionExecutionError() if the stack is too empty."

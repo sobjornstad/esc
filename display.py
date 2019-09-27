@@ -284,15 +284,13 @@ class HelpWindow(Window):
             docstring_lines,
             ("", "Signature:"),
             self.signature_info,
-            self.results_info
+            ("", "If you executed this command now..."),
+            (f"    {i}" for i in self.results_info)
         )
         for yposn, text in enumerate(display_iterable, self.start_y+1):
-            try:
-                self.window.addstr(yposn, self.start_x + 1, text)
-            except curses.error:
-                curses.endwin()
-                print(text)
-                raise SystemExit()
+            self.window.addstr(yposn, self.start_x + 1, text)
+            if yposn > self.height - 2:
+                break
         super().refresh()
 
 
