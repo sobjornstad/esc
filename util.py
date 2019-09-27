@@ -7,6 +7,7 @@ import decimal
 def is_number(c):
     return ('0' <= c <= '9') or (c in ('.', '_', 'e'))
 
+
 def remove_exponent(d):
     """
     Remove exponent and trailing zeros. Modified from the version in the
@@ -25,3 +26,10 @@ def remove_exponent(d):
             pass
 
     return retval
+
+
+def truncate(string: str, max_length: int) -> str:
+    "Truncate /string/ to at most /max_length/ using an ellipsis."
+    if len(string) > max_length:
+        string = string[:max_length-3] + '...'
+    return string

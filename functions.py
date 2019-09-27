@@ -214,3 +214,7 @@ def add_mn_sales_tax(s):
     tax_rate = Decimal(.07375)
     tax = tax_rate * s[0]
     return s[0] + tax
+
+@Function('I', menu=main_menu, pop=1, push=1, description='increment the value on the bottom', log_as=UNOP)
+def increment(s):
+    return s + 1

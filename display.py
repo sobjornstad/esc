@@ -6,7 +6,9 @@ to update the screen.
 """
 
 import curses
+
 from consts import STACKDEPTH, STACKWIDTH, PROGRAM_NAME
+from util import truncate
 
 # pylint: disable=invalid-name
 _screen = None
@@ -143,9 +145,7 @@ class HistoryWindow(Window):
         visible_operations = self.operations[-available_lines:]
         for yposn, description in enumerate(visible_operations, 1):
             max_item_width = self.width - 2
-            if len(description) > max_item_width:
-                description = description[:max_item_width-3] + '...'
-            self.window.addstr(yposn, 1, description)
+            self.window.addstr(yposn, 1, truncate(description, max_item_width-3))
 
         super().refresh()
 
@@ -169,13 +169,16 @@ class CommandsWindow(Window):
 
         # TODO: This is desperately ugly and is intended to be a hack until
         # commands are objects we can introspect.
+        border_width = 2
+        key_width = 2
+        max_width = self.width - border_width - key_width
         for command in self.commands:
             try:
                 self.window.addstr(*command[:-1])
                 if command[-1]:
                     self.window.addstr(command[0],
                                        command[1] + 1 + len(command[2]),
-                                       command[-1])
+                                       truncate(command[-1], max_width))
             except curses.error:
                 pass
         super().refresh()

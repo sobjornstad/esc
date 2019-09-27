@@ -285,9 +285,9 @@ def display_menu(menu):
     """
     screen().reset_commands_window()
 
-    min_xposn = 2
+    min_xposn = 1
     max_xposn = 22
-    xposn = 2
+    xposn = min_xposn
     yposn = 1
 
     # Print menu title.
