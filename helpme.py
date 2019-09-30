@@ -9,7 +9,7 @@ import status
 import util
 
 
-def get_help(operation_key, menu, ss, recursing=False):
+def get_help(operation_key, menu, ss, registry, recursing=False):
     """
     Display the on-line help page for the provided operation.
     """
@@ -32,14 +32,14 @@ def get_help(operation_key, menu, ss, recursing=False):
                               esc_function.help_title,
                               esc_function.signature_info,
                               esc_function.__doc__,
-                              esc_function.simulated_result(ss))
+                              esc_function.simulated_result(ss, registry))
 
     # If this is a menu, we can select items on the menu to dive into.
     if esc_function.is_menu:
-        menu.execute(operation_key, ss)
+        menu.execute(operation_key, ss, registry)
         menus.display_menu(esc_function)
         c = util.fetch_input(True)
-        get_help(chr(c), esc_function, ss, recursing=True)
+        get_help(chr(c), esc_function, ss, registry, recursing=True)
     else:
         c = util.fetch_input(True)
 

@@ -37,3 +37,6 @@ class Registry:
 
     def items(self):
         return sorted(self._registers.items(), key=lambda i: i[0])
+
+    def values(self):
+        return self._registers.values()

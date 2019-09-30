@@ -271,3 +271,11 @@ def add_mn_sales_tax(bos):
 def increment(bos):
     "Add 1 to bos."
     return bos + 1
+
+@Function('R', menu=main_menu, push=1, description='Sum all registers',
+          log_as=lambda args, retval: f"sum all registers = {retval[0]}")
+def sum_reg(registry):
+    values = registry.values()
+    if not values:
+        raise Exception("Oops, there aren't any registers")
+    return sum(i.decimal for i in values)

@@ -254,7 +254,7 @@ class RegistersWindow(Window):
         """
         Store the new register pairs to be used on a refresh().
         """
-        self.register_pairs = list(registry.items())
+        self.register_pairs = registry.items()
 
 
 class HelpWindow(Window):

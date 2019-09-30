@@ -24,7 +24,7 @@ from consts import (QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
 from display import screen
 import modes
 from oops import (FunctionExecutionError, InsufficientItemsError, NotInMenuError,
-                  ProgrammingError)
+                  FunctionProgrammingError)
 
 BINOP = 'binop'
 UNOP = 'unop'
@@ -55,10 +55,10 @@ class EscFunction:
     def signature_info(self):
         raise NotImplementedError
 
-    def simulated_result(self, ss):  # pylint: disable=no-self-use, unused-argument
+    def simulated_result(self, ss, registry):  # pylint: disable=no-self-use, unused-argument
         return None
 
-    def execute(self, access_key, ss):
+    def execute(self, access_key, ss, registry):
         raise NotImplementedError
 
     def register_child(self, child):
@@ -138,7 +138,7 @@ class EscMenu(EscFunction):
             raise NotInMenuError(
                 f"There's no option '{access_key}' in this menu.")
 
-    def execute(self, access_key, ss):
+    def execute(self, access_key, ss, registry):
         if access_key == QUIT_CHARACTER:
             if self.is_main_menu:
                 raise SystemExit(1)
@@ -149,7 +149,7 @@ class EscMenu(EscFunction):
         if isinstance(child, EscMenu):
             return child
         else:
-            return child.execute(access_key, ss)
+            return child.execute(access_key, ss, registry)
 
 
 class EscOperation(EscFunction):
@@ -196,7 +196,7 @@ class EscOperation(EscFunction):
             output = f"    Output: {self.push} {results} added to the stack."
         return (type_, input_, output)
 
-    def simulated_result(self, ss):
+    def simulated_result(self, ss, registry):
         """
         Execute the operation on the provided StackState, but don't actually
         change the state -- instead, provide a description of what would
@@ -210,7 +210,7 @@ class EscOperation(EscFunction):
             used_args = ss.s[-self.pop:]
         checkpoint = ss.memento()
         try:
-            self.execute(None, ss)
+            self.execute(None, ss, registry)
             results = ss.s[-self.push:]
             operation_description = ss.last_operation
         except InsufficientItemsError as e:
@@ -257,19 +257,35 @@ class EscOperation(EscFunction):
         if self.log_as is None:
             return self.description
         elif self.log_as == UNOP:
-            return f"{self.description} {args[0]} = {retvals[0]}"
+            try:
+                return f"{self.description} {args[0]} = {retvals[0]}"
+            except IndexError:
+                raise FunctionProgrammingError(
+                    function_name=self.function.__name__,
+                    key=self.key,
+                    description=self.description,
+                    problem="requested unary operator logging (UNOP) but did not "
+                            "request any values from the stack")
         elif self.log_as == BINOP:
-            return f"{args[0]} {self.key} {args[1]} = {retvals[0]}"
+            try:
+                return f"{args[0]} {self.key} {args[1]} = {retvals[0]}"
+            except IndexError:
+                raise FunctionProgrammingError(
+                    function_name=self.function.__name__,
+                    key=self.key,
+                    description=self.description,
+                    problem="requested binary operator logging (BINOP) but did not "
+                            "request two values from the stack")
         elif callable(self.log_as):
             return self.log_as(args, retvals)
         else:
             return self.log_as.format(*itertools.chain(args, retvals))
 
-    def execute(self, access_key, ss):  # pylint: disable=useless-return
+    def execute(self, access_key, ss, registry):  # pylint: disable=useless-return
         with ss.transaction():
             args = self.retrieve_arguments(ss)
             try:
-                retvals = self.function(args)
+                retvals = self.function(args, registry)
             except ValueError:
                 # illegal operation; restore original args to stack and return
                 raise FunctionExecutionError("Domain error! Stack unchanged.")
@@ -331,11 +347,12 @@ class EscOperation(EscFunction):
                     try:
                         coerced_retvals.append(decimal.Decimal(i))
                     except (decimal.InvalidOperation, TypeError) as e:
-                        raise ProgrammingError(
-                            f"The function '{self.function.__name__}' "
-                            f"(key {self.key}, description {self.description}) "
-                            "returned a value that cannot be converted to a Decimal. "
-                            "The original error message is as follows:\n%r" % e)
+                        raise FunctionProgrammingError(
+                            function_name=self.function.__name__,
+                            key=self.key,
+                            description=self.description,
+                            problem="returned a value that cannot be converted to a Decimal",
+                            wrapped_exception=e)
                 else:
                     coerced_retvals.append(i)
 
@@ -374,10 +391,12 @@ def Function(key, menu, push, description=None, log_as=None):  # pylint: disable
         #TODO: Should this logic actually be in the decorator, or should it be in the Operation class?
         sig = signature(func)
         parms = sig.parameters.values()
-        bind_all = [i for i in parms if i.kind == Parameter.VAR_POSITIONAL]
-        pop = len(parms) if not bind_all else -1
 
-        def _bind_parm(stack_item, parm):
+        bind_all = [i for i in parms if i.kind == Parameter.VAR_POSITIONAL]
+        stack_parms = [i for i in parms if i.name not in ('registry',)]
+        pop = len(stack_parms) if not bind_all else -1
+
+        def _bind_stack_parm(stack_item, parm):
             if parm.name.endswith('_stackitem'):
                 return stack_item
             if parm.name.endswith('_str'):
@@ -386,15 +405,21 @@ def Function(key, menu, push, description=None, log_as=None):  # pylint: disable
                 return stack_item.decimal
 
         @wraps(func)
-        def wrapper(stack):
+        def wrapper(stack, registry):
+            positional_binding = []
+            keyword_binding = {}
+
             if bind_all:
-                binding = [_bind_parm(stack_item, bind_all[0])
-                           for stack_item in stack]
+                positional_binding.extend(_bind_stack_parm(stack_item, bind_all[0])
+                                          for stack_item in stack)
             else:
-                stack_slice = stack[-(len(parms)):]
-                binding = [_bind_parm(stack_item, parm)
-                            for stack_item, parm in zip(stack_slice, parms)]
-            return func(*binding)
+                stack_slice = stack[-(len(stack_parms)):]
+                keyword_binding.update({parm.name: _bind_stack_parm(stack_item, parm)
+                                        for stack_item, parm
+                                        in zip(stack_slice, stack_parms)})
+            if 'registry' in (i.name for i in parms):
+                keyword_binding['registry'] = registry
+            return func(*positional_binding, **keyword_binding)
 
         op = EscOperation(key=key, func=wrapper, pop=pop, push=push,
                           description=description, menu=menu, log_as=log_as)

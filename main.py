@@ -175,7 +175,7 @@ def try_special(c, ss, registry, menu):
         delete_register(ss, registry)
     elif c == curses.KEY_F1:
         help_on = _get_help_char()
-        get_help(help_on, menu, ss)
+        get_help(help_on, menu, ss, registry)
     else:
         return False
     return True
@@ -231,7 +231,7 @@ def main():
 
         # Try to interpret the input as a function.
         try:
-            menu = menu.execute(chr(c), ss)
+            menu = menu.execute(chr(c), ss, registry)
         except (NotInMenuError, FunctionExecutionError) as e:
             status.error(str(e))
             status.redraw()

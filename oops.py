@@ -8,6 +8,32 @@ class EscError(Exception):
 class ProgrammingError(EscError):
     pass
 
+class FunctionProgrammingError(ProgrammingError):
+    """
+    Programming error that occurs in a user's function (or, for that matter,
+    a badly tested built-in function!).
+
+    Wraps some handy logic for generating a standardized message.
+    """
+    def __init__(self, function_name, key, description, problem,
+                 wrapped_exception=None):
+        super().__init__()
+        self.function_name = function_name
+        self.key = key
+        self.description = description
+        self.problem = problem
+        self.wrapped_exception = wrapped_exception
+
+        self.message = (f"The function '{self.function_name}' "
+                        f"(key '{self.key}', description '{self.description}') "
+                        f"{self.problem}. ")
+        if self.wrapped_exception:
+            self.message += ("The original error message is as follows:\n"
+                             + repr(self.wrapped_exception))
+
+    def __str__(self):
+        return self.message
+
 class NotInMenuError(EscError):
     pass
 
