@@ -251,7 +251,7 @@ def yank_bos(bos_stackitem):
     return bos_stackitem.decimal # return to stack
 
 @Function('S', menu=main_menu, push=1, description='sum entire stack',
-          log_as=(lambda _, retval: f"sum entire stack = {retval[0]}"))
+          log_as=(lambda retval: f"sum entire stack = {retval[0]}"))
 def sum_entire_stack(*stack):
     "Sum every item on the stack into one value."
     if not stack:
@@ -273,8 +273,9 @@ def increment(bos):
     return bos + 1
 
 @Function('R', menu=main_menu, push=1, description='Sum all registers',
-          log_as=lambda args, retval: f"sum all registers = {retval[0]}")
+          log_as=lambda retval: f"sum all registers = {retval[0]}")
 def sum_reg(registry):
+    "Sum the values of all registers. Example function."
     values = registry.values()
     if not values:
         raise Exception("Oops, there aren't any registers")

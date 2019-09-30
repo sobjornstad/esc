@@ -5,6 +5,7 @@ util.py - miscellaneous numeric utility functions
 import curses
 import decimal
 import display
+import inspect
 import sys
 
 from consts import REQUIRED_TERM_HEIGHT, REQUIRED_TERM_WIDTH
@@ -74,3 +75,19 @@ def fetch_input(in_menu) -> int:
     else:
         return display.screen().getch_stack()
 
+
+def magic_call(func, available_kwargs, args=None):
+    """
+    Call /func/, allowing it to pick and choose from a set of arguments.
+
+    If an iterable of positional /args/ is supplied, splat them to the
+    function. Then, double-splat any kwargs to the function that it asks for
+    (matching by name), ignoring any it doesn't care about.
+    """
+    sig = inspect.signature(func)
+    parms = sig.parameters.values()
+    if args is None:
+        args = ()
+    return func(*args, **{k: v
+                          for k, v in available_kwargs.items()
+                          if k in [i.name for i in parms]})

@@ -25,6 +25,7 @@ from display import screen
 import modes
 from oops import (FunctionExecutionError, InsufficientItemsError, NotInMenuError,
                   FunctionProgrammingError)
+import util
 
 BINOP = 'binop'
 UNOP = 'unop'
@@ -249,7 +250,7 @@ class EscOperation(EscFunction):
         msg = f"'{self.key}' needs at least {pops_requested} {pops} on stack."
         return InsufficientItemsError(pops_requested, msg)
 
-    def describe_operation(self, args, retvals):
+    def describe_operation(self, args, retvals, registry):
         """
         Given the values popped from the stack (args) and the values pushed
         back to the stack (retvals), return a string describing what was done.
@@ -277,7 +278,9 @@ class EscOperation(EscFunction):
                     problem="requested binary operator logging (BINOP) but did not "
                             "request two values from the stack")
         elif callable(self.log_as):
-            return self.log_as(args, retvals)
+            return util.magic_call(
+                self.log_as,
+                {'args': args, 'retval': retvals, 'registry': registry})
         else:
             return self.log_as.format(*itertools.chain(args, retvals))
 
@@ -297,7 +300,7 @@ class EscOperation(EscFunction):
                     "That operation is not defined by the rules of arithmetic.")
             except InsufficientItemsError as e:
                 raise self._insufficient_items_on_stack(e.number_required)
-            self.store_results(ss, args, retvals)
+            self.store_results(ss, args, retvals, registry)
         return None
 
     def retrieve_arguments(self, ss):
@@ -332,7 +335,7 @@ class EscOperation(EscFunction):
 
         return args
 
-    def store_results(self, ss, args, return_values):
+    def store_results(self, ss, args, return_values, registry):
         """
         Return the values computed by our function to the stack.
         """
@@ -356,9 +359,10 @@ class EscOperation(EscFunction):
                 else:
                     coerced_retvals.append(i)
 
-            ss.push(coerced_retvals, self.describe_operation(args, return_values))
+            ss.push(coerced_retvals,
+                    self.describe_operation(args, return_values, registry))
         else:
-            ss.record_operation(self.describe_operation(args, ()))
+            ss.record_operation(self.describe_operation(args, (), registry))
 
 
 ### Constructor/registration functions to be used in functions.py ###
