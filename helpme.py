@@ -2,6 +2,9 @@
 helpme.py - online help functions for esc
 """
 
+import inspect
+
+import builtin_stubs
 from display import screen
 import menus
 from oops import NotInMenuError
@@ -9,17 +12,34 @@ import status
 import util
 
 
+def builtin_help(operation_key, menu):
+    """
+    Return an instance of the builtin class for the menu choice represented
+    by operation_key, if one exists; otherwise return None.
+    """
+    if menu.is_main_menu:
+        matching_builtin = [obj for name, obj in inspect.getmembers(builtin_stubs)
+                            if inspect.isclass(obj)
+                            and name != 'BuiltinFunction'
+                            and obj.key == operation_key]
+        if matching_builtin:
+            return matching_builtin[0]()
+    return None
+
+
 def get_help(operation_key, menu, ss, registry, recursing=False):
     """
     Display the on-line help page for the provided operation.
     """
-    try:
-        esc_function = menu.child(operation_key)
-    except NotInMenuError as e:
-        if not recursing:
-            status.error(str(e))
-        # When recursing, we get out of the menu by pressing a key that doesn't exist.
-        return
+    esc_function = builtin_help(operation_key, menu)
+    if not esc_function:
+        try:
+            esc_function = menu.child(operation_key)
+        except NotInMenuError as e:
+            if not recursing:
+                status.error(str(e))
+            # When recursing, we get out of the menu by pressing a key that doesn't exist.
+            return
 
     screen().refresh_stack(ss)
     if esc_function.is_menu:

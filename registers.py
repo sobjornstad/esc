@@ -19,6 +19,9 @@ class Registry:
     def __contains__(self, value):
         return value in self._registers
 
+    def __len__(self):
+        return len(self._registers)
+
     def __getitem__(self, key):
         return self._registers[key]
 

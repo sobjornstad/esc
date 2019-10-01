@@ -365,6 +365,43 @@ class EscOperation(EscFunction):
             ss.record_operation(self.describe_operation(args, (), registry))
 
 
+class BuiltinFunction(EscFunction):
+    """
+    Mock class for built-in functions. Built-in EscFunctions do not actually
+    get run and do anything -- they are special-cased because they need
+    access to internals normal functions cannot access. However, it's still
+    useful to have classes for them as stand-ins for things like retrieving
+    help.
+
+    Unlike the other EscFunctions, we subclass these because they each need
+    special behaviors. Subclasses should override the docstring (directly is
+    fine) and the simulated_result() method.
+
+    Subclasses should define key and description as class variables. They'll
+    be shadowed by instance variables once we instantiate the class, but the
+    values will be the same. That sounds dumb, but it makes sense for all
+    other classes in the hierarchy and doesn't hurt us here. We don't want to
+    define them in the __init__ of each subclass because then we have to
+    instantiate every class to match on them by key (see reflective search in
+    helpme.py).
+    """
+    def __init__(self):
+        super().__init__(self.key, self.description)
+        self.is_menu = False
+
+    def execute(self, access_key, ss, registry):  # pylint: disable=useless-return
+        pass
+
+    @property
+    def help_title(self):
+        return f"{self.key} ({self.description})"
+
+    @property
+    def signature_info(self):
+        type_ = f"    Type: Built-in (performs special esc actions)"
+        return (type_,)
+
+
 ### Constructor/registration functions to be used in functions.py ###
 def Menu(key, description, parent, mode_display=None):  # pylint: disable=invalid-name
     "Create a new menu under the existing menu /parent/."
