@@ -136,8 +136,7 @@ class EscMenu(EscFunction):
         try:
             return self.children[access_key]
         except KeyError:
-            raise NotInMenuError(
-                f"There's no option '{access_key}' in this menu.")
+            raise NotInMenuError(access_key)
 
     def execute(self, access_key, ss, registry):
         if access_key == QUIT_CHARACTER:

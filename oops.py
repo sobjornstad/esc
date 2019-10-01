@@ -2,6 +2,8 @@
 oops.py - custom exceptions for esc
 """
 
+import curses.ascii
+
 class EscError(Exception):
     pass
 
@@ -35,7 +37,22 @@ class FunctionProgrammingError(ProgrammingError):
         return self.message
 
 class NotInMenuError(EscError):
-    pass
+    """
+    Raised when a keypress is parsed as a menu option but that key doesn't
+    refer to any choice on the current menu. Describes the problem in a
+    message that can be printed to the status bar.
+    """
+    def __init__(self, access_key):
+        super().__init__()
+        specials = (' ', '\n', '\r', '\t')
+        if ord(access_key) > 256 or access_key in specials:
+            self.msg = "The key you pressed doesn't mean anything to esc here."
+        else:
+            self.msg = (f"There's no option '{curses.ascii.unctrl(access_key)}' "
+                        f"in this menu.")
+
+    def __str__(self):
+        return self.msg
 
 class FunctionExecutionError(EscError):
     pass
