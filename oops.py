@@ -5,17 +5,27 @@ oops.py - custom exceptions for esc
 import curses.ascii
 
 class EscError(Exception):
-    pass
+    "Base application exception for esc. Don't raise directly."
+
 
 class ProgrammingError(EscError):
-    pass
+    """
+    Indicates an error caused by incorrectly written or defined esc functions
+    or other (possibly built-in ones). This includes modes, menus, and so on,
+    as well as actual functions. It does not include runtime errors within
+    functions themselves; these are FunctionExecutionErrors.
+    """
+
 
 class FunctionProgrammingError(ProgrammingError):
     """
-    Programming error that occurs in a user's function (or, for that matter,
-    a badly tested built-in function!).
+    A more specific type of ProgrammingError that occurs when a user's
+    @Function decorator or function parameters are invalid.
 
-    Wraps some handy logic for generating a standardized message.
+    The distinction is mostly for convenience within esc's codebase rather
+    than because client code needs to tell the difference from other
+    ProgrammingErrors; this class wraps some handy logic for generating a
+    standardized message.
     """
     def __init__(self, function_name, key, description, problem,
                  wrapped_exception=None):
@@ -36,6 +46,7 @@ class FunctionProgrammingError(ProgrammingError):
     def __str__(self):
         return self.message
 
+
 class NotInMenuError(EscError):
     """
     Raised when a keypress is parsed as a menu option but that key doesn't
@@ -54,21 +65,43 @@ class NotInMenuError(EscError):
     def __str__(self):
         return self.msg
 
-class FunctionExecutionError(EscError):
-    pass
 
 class InvalidNameError(EscError):
-    pass
+    """
+    Raised when the user chooses an invalid name for a register or other label.
+    """
+
+
+class FunctionExecutionError(EscError):
+    """
+    A broad exception type that occurs when the code within a function
+    couldn't be executed successfully for some reason. It is raised automatically
+    when events like these happen:
+
+    - a number is in the middle of being entered and isn't a valid number
+    - a function performed an undefined operation like dividing by zero
+    - a function raised FunctionExecutionError itself due to inability to
+      complete the task
+    - there are too many or too few items on the stack
+
+    FunctionExecutionErrors normally result in the __str__ of the exception
+    being printed to the status bar, so exception messages should be concise.
+
+    A FunctionExecutionError may be raised directly, or one of its subclasses
+    may be used.
+    """
 
 class InsufficientItemsError(FunctionExecutionError):
     """
-    Raised by functions that use pop=-1 to indicate not enough items are on
-    the stack to finish their work.
+    Raised directly by functions that use pop=-1 to indicate not enough items
+    are on the stack to finish their work, or by the menu logic when a
+    function requests /n/ pops and the stack contains fewer than /n/ items.
 
-    The function should raise an exception using the number_required
-    constructor parameter. The menu will normally reraise the exception with
-    a more useful message; a fallback message is provided in case this
-    doesn't happen for some reason.
+    Functions may use the simplified form of the exception, providing an int
+    describing the number of items that should have been on the stack for the
+    number_required constructor parameter. The menu will then reraise the
+    exception with a more useful message; a fallback message is provided in
+    case this doesn't happen for some reason.
     """
     def __init__(self, number_required, msg=None):
         super().__init__()
