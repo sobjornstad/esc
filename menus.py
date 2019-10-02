@@ -188,26 +188,37 @@ class EscOperation(EscFunction):
         items = "item" if self.pop == 1 else "items"
         results = "result" if self.push == 1 else "results"
         type_ = f"    Type: Function (performs calculations)"
+
         if self.pop == -1:
             input_ = f"    Input: entire stack"
         else:
-            input_ = f"    Input: {self.pop} {items} from the stack."
-        if self.push < 1:
+            input_ = f"    Input: {self.pop} {items} from the stack"
+
+        if self.retain:
+            input_ += " (will remain)"
+
+        if self.push == -1:
+            output = "    Output: any number of items"
+        elif self.push == 0:
             output = "    Output: no output"
         else:
-            output = f"    Output: {self.push} {results} added to the stack."
+            output = f"    Output: {self.push} {results} added to the stack"
+
         return (type_, input_, output)
 
-    @staticmethod
-    def _simulated_description(args, log, results):
+    def _simulated_description(self, args, log, results):
         """
         Return a list of strings to display in esc's interface to describe an
         operation that takes /args/, produces a log message of /log/, and
         outputs /results/.
         """
         description = [f"This calculation would occur:",
-                       f"    {log}",
-                       f"The following stack items would be consumed:"]
+                       f"    {log}"]
+        if self.retain:
+            description.append("The following stack items would be read as input:")
+        else:
+            description.append("The following stack items would be consumed:")
+
         if args:
             for i in args:
                 description.append(f"    {i}")
@@ -353,16 +364,11 @@ class EscOperation(EscFunction):
         change the state -- instead, provide a description of what would
         happen.
         """
-        if self.pop == -1:
-            used_args = ss.s[:]
-        elif self.pop == 0:
-            used_args = []
-        else:
-            used_args = ss.s[-self.pop:]
+        used_args = ss.last_n_items(self.pop)
         checkpoint = ss.memento()
         try:
             self.execute(None, ss, registry)
-            results = ss.s[-self.push:]
+            results = ss.last_n_items(self.push)
             log_message = ss.last_operation
         except InsufficientItemsError as e:
             items = "item is" if e.number_required == 1 else "items are"

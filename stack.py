@@ -316,6 +316,26 @@ class StackState:
                 self.s = self.s[:-num]
             return stack_slice
 
+    def last_n_items(self, n):
+        """
+        Return the last /n/ items from the stack, with special meaning for 0
+        and -1.
+
+        n > 0   => the last n items on the stack
+        n == 0  => the empty list
+        n == -1 => (a shallow copy of) the entire stack
+
+        This matches the meaning of the pop and push values used in the
+        function execution logic. A function requests push=n>0 when it wants
+        to push n items, 0 if it pushes nothing, or -1 if whatever it pushes
+        should replace the entire stack.
+        """
+        if n == -1:
+            return self.s[:]
+        elif n == 0:
+            return []
+        else:
+            return self.s[-n:]
 
     def record_operation(self, description):
         """
