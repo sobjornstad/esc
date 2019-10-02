@@ -4,11 +4,11 @@ util.py - miscellaneous numeric utility functions
 
 import curses
 import decimal
-import display
 import inspect
 import sys
 
 from consts import REQUIRED_TERM_HEIGHT, REQUIRED_TERM_WIDTH
+import display
 
 
 def is_number(c):

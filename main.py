@@ -237,8 +237,6 @@ def main():
             screen().refresh_status()
         else:
             screen().refresh_stack(ss)
-            #TODO: This shouldn't go to ready() if there was an advisory or
-            # error within the function
             status.ready()
 
 

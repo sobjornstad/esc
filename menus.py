@@ -6,11 +6,11 @@ Actual functions are defined in functions.py (and in a future
 user-defined-functions file).
 
 First come EscFunction and its subclasses, which implement both the menus and
-the functions in a sort of recursive tree pattern. Then come
-faux-constructors (actually functions) which can be imported from
-functions.py and called to register functions (we import functions.py from
-here so that it gets run). Through these constructors, all registered
-functions and submenus end up reachable from the main menu.
+the functions in a composite tree pattern. Then come faux-constructors
+(actually functions) which can be imported from functions.py and called to
+register functions (we import functions.py from here so that it gets run).
+Through these constructors, all registered functions and submenus end up
+reachable from the main menu.
 """
 
 from collections import OrderedDict
@@ -156,7 +156,7 @@ class EscOperation(EscFunction):
     """
     A type of EscFunction that can be run to make some changes on the stack.
     """
-    def __init__(self, key, func, pop, push, description, menu, log_as=None):
+    def __init__(self, key, func, pop, push, description, menu, log_as=None):  # pylint: disable=too-many-arguments
         super().__init__(key, description)
         self.function = func
         self.pop = pop
@@ -196,38 +196,18 @@ class EscOperation(EscFunction):
             output = f"    Output: {self.push} {results} added to the stack."
         return (type_, input_, output)
 
-    def simulated_result(self, ss, registry):
+    @staticmethod
+    def _simulated_description(args, log, results):
         """
-        Execute the operation on the provided StackState, but don't actually
-        change the state -- instead, provide a description of what would
-        happen.
+        Return a list of strings to display in esc's interface to describe an
+        operation that takes /args/, produces a log message of /log/, and
+        outputs /results/.
         """
-        if self.pop == -1:
-            used_args = ss.s[:]
-        elif self.pop == 0:
-            used_args = []
-        else:
-            used_args = ss.s[-self.pop:]
-        checkpoint = ss.memento()
-        try:
-            self.execute(None, ss, registry)
-            results = ss.s[-self.push:]
-            operation_description = ss.last_operation
-        except InsufficientItemsError as e:
-            items = "item is" if e.number_required == 1 else "items are"
-            return (f"An error would occur. (At least {e.number_required} stack {items}",
-                    f"needed to run this function.)")
-        except FunctionExecutionError:
-            return ("An error would occur. (Most likely the values on ",
-                    "the stack are not valid.)")
-        finally:
-            ss.restore(checkpoint)
-
         description = [f"This calculation would occur:",
-                       f"    {operation_description}",
+                       f"    {log}",
                        f"The following stack items would be consumed:"]
-        if used_args:
-            for i in used_args:
+        if args:
+            for i in args:
                 description.append(f"    {i}")
         else:
             description.append("    (none)")
@@ -248,6 +228,68 @@ class EscOperation(EscFunction):
         pops = 'item' if pops_requested == 1 else 'items'
         msg = f"'{self.key}' needs at least {pops_requested} {pops} on stack."
         return InsufficientItemsError(pops_requested, msg)
+
+    def _retrieve_arguments(self, ss):
+        """
+        Get a slice of stack from /ss/ of the size requested by the function
+        we're calling, throwing an exception if this can't be completed.
+        """
+        # Enter the number currently being edited, if any, stopping if it is
+        # invalid.
+        try:
+            ss.enter_number(running_op=self.key)
+        except ValueError as e:
+            raise FunctionExecutionError(str(e))
+
+        # Make sure there will be space to push the results.
+        # If requesting the whole stack, it's the function's responsibility to check.
+        if not ss.has_push_space(self.push - self.pop) and self.pop != -1:
+            num_short = self.push - self.pop - ss.free_stack_spaces
+            spaces = 'space' if num_short == 1 else 'spaces'
+            msg = f"'{self.key}': stack is too full (short {num_short} {spaces})."
+            #TODO: "Insufficient" doesn't seem like the right word here!
+            raise InsufficientItemsError(msg)
+
+        if self.pop == -1:
+            # Whole stack requested; will push the whole stack back later.
+            args = ss.s[:]
+            ss.clear()
+        else:
+            args = ss.pop(self.pop)
+            if (not args) and self.pop != 0:
+                raise self._insufficient_items_on_stack()
+
+        return args
+
+    def _store_results(self, ss, args, return_values, registry):
+        """
+        Return the values computed by our function to the stack.
+        """
+        if self.push > 0 or (self.push == -1 and return_values is not None):
+            if not hasattr(return_values, '__iter__'):
+                return_values = (return_values,)
+
+            coerced_retvals = []
+            for i in return_values:
+                # Functions can return any type that can be converted to Decimal.
+                if not isinstance(i, decimal.Decimal):
+                    try:
+                        coerced_retvals.append(decimal.Decimal(i))
+                    except (decimal.InvalidOperation, TypeError) as e:
+                        raise FunctionProgrammingError(
+                            function_name=self.function.__name__,
+                            key=self.key,
+                            description=self.description,
+                            problem="returned a value that cannot be converted "
+                                    "to a Decimal",
+                            wrapped_exception=e)
+                else:
+                    coerced_retvals.append(i)
+
+            ss.push(coerced_retvals,
+                    self.describe_operation(args, return_values, registry))
+        else:
+            ss.record_operation(self.describe_operation(args, (), registry))
 
     def describe_operation(self, args, retvals, registry):
         """
@@ -285,7 +327,7 @@ class EscOperation(EscFunction):
 
     def execute(self, access_key, ss, registry):  # pylint: disable=useless-return
         with ss.transaction():
-            args = self.retrieve_arguments(ss)
+            args = self._retrieve_arguments(ss)
             try:
                 retvals = self.function(args, registry)
             except ValueError:
@@ -299,69 +341,38 @@ class EscOperation(EscFunction):
                     "That operation is not defined by the rules of arithmetic.")
             except InsufficientItemsError as e:
                 raise self._insufficient_items_on_stack(e.number_required)
-            self.store_results(ss, args, retvals, registry)
-        return None
+            self._store_results(ss, args, retvals, registry)
+        return None  # back to main menu
 
-    def retrieve_arguments(self, ss):
+    def simulated_result(self, ss, registry):
         """
-        Get a slice of stack from /ss/ of the size requested by the function
-        we're calling, throwing an exception if this can't be completed.
+        Execute the operation on the provided StackState, but don't actually
+        change the state -- instead, provide a description of what would
+        happen.
         """
-        # Enter the number currently being edited, if any, stopping if it is
-        # invalid.
-        try:
-            ss.enter_number(running_op=self.key)
-        except ValueError as e:
-            raise FunctionExecutionError(str(e))
-
-        # Make sure there will be space to push the results.
-        # If requesting the whole stack, it's the function's responsibility to check.
-        if not ss.has_push_space(self.push - self.pop) and self.pop != -1:
-            num_short = self.push - self.pop - ss.free_stack_spaces
-            spaces = 'space' if num_short == 1 else 'spaces'
-            msg = f"'{self.key}': stack is too full (short {num_short} {spaces})."
-            #TODO: "Insufficient" doesn't seem like the right word here!
-            raise InsufficientItemsError(msg)
-
         if self.pop == -1:
-            # Whole stack requested; will push the whole stack back later.
-            args = ss.s[:]
-            ss.clear()
+            used_args = ss.s[:]
+        elif self.pop == 0:
+            used_args = []
         else:
-            args = ss.pop(self.pop)
-            if (not args) and self.pop != 0:
-                raise self._insufficient_items_on_stack()
+            used_args = ss.s[-self.pop:]
+        checkpoint = ss.memento()
+        try:
+            self.execute(None, ss, registry)
+            results = ss.s[-self.push:]
+            log_message = ss.last_operation
+        except InsufficientItemsError as e:
+            items = "item is" if e.number_required == 1 else "items are"
+            return (
+                f"An error would occur. (At least {e.number_required} stack {items}",
+                f"needed to run this function.)")
+        except FunctionExecutionError:
+            return ("An error would occur. (Most likely the values on ",
+                    "the stack are not valid.)")
+        finally:
+            ss.restore(checkpoint)
 
-        return args
-
-    def store_results(self, ss, args, return_values, registry):
-        """
-        Return the values computed by our function to the stack.
-        """
-        if self.push > 0 or (self.push == -1 and return_values is not None):
-            if not hasattr(return_values, '__iter__'):
-                return_values = (return_values,)
-
-            coerced_retvals = []
-            for i in return_values:
-                # Functions can return any type that can be converted to Decimal.
-                if not isinstance(i, decimal.Decimal):
-                    try:
-                        coerced_retvals.append(decimal.Decimal(i))
-                    except (decimal.InvalidOperation, TypeError) as e:
-                        raise FunctionProgrammingError(
-                            function_name=self.function.__name__,
-                            key=self.key,
-                            description=self.description,
-                            problem="returned a value that cannot be converted to a Decimal",
-                            wrapped_exception=e)
-                else:
-                    coerced_retvals.append(i)
-
-            ss.push(coerced_retvals,
-                    self.describe_operation(args, return_values, registry))
-        else:
-            ss.record_operation(self.describe_operation(args, (), registry))
+        return self._simulated_description(used_args, log_message, results)
 
 
 class BuiltinFunction(EscFunction):
@@ -416,11 +427,10 @@ def Constant(value, key, description, menu):  # pylint: disable=invalid-name
     "Create a new constant. Syntactic sugar for registering a function."
     @Function(key=key, menu=menu, push=1, description=description,
               log_as=f"insert constant {description}")
-    def func():  # pylint: disable=unused-variable
-        f"""
-        Add the constant {description} = {value} to the stack.
-        """
+    def func():
         return value
+    # You can't define a dynamic docstring from within the function.
+    func.__doc__ = f"Add the constant {description} = {value} to the stack."
 
 
 def Function(key, menu, push, description=None, log_as=None):  # pylint: disable=invalid-name
@@ -428,7 +438,6 @@ def Function(key, menu, push, description=None, log_as=None):  # pylint: disable
     Decorator to register a function on a given menu.
     """
     def function_decorator(func):
-        #TODO: Should this logic actually be in the decorator, or should it be in the Operation class?
         sig = signature(func)
         parms = sig.parameters.values()
 
