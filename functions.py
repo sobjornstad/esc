@@ -12,7 +12,7 @@ from subprocess import Popen, PIPE
 from consts import CONSTANT_MENU_CHARACTER
 from menus import UNOP, BINOP, Constant, Function, Menu, Mode, ModeChange, main_menu
 import modes
-from oops import InsufficientItemsError
+from oops import InsufficientItemsError, FunctionExecutionError
 from status import status
 
 
@@ -289,5 +289,5 @@ def sum_reg(registry):
     "Sum the values of all registers. Example function."
     values = registry.values()
     if not values:
-        raise Exception("Oops, there aren't any registers")
+        raise FunctionExecutionError("There are no registers defined.")
     return sum(i.decimal for i in values)
