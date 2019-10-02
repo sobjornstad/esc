@@ -295,12 +295,16 @@ class StackState:
         self.stack_posn += len(vals)
         return True
 
-    def pop(self, num=1):
+    def pop(self, num=1, retain=False):
         """
         Pop /num/ StackItems off the end of the stack and return them as a
         list. If there are too few items on the stack, return None.
+
+        If /retain/ is true, don't remove the items from the stack.
         """
-        self.stack_posn -= num
+        if not retain:
+            self.stack_posn -= num
+
         if len(self.s) < num:
             return None
         elif num == 0:
@@ -308,7 +312,8 @@ class StackState:
             return []
         else:
             stack_slice = self.s[-num:]
-            self.s = self.s[:-num]
+            if not retain:
+                self.s = self.s[:-num]
             return stack_slice
 
 

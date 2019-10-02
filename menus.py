@@ -156,12 +156,14 @@ class EscOperation(EscFunction):
     """
     A type of EscFunction that can be run to make some changes on the stack.
     """
-    def __init__(self, key, func, pop, push, description, menu, log_as=None):  # pylint: disable=too-many-arguments
+    def __init__(self, key, func, pop, push, description, menu, retain=False,
+                 log_as=None):  # pylint: disable=too-many-arguments
         super().__init__(key, description)
         self.function = func
         self.pop = pop
         self.push = push
         self.parent = menu
+        self.retain = retain
         self.log_as = log_as
 
     def __repr__(self):
@@ -253,9 +255,10 @@ class EscOperation(EscFunction):
         if self.pop == -1:
             # Whole stack requested; will push the whole stack back later.
             args = ss.s[:]
-            ss.clear()
+            if not self.retain:
+                ss.clear()
         else:
-            args = ss.pop(self.pop)
+            args = ss.pop(self.pop, retain=self.retain)
             if (not args) and self.pop != 0:
                 raise self._insufficient_items_on_stack()
 
@@ -433,7 +436,7 @@ def Constant(value, key, description, menu):  # pylint: disable=invalid-name
     func.__doc__ = f"Add the constant {description} = {value} to the stack."
 
 
-def Function(key, menu, push, description=None, log_as=None):  # pylint: disable=invalid-name
+def Function(key, menu, push, description=None, retain=False, log_as=None):  # pylint: disable=invalid-name
     """
     Decorator to register a function on a given menu.
     """
@@ -471,7 +474,8 @@ def Function(key, menu, push, description=None, log_as=None):  # pylint: disable
             return func(*positional_binding, **keyword_binding)
 
         op = EscOperation(key=key, func=wrapper, pop=pop, push=push,
-                          description=description, menu=menu, log_as=log_as)
+                          description=description, menu=menu, log_as=log_as,
+                          retain=retain)
         menu.register_child(op)
         return wrapper
 
