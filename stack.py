@@ -12,7 +12,7 @@ from decimal import Decimal
 
 import history
 from oops import RollbackTransaction
-import status
+from status import status
 import util
 from consts import STACKDEPTH, STACKWIDTH
 

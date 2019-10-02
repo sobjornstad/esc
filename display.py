@@ -5,13 +5,13 @@ Other modules call into the EscScreen singleton defined here when they need
 to update the screen.
 """
 
-from contextlib import contextmanager
 import curses
 import itertools
 import textwrap
 from typing import Sequence
 
 from consts import STACKDEPTH, STACKWIDTH, PROGRAM_NAME
+from status import status
 from util import truncate, quit_if_screen_too_small, centered_position
 
 # pylint: disable=invalid-name
@@ -135,15 +135,15 @@ class StackWindow(Window):
             # when not editing a number, cursor goes on *next line*
             self.window.move(2 + self.ss.stack_posn, self.ss.cursor_posn + 1)
 
-    def backspace(self, status):
+    def backspace(self, bs_status):
         """
         Update the screen to show that a character was backspaced off the
         stack line being edited.
         """
-        if status == 0:  # character backspaced
+        if bs_status == 0:  # character backspaced
             self.window.addstr(1 + self.ss.stack_posn, self.ss.cursor_posn + 1, ' ')
             self.window.move(1 + self.ss.stack_posn, self.ss.cursor_posn + 1)
-        elif status == 1:  # stack item wiped out
+        elif bs_status == 1:  # stack item wiped out
             self.window.addstr(2 + self.ss.stack_posn, self.ss.cursor_posn + 1, ' ')
             self.window.move(2 + self.ss.stack_posn, self.ss.cursor_posn + 1)
         else:  # nothing to backspace
@@ -347,26 +347,22 @@ class EscScreen:
         self.registersw = RegistersWindow(self, max_y)
 
     def refresh_all(self):
-        for i in (self.statusw, self.stackw, self.historyw, self.commandsw,
-                  self.registersw):
+        self.refresh_status()
+        for i in (self.stackw, self.historyw, self.commandsw, self.registersw):
             i.refresh()
 
     ### Status bar ###
-    def set_status_char(self, c):
-        """Place the indicated character /c/ in the status bracket."""
-        self.statusw.status_char = c
-        self.statusw.refresh()
-
-    def set_status_msg(self, msg):
-        self.statusw.status_msg = msg
-        self.statusw.refresh()
-
     def focus_status_bar(self):
         "Place the cursor in the status bar bracket."
         self.statusw.emplace_cursor()
 
     def getch_status(self):
         return self.statusw.getch()
+
+    def refresh_status(self):
+        self.statusw.status_char = status.status_char
+        self.statusw.status_msg = status.status_message
+        self.statusw.refresh()
 
 
     ### Stack ###
@@ -422,6 +418,7 @@ class EscScreen:
     def show_help_window(self, is_menu: bool, help_title: str,
                          signature_info: Sequence[str], docstring: str,
                          results_info: Sequence[str]) -> None:
+        "Display a help window for the function we requested."
         max_y, _ = self.stdscr.getmaxyx()
         self.helpw = HelpWindow(self, is_menu, help_title, signature_info,
                                 docstring, results_info, max_y)

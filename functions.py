@@ -11,7 +11,7 @@ from consts import CONSTANT_MENU_CHARACTER
 from menus import UNOP, BINOP, Constant, Function, Menu, Mode, ModeChange, main_menu
 import modes
 from oops import InsufficientItemsError
-import status
+from status import status
 
 
 ####################

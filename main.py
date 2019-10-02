@@ -18,7 +18,7 @@ from oops import (FunctionExecutionError, InvalidNameError, NotInMenuError,
                   RollbackTransaction)
 import registers
 import stack
-import status
+from status import status
 import util
 
 
@@ -80,14 +80,14 @@ def enter_new_number(ss):
 def _get_register_char():
     "Retrieve a character representing a register."
     status.expecting_register()
-    status.redraw()
+    screen().refresh_status()
     return chr(util.fetch_input(True))
 
 
 def _get_help_char():
     "Retrieve a character representing a register."
     status.expecting_help()
-    status.redraw()
+    screen().refresh_status()
     return chr(util.fetch_input(True))
 
 
@@ -203,7 +203,7 @@ def main():
     # Main loop.
     while True:
         status.mark_seen()
-        status.redraw()
+        screen().refresh_status()
         screen().update_history(ss)
 
         if menu is None:
@@ -226,7 +226,7 @@ def main():
                 continue
         else:
             status.in_menu()
-            status.redraw()
+            screen().refresh_status()
             c = util.fetch_input(True)
 
         # Try to interpret the input as a function.
@@ -234,7 +234,7 @@ def main():
             menu = menu.execute(chr(c), ss, registry)
         except (NotInMenuError, FunctionExecutionError) as e:
             status.error(str(e))
-            status.redraw()
+            screen().refresh_status()
         else:
             screen().refresh_stack(ss)
             #TODO: This shouldn't go to ready() if there was an advisory or

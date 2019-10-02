@@ -8,7 +8,7 @@ import builtin_stubs
 from display import screen
 import menus
 from oops import NotInMenuError
-import status
+from status import status
 import util
 
 
@@ -38,7 +38,8 @@ def get_help(operation_key, menu, ss, registry, recursing=False):
         except NotInMenuError as e:
             if not recursing:
                 status.error(str(e))
-            # When recursing, we get out of the menu by pressing a key that doesn't exist.
+            # When recursing, we get out of the menu by pressing a key
+            # that doesn't exist.
             return
 
     screen().refresh_stack(ss)
@@ -47,7 +48,7 @@ def get_help(operation_key, menu, ss, registry, recursing=False):
     else:
         msg = f"Help: '{esc_function.description}' (press any key to return)"
     status.advisory(msg)
-    status.redraw()
+    screen().refresh_status()
     screen().show_help_window(esc_function.is_menu,
                               esc_function.help_title,
                               esc_function.signature_info,
