@@ -158,12 +158,12 @@ def try_special(c, ss, registry, menu):
         r = ss.backspace()
         screen().backspace(ss, r)
     elif chr(c) == UNDO_CHARACTER:
-        if history.hs.undo_to_checkpoint(ss):
+        if history.hs.undo(ss):
             screen().refresh_stack(ss)
         else:
             status.error("Nothing to undo.")
     elif curses.ascii.unctrl(c) == REDO_CHARACTER:
-        if history.hs.redo_to_checkpoint(ss):
+        if history.hs.redo(ss):
             screen().refresh_stack(ss)
         else:
             status.error("Nothing to redo.")

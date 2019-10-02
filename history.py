@@ -2,7 +2,6 @@
 history.py - manage a history of calculations
 """
 
-
 class HistoricalStack:
     """
     Manages the stack's history over time, as well as a list of the functions
@@ -22,41 +21,36 @@ class HistoricalStack:
         if (not self.undo_stack) or self.undo_stack[-1] != ss.memento():
             self.undo_stack.append(ss.memento())
 
-    def undo_to_checkpoint(self, ss, checkpoint_index=-1):
+    def undo(self, ss):
         """
         Mutate the provided StackState to bring it back to the preceding
-        checkpoint (or any index of checkpoint in the list -- typically
-        negative indices would be the useful ones here).
+        checkpoint.
 
         Returns True if successful, False if no undo states are available.
         """
-        #TODO: Indices other than -1 are not safe here --
-        # they will corrupt the stack since they pop from the middle of the
-        # list and leave the rest.
         if self.undo_stack:
-            restore_memento = self.undo_stack.pop(checkpoint_index)
+            restore_memento = self.undo_stack.pop()
             self.redo_stack.append(ss.memento())
             ss.restore(restore_memento)
             return True
         else:
             return False
 
-    def redo_to_checkpoint(self, ss, checkpoint_index=-1):
+    def redo(self, ss):
         """
         Mutate the provided StackState to bring it forward to the next
-        checkpoint in the redo list (or any index of checkpoint in the list
-        -- typically negative indices would be the useful ones here).
+        checkpoint in the redo list.
 
         Returns True if successful, False if no redo states are available.
         """
-        #TODO: same problem as above
         if self.redo_stack:
-            restore_memento = self.redo_stack.pop(checkpoint_index)
+            restore_memento = self.redo_stack.pop()
             self.undo_stack.append(ss.memento())
             ss.restore(restore_memento)
             return True
         else:
             return False
+
 
 # Make a single HistoricalStack available as a module global.
 # pylint: disable=invalid-name
