@@ -6,6 +6,8 @@ functions.py -- default calculator functions
 
 from decimal import Decimal
 import math
+import platform
+from subprocess import Popen, PIPE
 
 from consts import CONSTANT_MENU_CHARACTER
 from menus import UNOP, BINOP, Constant, Function, Menu, Mode, ModeChange, main_menu
@@ -237,17 +239,16 @@ Constant(math.e, 'e', description='e', menu=constants_menu)
           retain=True, log_as="yank {0} to clipboard")
 def yank_bos(bos_str):
     """
-    Use the 'xsel' command to copy the value of bos to your system clipboard.
-    This probably only works on Unix-like systems, and only with a running X
-    server.
+    Copy the value of bos to your system clipboard.
     """
-    #TODO: Make this work on Mac and Windows, there are appropriate shell functions.
-    # help from: http://stackoverflow.com/questions/7606062/
-    # is-there-a-way-to-directly-send-a-python-output-to-clipboard
-    from subprocess import Popen, PIPE
-    p = Popen(['xsel', '-bi'], stdin=PIPE)
+    cmd = {
+        'Windows': ['clip'],
+        'Darwin': ['pbcopy'],
+        'Linux': ['xsel', '-bi'],
+    }[platform.system()]
+    p = Popen(cmd, stdin=PIPE)
     p.communicate(input=bos_str.encode())
-    status.advisory('"%s" placed on system clipboard.' % bos_str)
+    status.advisory(f'"{bos_str}" placed on system clipboard.')
 
 @Function('S', menu=main_menu, push=1, description='sum entire stack',
           log_as=(lambda retval: f"sum entire stack = {retval[0]}"))
