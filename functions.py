@@ -108,9 +108,17 @@ def clear(*stack):  #pylint: disable=useless-return
 ###################
 
 TRIG_MODE_NAME = 'trig_mode'
+
+trig_doc = """
+    Calculate the values of trigonometric functions, treating inputs as
+    either degrees or radians depending on the mode.
+"""
+
 def trig_mode_display():
     return f"[{modes.get(TRIG_MODE_NAME)}]"
-trig_menu = Menu('t', 'trig menu', parent=main_menu, mode_display=trig_mode_display)
+
+trig_menu = Menu('t', 'trig menu', parent=main_menu, doc=trig_doc,
+                 mode_display=trig_mode_display)
 
 
 def trig_wrapper(bos, func, arc=False):
@@ -195,7 +203,8 @@ ModeChange(key='r', description='radians', menu=trig_menu, mode_name=TRIG_MODE_N
 # LOGARITHMS #
 ##############
 
-log_menu = Menu('l', 'log menu', parent=main_menu)
+log_doc = """Calculate the values of natural or base-10 logarithms."""
+log_menu = Menu('l', 'log menu', parent=main_menu, doc=log_doc)
 
 @Function('l', menu=log_menu, push=1, description='log x',
           log_as="log {0} = {1}")
@@ -226,7 +235,9 @@ def etothex(bos):
 # CONSTANTS #
 #############
 
-constants_menu = Menu(CONSTANT_MENU_CHARACTER, 'insert constant', main_menu)
+log_doc = """Insert common mathematical constants from this menu."""
+constants_menu = Menu(CONSTANT_MENU_CHARACTER, 'insert constant', main_menu,
+                      doc=log_doc)
 Constant(math.pi, 'p', description='pi', menu=constants_menu)
 Constant(math.e, 'e', description='e', menu=constants_menu)
 

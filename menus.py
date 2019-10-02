@@ -76,18 +76,15 @@ class EscMenu(EscFunction):
     """
     is_menu = True
 
-    def __init__(self, key, description, mode_display=None):
+    def __init__(self, key, description, doc, mode_display=None):
         super().__init__(key, description)
+        self.__doc__ = doc
         self.mode_display = mode_display
 
     def __repr__(self):
         return (f"<EscMenu '{self.key}': [" +
                 ", ".join(repr(i) for i in self.children.values()) +
                 "]>")
-
-    @property
-    def __doc__(self):
-        return "This is the menu's help text. Feature not yet implemented."
 
     @property
     def help_title(self):
@@ -422,14 +419,22 @@ class BuiltinFunction(EscFunction):
 
 
 ### Constructor/registration functions to be used in functions.py ###
-def Menu(key, description, parent, mode_display=None):  # pylint: disable=invalid-name
+def Menu(key, description, parent, doc, mode_display=None):  # pylint: disable=invalid-name
     "Create a new menu under the existing menu /parent/."
-    menu = EscMenu(key, description, mode_display)
+    menu = EscMenu(key, description, doc, mode_display)
     parent.register_child(menu)
     return menu
 
 
-main_menu = EscMenu('', "Main Menu")  # pylint: disable=invalid-name
+# As I write this, if the user ever sees this docstring, something's probably
+# gone wrong, since there's no way to choose the main menu from a menu and thus
+# get its help, but in the interest of future-proofing, we'll say something
+# interesting.
+main_doc = """
+    The main menu. All other esc functions and menus are eventually accessible
+    from this menu.
+"""
+main_menu = EscMenu('', "Main Menu", doc=main_doc)  # pylint: disable=invalid-name
 
 
 def Constant(value, key, description, menu):  # pylint: disable=invalid-name
