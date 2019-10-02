@@ -24,7 +24,7 @@ from consts import (QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
 from display import screen
 import modes
 from oops import (FunctionExecutionError, InsufficientItemsError, NotInMenuError,
-                  FunctionProgrammingError)
+                  FunctionProgrammingError, ProgrammingError)
 import util
 
 BINOP = 'binop'
@@ -66,6 +66,12 @@ class EscFunction:
         """
         Register a new child of this menu (whether a menu or an operation).
         """
+        if child.key in self.children:
+            conflicting = self.children[child.key].description
+            raise ProgrammingError(
+                f"Cannot add '{child.description}' as a child of '{self.description}':"
+                f" the access key '{child.key}' is already in use for '{conflicting}'.")
+
         child.parent = self
         self.children[child.key] = child
 

@@ -224,7 +224,7 @@ def ln(bos):
     "Take the base-e natural logarithm of bos."
     return bos.ln()
 
-@Function('n', menu=log_menu, push=1, description='e^x',
+@Function('e', menu=log_menu, push=1, description='e^x',
           log_as="e^{0} = {1}")
 def etothex(bos):
     "Take e to the power of bos."
