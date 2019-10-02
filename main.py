@@ -174,8 +174,10 @@ def try_special(c, ss, registry, menu):
     elif chr(c) == DELETE_REG_CHARACTER:
         delete_register(ss, registry)
     elif c == curses.KEY_F1:
-        help_on = _get_help_char()
-        get_help(help_on, menu, ss, registry)
+        with status.save_state():
+            help_on = _get_help_char()
+            get_help(help_on, menu, ss, registry)
+        screen().refresh_all()
     else:
         return False
     return True

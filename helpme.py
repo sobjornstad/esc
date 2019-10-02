@@ -66,5 +66,3 @@ def get_help(operation_key, menu, ss, registry, recursing=False):
 
     if not recursing:
         screen().helpw = None
-        screen().refresh_all()
-        status.ready()

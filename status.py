@@ -2,6 +2,7 @@
 status.py - manage the status bar
 """
 
+from contextlib import contextmanager
 from enum import Enum, auto
 
 
@@ -53,6 +54,7 @@ class StatusState:
         self.error_state = StatusState.SuccessCode.OK
         self.error_seen = True
         self.override_msg = ""
+        self._saved_states = []
 
     def __repr__(self):
         if self.error_state == StatusState.SuccessCode.OK:
@@ -128,6 +130,33 @@ class StatusState:
             self.error_state = StatusState.SuccessCode.OK
         else:
             self.error_seen = True
+
+    def push_state(self):
+        """
+        Save the current state onto a stack for later restoration.
+        """
+        self._saved_states.append((self.state,
+                                   self.error_state,
+                                   self.error_seen,
+                                   self.override_msg))
+
+    def pop_state(self):
+        """
+        Restore the most recently pushed state.
+        """
+        self.state, self.error_state, self.error_seen, self.override_msg = \
+            self._saved_states.pop()
+
+    @contextmanager
+    def save_state(self):
+        """
+        Save the current status while performing some operation.
+        """
+        self.push_state()
+        try:
+            yield
+        finally:
+            self.pop_state()
 
 
 # pylint: disable=invalid-name
