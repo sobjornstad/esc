@@ -10,7 +10,7 @@ import decimal
 from consts import (UNDO_CHARACTER, REDO_CHARACTER, STORE_REG_CHARACTER,
                     RETRIEVE_REG_CHARACTER, DELETE_REG_CHARACTER, PRECISION)
 import display
-from display import screen
+from display import screen, fetch_input
 from helpme import get_help
 import history
 import menus
@@ -81,14 +81,14 @@ def _get_register_char():
     "Retrieve a character representing a register."
     status.expecting_register()
     screen().refresh_status()
-    return chr(util.fetch_input(True))
+    return chr(fetch_input(True))
 
 
 def _get_help_char():
     "Retrieve a character representing a register."
     status.expecting_help()
     screen().refresh_status()
-    return chr(util.fetch_input(True))
+    return chr(fetch_input(True))
 
 
 def store_register(ss, registry):
@@ -215,7 +215,7 @@ def main():
         # Update cursor posn and fetch one char of input.
         screen().place_cursor(ss)
         if menu is menus.main_menu:
-            c = util.fetch_input(False)
+            c = fetch_input(False)
 
             # Are we entering a number?
             r = try_add_to_number(c, ss)
@@ -229,7 +229,7 @@ def main():
         else:
             status.in_menu()
             screen().refresh_status()
-            c = util.fetch_input(True)
+            c = fetch_input(True)
 
         # Try to interpret the input as a function.
         try:

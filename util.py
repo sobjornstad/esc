@@ -9,7 +9,6 @@ import itertools
 import sys
 
 from consts import REQUIRED_TERM_HEIGHT, REQUIRED_TERM_WIDTH
-import display
 from oops import ProgrammingError
 
 
@@ -63,19 +62,6 @@ def centered_position(text: str, width: int) -> int:
     center it within a window of width /width/.
     """
     return (width - len(text)) // 2 + 1
-
-
-def fetch_input(in_menu) -> int:
-    """
-    Get one character of input, the location of the window to fetch from
-    depending on whether we currently have a menu open (with a menu open, the
-    cursor sits in the status bar). The character is returned as an int for
-    compatibility with curses functions; use chr() to turn it into a string.
-    """
-    if in_menu:
-        return display.screen().getch_status()
-    else:
-        return display.screen().getch_stack()
 
 
 def partition(pred, iterable):

@@ -433,6 +433,19 @@ def screen():
     return _screen
 
 
+def fetch_input(in_menu) -> int:
+    """
+    Get one character of input, the location of the window to fetch from
+    depending on whether we currently have a menu open (with a menu open, the
+    cursor sits in the status bar). The character is returned as an int for
+    compatibility with curses functions; use chr() to turn it into a string.
+    """
+    if in_menu:
+        return screen().getch_status()
+    else:
+        return screen().getch_stack()
+
+
 def init(stdscr):
     "Initialize the screen() from curses' stdscr."
     global _screen

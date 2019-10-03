@@ -5,11 +5,10 @@ helpme.py - online help functions for esc
 import inspect
 
 import builtin_stubs
-from display import screen
+from display import screen, fetch_input
 import menus
 from oops import NotInMenuError
 from status import status
-import util
 
 
 def builtin_help(operation_key, menu):
@@ -59,10 +58,10 @@ def get_help(operation_key, menu, ss, registry, recursing=False):
     if esc_function.is_menu:
         menu.execute(operation_key, ss, registry)
         menus.display_menu(esc_function)
-        c = util.fetch_input(True)
+        c = fetch_input(True)
         get_help(chr(c), esc_function, ss, registry, recursing=True)
     else:
-        c = util.fetch_input(True)
+        c = fetch_input(True)
 
     if not recursing:
         screen().helpw = None
