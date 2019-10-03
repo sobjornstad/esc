@@ -5,10 +5,12 @@ util.py - miscellaneous numeric utility functions
 import curses
 import decimal
 import inspect
+import itertools
 import sys
 
 from consts import REQUIRED_TERM_HEIGHT, REQUIRED_TERM_WIDTH
 import display
+from oops import ProgrammingError
 
 
 def is_number(c):
@@ -76,18 +78,42 @@ def fetch_input(in_menu) -> int:
         return display.screen().getch_stack()
 
 
-def magic_call(func, available_kwargs, args=None):
+def partition(pred, iterable):
     """
-    Call /func/, allowing it to pick and choose from a set of arguments.
+    Use a predicate to partition entries into false entries and true entries.
+    Itertools recipe from the standard library documentation.
+    """
+    t1, t2 = itertools.tee(iterable)
+    return itertools.filterfalse(pred, t1), filter(pred, t2)
 
-    If an iterable of positional /args/ is supplied, splat them to the
-    function. Then, double-splat any kwargs to the function that it asks for
-    (matching by name), ignoring any it doesn't care about.
+
+def magic_call(func, available_kwargs):
+    """
+    Call /func/, allowing it to pick and choose from a set of arguments. This
+    works much like pytest's test fixtures do -- the framework has a set of
+    available data or functions which are selected by name by user functions.
+
+    /available_kwargs/ is a dictionary-like object mapping parameter names to
+    values. magic_call double-splats these values to any matching arguments
+    in the function's signature, ignoring any that aren't named in the
+    signature.
+
+    If the function's signature contains an argument that isn't in the
+    dictionary, and thus can't be bound, raise a ProgrammingError.
     """
     sig = inspect.signature(func)
-    parms = sig.parameters.values()
-    if args is None:
-        args = ()
-    return func(*args, **{k: v
-                          for k, v in available_kwargs.items()
-                          if k in [i.name for i in parms]})
+    unavailable, requested = (list(i)
+                              for i in partition(available_kwargs.__contains__,
+                                                 sig.parameters.keys()))
+
+    if unavailable:
+        raise ProgrammingError(
+            f"The function '{func.__name__}' "
+            f"({inspect.getfile(func)}:{inspect.getsourcelines(func)[1]}) "
+            f"requested the following arguments which are not available: "
+            f"{', '.join(unavailable)}. "
+            f"Available arguments are as follows: "
+            f"{', '.join(available_kwargs.keys())}.")
+
+    return func(**{k: v for k, v in available_kwargs.items()
+                   if k in requested})
