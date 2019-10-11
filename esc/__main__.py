@@ -7,20 +7,20 @@ import curses
 import curses.ascii
 import decimal
 
-from commands import main_menu
-from consts import (UNDO_CHARACTER, REDO_CHARACTER, STORE_REG_CHARACTER,
-                    RETRIEVE_REG_CHARACTER, DELETE_REG_CHARACTER, PRECISION)
-import display
-from display import screen, fetch_input
-import function_loader
-from helpme import get_help
-import history
-from oops import (FunctionExecutionError, InvalidNameError, NotInMenuError,
-                  RollbackTransaction)
-import registers
-import stack
-from status import status
-import util
+from .commands import main_menu
+from .consts import (UNDO_CHARACTER, REDO_CHARACTER, STORE_REG_CHARACTER,
+                     RETRIEVE_REG_CHARACTER, DELETE_REG_CHARACTER, PRECISION)
+from . import display
+from .display import screen, fetch_input
+from . import function_loader
+from .helpme import get_help
+from . import history
+from .oops import (FunctionExecutionError, InvalidNameError, NotInMenuError,
+                   RollbackTransaction)
+from . import registers
+from . import stack
+from .status import status
+from . import util
 
 
 def try_add_to_number(c, ss):
@@ -252,5 +252,4 @@ def bootstrap(stdscr):
     main()
 
 
-if __name__ == "__main__":
-    curses.wrapper(bootstrap)
+curses.wrapper(bootstrap)

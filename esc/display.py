@@ -10,11 +10,11 @@ import itertools
 import textwrap
 from typing import Sequence
 
-from consts import (STACKDEPTH, STACKWIDTH, PROGRAM_NAME,
-                    QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
-                    RETRIEVE_REG_CHARACTER, STORE_REG_CHARACTER, DELETE_REG_CHARACTER)
-from status import status
-from util import truncate, quit_if_screen_too_small, centered_position
+from .consts import (STACKDEPTH, STACKWIDTH, PROGRAM_NAME,
+                     QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
+                     RETRIEVE_REG_CHARACTER, STORE_REG_CHARACTER, DELETE_REG_CHARACTER)
+from .status import status
+from .util import truncate, quit_if_screen_too_small, centered_position
 
 # pylint: disable=invalid-name
 _screen = None

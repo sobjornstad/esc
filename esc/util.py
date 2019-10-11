@@ -8,8 +8,8 @@ import inspect
 import itertools
 import sys
 
-from consts import REQUIRED_TERM_HEIGHT, REQUIRED_TERM_WIDTH
-from oops import ProgrammingError
+from .consts import REQUIRED_TERM_HEIGHT, REQUIRED_TERM_WIDTH
+from .oops import ProgrammingError
 
 
 def is_number(c):

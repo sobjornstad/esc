@@ -6,7 +6,7 @@ modes.py - Manage calculator state/modes
 from dataclasses import dataclass
 from typing import Any, Optional, Sequence
 
-from oops import ProgrammingError
+from .oops import ProgrammingError
 
 
 MODES = {}

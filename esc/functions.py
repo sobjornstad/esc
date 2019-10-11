@@ -9,11 +9,11 @@ import math
 import platform
 from subprocess import Popen, PIPE
 
-from commands import UNOP, BINOP, Constant, Function, Menu, Mode, ModeChange, main_menu
-from consts import CONSTANT_MENU_CHARACTER
-import modes
-from oops import InsufficientItemsError, FunctionExecutionError
-from status import status
+from .commands import UNOP, BINOP, Constant, Function, Menu, Mode, ModeChange, main_menu
+from .consts import CONSTANT_MENU_CHARACTER
+from . import modes
+from .oops import InsufficientItemsError, FunctionExecutionError
+from .status import status
 
 
 ####################

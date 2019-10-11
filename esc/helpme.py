@@ -4,10 +4,10 @@ helpme.py - online help functions for esc
 
 import inspect
 
-import builtin_stubs
-from display import screen, fetch_input
-from oops import NotInMenuError
-from status import status
+from . import builtin_stubs
+from .display import screen, fetch_input
+from .oops import NotInMenuError
+from .status import status
 
 
 def builtin_help(operation_key, menu):

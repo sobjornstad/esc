@@ -6,7 +6,7 @@ import importlib
 from pathlib import Path
 import sys
 
-from oops import ProgrammingError
+from .oops import ProgrammingError
 
 
 def _import_user_functions():
@@ -49,5 +49,5 @@ def load_all():
     written correctly) ultimately register the functions onto main_menu. This
     method needs to be called only once at application startup.
     """
-    import functions  # pylint: disable=unused-import, wrong-import-position
+    from . import functions  # pylint: disable=unused-import, wrong-import-position
     _import_user_functions()

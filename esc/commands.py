@@ -21,11 +21,11 @@ from functools import wraps
 from inspect import signature, Parameter
 import itertools
 
-from consts import QUIT_CHARACTER
-import modes
-from oops import (FunctionExecutionError, InsufficientItemsError, NotInMenuError,
-                  FunctionProgrammingError, ProgrammingError)
-import util
+from .consts import QUIT_CHARACTER
+from . import modes
+from .oops import (FunctionExecutionError, InsufficientItemsError, NotInMenuError,
+                   FunctionProgrammingError, ProgrammingError)
+from . import util
 
 BINOP = 'binop'
 UNOP = 'unop'

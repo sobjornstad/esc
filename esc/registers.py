@@ -4,8 +4,8 @@ registers.py - manage registers
 
 from typing import Dict
 
-from oops import InvalidNameError
-from stack import StackItem
+from .oops import InvalidNameError
+from .stack import StackItem
 
 
 class Registry:
