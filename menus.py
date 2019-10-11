@@ -263,8 +263,7 @@ class EscOperation(EscFunction):
             num_short = self.push - self.pop - ss.free_stack_spaces
             spaces = 'space' if num_short == 1 else 'spaces'
             msg = f"'{self.key}': stack is too full (short {num_short} {spaces})."
-            #TODO: "Insufficient" doesn't seem like the right word here!
-            raise InsufficientItemsError(msg)
+            raise FunctionExecutionError(msg)
 
         if self.pop == -1:
             # Whole stack requested; will push the whole stack back later.
