@@ -7,11 +7,12 @@ import curses
 import curses.ascii
 import decimal
 
-import commands
+from commands import main_menu
 from consts import (UNDO_CHARACTER, REDO_CHARACTER, STORE_REG_CHARACTER,
                     RETRIEVE_REG_CHARACTER, DELETE_REG_CHARACTER, PRECISION)
 import display
 from display import screen, fetch_input
+import function_loader
 from helpme import get_help
 import history
 from oops import (FunctionExecutionError, InvalidNameError, NotInMenuError,
@@ -197,6 +198,7 @@ def main():
     Where the magic happens. Initializes the important constructs and manages
     the main loop.
     """
+    function_loader.load_all()
     ss = stack.StackState()
     registry = registers.Registry()
     menu = None
@@ -209,12 +211,12 @@ def main():
         screen().update_history(ss)
 
         if menu is None:
-            menu = commands.main_menu
+            menu = main_menu
         screen().display_menu(menu)
 
         # Update cursor posn and fetch one char of input.
         screen().place_cursor(ss)
-        if menu is commands.main_menu:
+        if menu is main_menu:
             c = fetch_input(False)
 
             # Are we entering a number?

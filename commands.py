@@ -426,23 +426,28 @@ class BuiltinFunction(EscCommand):
         return (type_,)
 
 
+### Main menu ###
+# As I write this, if the user ever sees this docstring, something's probably
+# gone wrong, since there's no way to choose the main menu from a menu and thus
+# get its help, but in the interest of future-proofing, we'll say something
+# interesting.
+MAIN_DOC = """
+    The main menu. All other esc functions and menus are eventually accessible
+    from this menu.
+"""
+
+# We have to define the main menu somewhere so we can get at the operations and
+# menus on it. Files of functions will ultimately need to import this menu to
+# register anything useful.
+main_menu = EscMenu('', "Main Menu", doc=MAIN_DOC)  # pylint: disable=invalid-name
+
+
 ### Constructor/registration functions to be used in functions.py ###
 def Menu(key, description, parent, doc, mode_display=None):  # pylint: disable=invalid-name
     "Create a new menu under the existing menu /parent/."
     menu = EscMenu(key, description, doc, mode_display)
     parent.register_child(menu)
     return menu
-
-
-# As I write this, if the user ever sees this docstring, something's probably
-# gone wrong, since there's no way to choose the main menu from a menu and thus
-# get its help, but in the interest of future-proofing, we'll say something
-# interesting.
-main_doc = """
-    The main menu. All other esc functions and menus are eventually accessible
-    from this menu.
-"""
-main_menu = EscMenu('', "Main Menu", doc=main_doc)  # pylint: disable=invalid-name
 
 
 def Constant(value, key, description, menu):  # pylint: disable=invalid-name
@@ -510,6 +515,3 @@ def ModeChange(key, description, menu, mode_name, to_value):  # pylint: disable=
     op = EscOperation(key=key, func=lambda _: modes.set(mode_name, to_value),
                       pop=0, push=0, description=description, menu=menu)
     menu.register_child(op)
-
-
-import functions
