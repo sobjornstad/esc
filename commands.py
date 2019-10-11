@@ -1,16 +1,18 @@
 """
-menus.py - implement menus of functions
+commands.py - implement menus, operations, and other things that show up
+              in the commands window
 
 We use menus to register and keep track of the functions the user can call.
-Actual functions are defined in functions.py (and in a future
+Actual calculator functionality is defined in functions.py (and in a future
 user-defined-functions file).
 
-First come EscFunction and its subclasses, which implement both the menus and
-the functions in a composite tree pattern. Then come faux-constructors
-(actually functions) which can be imported from functions.py and called to
-register functions (we import functions.py from here so that it gets run).
-Through these constructors, all registered functions and submenus end up
-reachable from the main menu.
+First come EscCommand and its subclasses, which implement both menus and
+function objects (which compose the actual Python functions in functions.py
+that perform actions) in a composite tree pattern. Then come
+faux-constructors (actually functions) which can be imported from
+functions.py and called to register functions (we import functions.py from
+here so that it gets run). Through these constructors, all registered
+functions and submenus end up reachable from the main menu.
 """
 
 from collections import OrderedDict
@@ -29,7 +31,7 @@ BINOP = 'binop'
 UNOP = 'unop'
 
 
-class EscFunction:
+class EscCommand:
     """
     Class for some esc functionality or operation the user can activate.
 
@@ -74,9 +76,9 @@ class EscFunction:
         self.children[child.key] = child
 
 
-class EscMenu(EscFunction):
+class EscMenu(EscCommand):
     """
-    A type of EscFunction that serves as a container for other menus and operations.
+    A type of EscCommand that serves as a container for other menus and operations.
     """
     is_menu = True
 
@@ -153,9 +155,9 @@ class EscMenu(EscFunction):
             return child.execute(access_key, ss, registry)
 
 
-class EscOperation(EscFunction):
+class EscOperation(EscCommand):
     """
-    A type of EscFunction that can be run to make some changes on the stack.
+    A type of EscCommand that can be run to make some changes on the stack.
     """
     def __init__(self, key, func, pop, push, description, menu, retain=False,
                  log_as=None):  # pylint: disable=too-many-arguments
@@ -384,15 +386,15 @@ class EscOperation(EscFunction):
         return self._simulated_description(used_args, log_message, results)
 
 
-class BuiltinFunction(EscFunction):
+class BuiltinFunction(EscCommand):
     """
-    Mock class for built-in functions. Built-in EscFunctions do not actually
+    Mock class for built-in functions. Built-in EscCommand do not actually
     get run and do anything -- they are special-cased because they need
     access to internals normal functions cannot access. However, it's still
     useful to have classes for them as stand-ins for things like retrieving
     help.
 
-    Unlike the other EscFunctions, we subclass these because they each need
+    Unlike the other EscCommands, we subclass these because they each need
     special behaviors. Subclasses should override the docstring (directly is
     fine) and the simulated_result() method.
 
@@ -410,6 +412,9 @@ class BuiltinFunction(EscFunction):
 
     def execute(self, access_key, ss, registry):  # pylint: disable=useless-return
         pass
+
+    def simulated_result(self, ss, registry):
+        raise NotImplementedError
 
     @property
     def help_title(self):

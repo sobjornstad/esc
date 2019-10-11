@@ -7,13 +7,13 @@ import curses
 import curses.ascii
 import decimal
 
+import commands
 from consts import (UNDO_CHARACTER, REDO_CHARACTER, STORE_REG_CHARACTER,
                     RETRIEVE_REG_CHARACTER, DELETE_REG_CHARACTER, PRECISION)
 import display
 from display import screen, fetch_input
 from helpme import get_help
 import history
-import menus
 from oops import (FunctionExecutionError, InvalidNameError, NotInMenuError,
                   RollbackTransaction)
 import registers
@@ -209,12 +209,12 @@ def main():
         screen().update_history(ss)
 
         if menu is None:
-            menu = menus.main_menu
+            menu = commands.main_menu
         screen().display_menu(menu)
 
         # Update cursor posn and fetch one char of input.
         screen().place_cursor(ss)
-        if menu is menus.main_menu:
+        if menu is commands.main_menu:
             c = fetch_input(False)
 
             # Are we entering a number?

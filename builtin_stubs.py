@@ -2,7 +2,7 @@
 builtin_stubs.py - stub classes for built-in functions
 """
 
-from menus import BuiltinFunction
+from commands import BuiltinFunction
 
 
 class StoreRegister(BuiltinFunction):
