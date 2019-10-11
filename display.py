@@ -10,7 +10,9 @@ import itertools
 import textwrap
 from typing import Sequence
 
-from consts import STACKDEPTH, STACKWIDTH, PROGRAM_NAME
+from consts import (STACKDEPTH, STACKWIDTH, PROGRAM_NAME,
+                    QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
+                    RETRIEVE_REG_CHARACTER, STORE_REG_CHARACTER, DELETE_REG_CHARACTER)
 from status import status
 from util import truncate, quit_if_screen_too_small, centered_position
 
@@ -397,6 +399,55 @@ class EscScreen:
 
     def reset_commands_window(self):
         self.commandsw.reset()
+
+    def display_menu(self, menu):
+        """
+        Update the commands window to show the current menu.
+        """
+        self.reset_commands_window()
+
+        min_xposn = 1
+        max_xposn = 22
+        xposn = min_xposn
+        yposn = 1
+
+        # Print menu title.
+        if not menu.is_main_menu:
+            self.add_menu(menu.description, yposn)
+            if menu.mode_display:
+                self.add_mode_display(menu.mode_display(), yposn+1)
+            yposn += 2
+
+        # Print anonymous functions to the screen.
+        for i in menu.anonymous_children:
+            self.add_command(i.key, None, yposn, xposn)
+            xposn += 2
+            if xposn >= max_xposn - 2:
+                yposn += 1
+                xposn = min_xposn
+
+        # Now normal functions and menus.
+        yposn += 1
+        xposn = min_xposn
+        for i in menu.named_children:
+            self.add_command(i.key, i.description, yposn, xposn)
+            yposn += 1
+
+        # then the special options, if on the main menu
+        if menu.is_main_menu:
+            self.add_command(STORE_REG_CHARACTER, 'store bos to reg', yposn, xposn)
+            self.add_command(RETRIEVE_REG_CHARACTER, 'get bos from reg', yposn+1, xposn)
+            self.add_command(DELETE_REG_CHARACTER, 'delete register', yposn+2, xposn)
+            self.add_command(UNDO_CHARACTER, 'undo (', yposn+3, xposn)
+            self.add_command(REDO_CHARACTER.lower(), 'redo)', yposn+3, xposn + 8)
+            yposn += 4
+
+        # then the quit option, which is always there but is not a function
+        quit_name = 'quit' if menu.is_main_menu else 'cancel'
+        self.add_command(QUIT_CHARACTER, quit_name, yposn, xposn)
+
+        # finally, make curses figure out how it's supposed to draw this
+        self.commandsw.refresh()
 
 
     ### Registers ###

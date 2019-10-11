@@ -57,7 +57,7 @@ def get_help(operation_key, menu, ss, registry, recursing=False):
     # If this is a menu, we can select items on the menu to dive into.
     if esc_function.is_menu:
         menu.execute(operation_key, ss, registry)
-        menus.display_menu(esc_function)
+        screen().display_menu(esc_function)
         c = fetch_input(True)
         get_help(chr(c), esc_function, ss, registry, recursing=True)
     else:

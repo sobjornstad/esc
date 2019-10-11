@@ -210,7 +210,7 @@ def main():
 
         if menu is None:
             menu = menus.main_menu
-        menus.display_menu(menu)
+        screen().display_menu(menu)
 
         # Update cursor posn and fetch one char of input.
         screen().place_cursor(ss)

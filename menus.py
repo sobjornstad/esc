@@ -19,9 +19,7 @@ from functools import wraps
 from inspect import signature, Parameter
 import itertools
 
-from consts import (QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
-                    RETRIEVE_REG_CHARACTER, STORE_REG_CHARACTER, DELETE_REG_CHARACTER)
-from display import screen
+from consts import QUIT_CHARACTER
 import modes
 from oops import (FunctionExecutionError, InsufficientItemsError, NotInMenuError,
                   FunctionProgrammingError, ProgrammingError)
@@ -510,53 +508,3 @@ def ModeChange(key, description, menu, mode_name, to_value):  # pylint: disable=
 
 
 import functions
-
-
-def display_menu(menu):
-    """
-    Update the commands window to show the current menu.
-    """
-    screen().reset_commands_window()
-
-    min_xposn = 1
-    max_xposn = 22
-    xposn = min_xposn
-    yposn = 1
-
-    # Print menu title.
-    if not menu.is_main_menu:
-        screen().add_menu(menu.description, yposn)
-        if menu.mode_display:
-            screen().add_mode_display(menu.mode_display(), yposn+1)
-        yposn += 2
-
-    # Print anonymous functions to the screen.
-    for i in menu.anonymous_children:
-        screen().add_command(i.key, None, yposn, xposn)
-        xposn += 2
-        if xposn >= max_xposn - 2:
-            yposn += 1
-            xposn = min_xposn
-
-    # Now normal functions and menus.
-    yposn += 1
-    xposn = min_xposn
-    for i in menu.named_children:
-        screen().add_command(i.key, i.description, yposn, xposn)
-        yposn += 1
-
-    # then the special options, if on the main menu
-    if menu.is_main_menu:
-        screen().add_command(STORE_REG_CHARACTER, 'store bos to reg', yposn, xposn)
-        screen().add_command(RETRIEVE_REG_CHARACTER, 'get bos from reg', yposn+1, xposn)
-        screen().add_command(DELETE_REG_CHARACTER, 'delete register', yposn+2, xposn)
-        screen().add_command(UNDO_CHARACTER, 'undo (', yposn+3, xposn)
-        screen().add_command(REDO_CHARACTER.lower(), 'redo)', yposn+3, xposn + 8)
-        yposn += 4
-
-    # then the quit option, which is always there but is not a function
-    quit_name = 'quit' if menu.is_main_menu else 'cancel'
-    screen().add_command(QUIT_CHARACTER, quit_name, yposn, xposn)
-
-    # finally, make curses figure out how it's supposed to draw this
-    screen().commandsw.refresh()
