@@ -41,10 +41,13 @@ def get_help(operation_key, menu, ss, registry, recursing=False):
             return
 
     screen().refresh_stack(ss)
+    # For anonymous functions (those whose description is None),
+    # use the key to describe the function.
+    description = esc_function.description or esc_function.key
     if esc_function.is_menu:
-        msg = f"Help: {esc_function.description} (select a command or 'q' to return)"
+        msg = f"Help: {description} (select a command or 'q' to return)"
     else:
-        msg = f"Help: '{esc_function.description}' (press any key to return)"
+        msg = f"Help: '{description}' (press any key to return)"
     status.advisory(msg)
     screen().refresh_status()
     screen().show_help_window(esc_function.is_menu,
