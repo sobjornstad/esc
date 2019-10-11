@@ -6,7 +6,6 @@ import inspect
 
 import builtin_stubs
 from display import screen, fetch_input
-import menus
 from oops import NotInMenuError
 from status import status
 
