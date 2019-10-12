@@ -25,7 +25,8 @@ Installing plugins
 To install a plugin,
 you simply copy its ``.py`` file into your plugins directory
 (see :ref:`Plugin location`).
-You can create the ``.esc`` and/or ``plugins`` directory if they don't exist.
+You can create the ``.esc`` and/or ``plugins`` directories
+if they don't exist.
 The next time you start esc, the plugins will be loaded.
 
 .. warning::

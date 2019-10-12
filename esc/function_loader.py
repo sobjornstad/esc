@@ -11,17 +11,18 @@ from .oops import ProgrammingError
 
 def _import_user_functions():
     """
-    Dynamically import any .py files in the user's esc functions directory.
+    Dynamically import any .py files in the user's esc plugins directory.
 
-    The functions directory is just inside the esc config directory (which
+    The plugins directory is just inside the esc config directory (which
     presently doesn't contain anything else!) This is the first of ~/.esc or
     ~/.config/esc that is found.
 
     The files are imported with the esc namespace first on the path, so doing
-    e.g., 'from commands import main_menu' will work automagically.
+    e.g., 'from esc.commands import main_menu' will work automagically,
+    even if esc isn't on the PYTHONPATH.
     """
-    possible_dirs = (Path.home() / ".esc" / "functions",
-                     Path.home() / ".config" / "esc" / "functions")
+    possible_dirs = (Path.home() / ".esc" / "plugins",
+                     Path.home() / ".config" / "esc" / "plugins")
     try:
         config_path = next(i for i in possible_dirs
                            if i.exists() and i.is_dir())
