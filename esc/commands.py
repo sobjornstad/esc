@@ -571,6 +571,6 @@ def Mode(name, default_value, allowable_values=None):  # pylint: disable=invalid
 
 def ModeChange(key, description, menu, mode_name, to_value):  # pylint: disable=invalid-name
     "Create a new mode change. Syntactic sugar for registering a function."
-    op = EscOperation(key=key, func=lambda _: modes.set(mode_name, to_value),
+    op = EscOperation(key=key, func=lambda _, __: modes.set(mode_name, to_value),
                       pop=0, push=0, description=description, menu=menu)
     menu.register_child(op)
