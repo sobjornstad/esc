@@ -162,6 +162,14 @@ esc defines several special commands.
 .. autoclass:: esc.builtin_stubs.Quit
 
 
+Custom commands
+---------------
+
+In addition to all the commands described above,
+you may see some other commands in your list at times.
+These are added by :ref:`esc plugins <Plugins>`.
+
+
 Getting help on commands
 ------------------------
 

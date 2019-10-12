@@ -30,7 +30,7 @@ def _import_user_functions():
         return
 
     sys.path.insert(0, str(config_path))
-    for child in config_path.iterdir():
+    for child in sorted(config_path.iterdir()):
         try:
             if child.is_file() and child.name.endswith('.py'):
                 mod_name = child.name.rsplit('.', 1)[0]

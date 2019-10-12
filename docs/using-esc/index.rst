@@ -15,3 +15,4 @@ you want the :ref:`Developer Manual`.
     notation
     concepts
     exercises
+    plugins
