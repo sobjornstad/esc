@@ -25,6 +25,11 @@ def add(sos, bos):
     "Add sos and bos."
     return sos + bos
 
+add.ensure(before=[2, 2], after=[4])
+add.ensure(before=[2, -3], after=[-1])
+add.ensure(before=[1, 2, 3], after=[1, 5])
+add.ensure(before=[5], raises=InsufficientItemsError)
+
 @Function('-', menu=main_menu, push=1, log_as=BINOP)
 def subtract(sos, bos):
     "Subtract bos from sos."

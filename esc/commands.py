@@ -22,6 +22,7 @@ from inspect import signature, Parameter
 import itertools
 
 from .consts import QUIT_CHARACTER
+from .functest import TestCase
 from . import modes
 from .oops import (FunctionExecutionError, InsufficientItemsError, NotInMenuError,
                    FunctionProgrammingError, ProgrammingError)
@@ -56,10 +57,13 @@ class EscCommand:
     def signature_info(self):
         raise NotImplementedError
 
+    def execute(self, access_key, ss, registry):
+        raise NotImplementedError
+
     def simulated_result(self, ss, registry):  # pylint: disable=no-self-use, unused-argument
         return None
 
-    def execute(self, access_key, ss, registry):
+    def test(self):
         raise NotImplementedError
 
     def register_child(self, child):
@@ -153,6 +157,10 @@ class EscMenu(EscCommand):
             return child
         else:
             return child.execute(access_key, ss, registry)
+
+    def test(self):
+        for child in self.children.values():
+            child.test()
 
 
 class EscOperation(EscCommand):
@@ -279,29 +287,23 @@ class EscOperation(EscCommand):
 
     def _store_results(self, ss, args, return_values, registry):
         """
-        Return the values computed by our function to the stack.
+        Return the values computed by our function to the stack
+        and record the operation in a history entry.
         """
         if self.push > 0 or (self.push == -1 and return_values is not None):
             if not hasattr(return_values, '__iter__'):
                 return_values = (return_values,)
 
-            coerced_retvals = []
-            for i in return_values:
-                # Functions can return any type that can be converted to Decimal.
-                if not isinstance(i, decimal.Decimal):
-                    try:
-                        coerced_retvals.append(decimal.Decimal(i))
-                    except (decimal.InvalidOperation, TypeError) as e:
-                        raise FunctionProgrammingError(
-                            function_name=self.function.__name__,
-                            key=self.key,
-                            description=self.description,
-                            problem="returned a value that cannot be converted "
-                                    "to a Decimal",
-                            wrapped_exception=e)
-                else:
-                    coerced_retvals.append(i)
-
+            try:
+                coerced_retvals = util.decimalize_iterable(return_values)
+            except (decimal.InvalidOperation, TypeError) as e:
+                raise FunctionProgrammingError(
+                    function_name=self.function.__name__,
+                    key=self.key,
+                    description=self.description,
+                    problem="returned a value that cannot be converted "
+                            "to a Decimal",
+                    wrapped_exception=e)
             ss.push(coerced_retvals,
                     self.describe_operation(args, return_values, registry))
         else:
@@ -385,6 +387,13 @@ class EscOperation(EscCommand):
 
         return self._simulated_description(used_args, log_message, results)
 
+    def test(self):
+        # Some internal functions that are registered, such as mode changes,
+        # don't have a tests attribute. We want to ignore those.
+        if hasattr(self.function, 'tests'):
+            for test_case in self.function.tests:
+                test_case.execute(self)
+
 
 class BuiltinFunction(EscCommand):
     """
@@ -444,14 +453,17 @@ main_menu = EscMenu('', "Main Menu", doc=MAIN_DOC)  # pylint: disable=invalid-na
 
 ### Constructor/registration functions to be used in functions.py ###
 def Menu(key, description, parent, doc, mode_display=None):  # pylint: disable=invalid-name
-    "Create a new menu under the existing menu /parent/."
+    "Register a new submenu of the existing menu /parent/."
     menu = EscMenu(key, description, doc, mode_display)
     parent.register_child(menu)
     return menu
 
 
 def Constant(value, key, description, menu):  # pylint: disable=invalid-name
-    "Create a new constant. Syntactic sugar for registering a function."
+    """
+    Register a new constant. Constants are just exceedingly boring functions,
+    so this is merely syntactic sugar.
+    """
     @Function(key=key, menu=menu, push=1, description=description,
               log_as=f"insert constant {description}")
     def func():
@@ -462,7 +474,40 @@ def Constant(value, key, description, menu):  # pylint: disable=invalid-name
 
 def Function(key, menu, push, description=None, retain=False, log_as=None):  # pylint: disable=invalid-name
     """
-    Decorator to register a function on a given menu.
+    Decorator to register a function on a given menu. This decorator does a
+    lot of magic to make defining functions as clean and easy as possible.
+
+    The most obvious issues are as follows:
+
+    1. The function is wrapped with magic that binds function parameters to
+       stack values and other useful things by name. The rules are as follows:
+
+       Most positional parameters will simply be bound to values on the
+       bottom of the stack in order and will be of type Decimal. If you
+       define parameters (sos, bos), for example, sos will get the
+       second-to-last item on the stack and bos the last item on the stack.
+       (Note it's not the reverse; this order is like what you'd get if you
+       sliced the stack, not if you popped elements from it in order.)
+
+       Positional parameters that end in _str instead get the string
+       representation of whatever object was on the stack at that position,
+       and those ending in _stackitem get the whole StackItem object.
+
+       Any varargs parameter (e.g., *args, *stack) used instead of other
+       positionals receives the entire stack.
+
+       Finally, the special name 'registry' receives the active Registry
+       instance.
+
+    2. The function has a function attached to it as an attribute,
+       called 'ensure', which is used for defining tests of that function:
+
+       >>> def add(sos, bos):
+       >>> ... return sos + bos
+       >>> add.ensure(before=[1, 2, 3], after=[1, 5])
+
+       These tests are run every time esc starts. An exception will be thrown
+       if any of them fail.
     """
     def function_decorator(func):
         sig = signature(func)
@@ -497,16 +542,30 @@ def Function(key, menu, push, description=None, retain=False, log_as=None):  # p
                 keyword_binding['registry'] = registry
             return func(*positional_binding, **keyword_binding)
 
+        # Add test definition functionality.
+        def ensure(before, after=None, raises=None):
+            tc = TestCase(before, after, raises)
+            wrapper.tests.append(tc)
+        wrapper.ensure = ensure
+        wrapper.tests = []
+
+        # Create a new EscOperation instance and place it on the menu.
         op = EscOperation(key=key, func=wrapper, pop=pop, push=push,
                           description=description, menu=menu, log_as=log_as,
                           retain=retain)
         menu.register_child(op)
+
+        # Return the wrapped function to functions.py to complete
+        # the decorator protocol.
         return wrapper
 
     return function_decorator
 
 
 def Mode(name, default_value, allowable_values=None):  # pylint: disable=invalid-name
+    """
+    Register a new mode.
+    """
     return modes.register(name, default_value, allowable_values)
 
 

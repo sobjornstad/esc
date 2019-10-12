@@ -199,6 +199,8 @@ def main():
     the main loop.
     """
     function_loader.load_all()
+    main_menu.test()
+
     ss = stack.StackState()
     registry = registers.Registry()
     menu = None

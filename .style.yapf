@@ -1,0 +1,9 @@
+[style]
+based_on_style = pep8
+column_limit = 88
+dedent_closing_brackets = False
+spaces_before_comment = 2
+split_all_top_level_comma_separated_values = True
+split_before_arithmetic_operator = True
+split_before_logical_operator = True
+split_complex_comprehension = True

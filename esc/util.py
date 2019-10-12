@@ -103,3 +103,18 @@ def magic_call(func, available_kwargs):
 
     return func(**{k: v for k, v in available_kwargs.items()
                    if k in requested})
+
+
+def decimalize_iterable(iterable):
+    """
+    Convert an iterable of some type of numbers to an iterable of Decimal.
+
+    Raises TypeError or decimal.InvalidOperation if a value cannot be converted.
+    """
+    decimalized = []
+    for stack_item in iterable:
+        if not isinstance(stack_item, decimal.Decimal):
+            decimalized.append(decimal.Decimal(stack_item))
+        else:
+            decimalized.append(stack_item)
+    return decimalized

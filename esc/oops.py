@@ -20,7 +20,8 @@ class ProgrammingError(EscError):
 class FunctionProgrammingError(ProgrammingError):
     """
     A more specific type of ProgrammingError that occurs when a user's
-    @Function decorator or function parameters are invalid.
+    @Function decorator or function parameters are invalid or function
+    tests fail.
 
     The distinction is mostly for convenience within esc's codebase rather
     than because client code needs to tell the difference from other

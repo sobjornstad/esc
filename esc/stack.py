@@ -196,6 +196,12 @@ class StackState:
     def last_operation(self):
         return self.operation_history[-1] if self.operation_history else None
 
+    def as_decimal(self):
+        """
+        Return the stack as a list of its Decimal values.
+        """
+        return [i.decimal for i in self.s]
+
     def add_partial(self, c):
         """
         Start a new item on the stack with the given character /c/. Return
