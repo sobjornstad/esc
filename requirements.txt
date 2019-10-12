@@ -1,0 +1,10 @@
+# docs
+sphinx==1.8.5
+sphinx_rtd_theme==0.4.3
+
+# dev tools
+pylint
+setuptools
+twine
+wheel
+doc8

@@ -1,5 +1,0 @@
-# development only
-pylint
-setuptools
-twine
-wheel
