@@ -7,7 +7,7 @@ from .commands import BuiltinFunction
 
 class StoreRegister(BuiltinFunction):
     """
-    Store the bottommost value on the stack into a register. Registers
+    Copy the bottommost value on the stack into a register. Registers
     store values under a single-letter name until you need them again.
     """
     key = ">"
@@ -24,9 +24,9 @@ class StoreRegister(BuiltinFunction):
 
 class RetrieveRegister(BuiltinFunction):
     """
-    Retrieve the value of a register you've previously stored to and add it
-    to the bottom of the stack. Registers store values under a single-letter
-    name until you need them again.
+    Copy the value of a register you've previously stored to the bottom
+    of the stack. Registers store values under a single-letter name
+    until you need them again.
     """
     key = "<"
     description = "get bos from reg"
