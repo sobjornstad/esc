@@ -133,16 +133,17 @@ pop.ensure(before=[], raises=InsufficientItemsError)
 
 
 @Function('r', menu=main_menu, push=-1,
-          description='roll off tos',
-          log_as="roll off tos {0}")
+          description='roll up',
+          log_as="roll tos {0} to bos")
 def roll(*stack):
-    "Remove and discard the top item from the stack."
-    if not stack:
-        raise InsufficientItemsError(number_required=1)
-    return stack[1:]
+    "Move the top item on the stack to the bottom."
+    if len(stack) < 2:
+        raise InsufficientItemsError(number_required=2)
+    return (*stack[1:], stack[0])
 
-roll.ensure(before=[1, 2, 3], after=[2, 3])
-roll.ensure(before=[1], after=[])
+roll.ensure(before=[1, 2, 3], after=[2, 3, 1])
+roll.ensure(before=[1, 2], after=[2, 1])
+roll.ensure(before=[1], raises=InsufficientItemsError)
 roll.ensure(before=[], raises=InsufficientItemsError)
 
 

@@ -104,6 +104,7 @@ which may hold as few as 3.
 
 .. [8] ``c``
 
-.. [9] ``x y p x ^V``, where ^V means to paste into esc!
+.. [9] ``r r``,
+       or more playfully ``x y p x ^V``, where ^V means to paste into esc!
 
 .. [10] ``>x + + <x d + <x``
