@@ -28,21 +28,17 @@ class FunctionProgrammingError(ProgrammingError):
     ProgrammingErrors; this class wraps some handy logic for generating a
     standardized message.
     """
-    def __init__(self, function_name, key, description, problem,
-                 wrapped_exception=None):
+    def __init__(self, operation, problem):
         super().__init__()
-        self.function_name = function_name
-        self.key = key
-        self.description = description
+        self.operation = operation
+        self.function_name = self.operation.function.__name__
+        self.key = self.operation.key
+        self.description = self.operation.description
         self.problem = problem
-        self.wrapped_exception = wrapped_exception
 
         self.message = (f"The function '{self.function_name}' "
                         f"(key '{self.key}', description '{self.description}') "
                         f"{self.problem}. ")
-        if self.wrapped_exception:
-            self.message += ("The original error message is as follows:\n"
-                             + repr(self.wrapped_exception))
 
     def __str__(self):
         return self.message

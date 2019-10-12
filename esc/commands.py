@@ -298,12 +298,9 @@ class EscOperation(EscCommand):
                 coerced_retvals = util.decimalize_iterable(return_values)
             except (decimal.InvalidOperation, TypeError) as e:
                 raise FunctionProgrammingError(
-                    function_name=self.function.__name__,
-                    key=self.key,
-                    description=self.description,
+                    operation=self,
                     problem="returned a value that cannot be converted "
-                            "to a Decimal",
-                    wrapped_exception=e)
+                            "to a Decimal") from e
             ss.push(coerced_retvals,
                     self.describe_operation(args, return_values, registry))
         else:
@@ -321,9 +318,7 @@ class EscOperation(EscCommand):
                 return f"{self.description} {args[0]} = {retvals[0]}"
             except IndexError:
                 raise FunctionProgrammingError(
-                    function_name=self.function.__name__,
-                    key=self.key,
-                    description=self.description,
+                    operation=self,
                     problem="requested unary operator logging (UNOP) but did not "
                             "request any values from the stack")
         elif self.log_as == BINOP:
@@ -331,9 +326,7 @@ class EscOperation(EscCommand):
                 return f"{args[0]} {self.key} {args[1]} = {retvals[0]}"
             except IndexError:
                 raise FunctionProgrammingError(
-                    function_name=self.function.__name__,
-                    key=self.key,
-                    description=self.description,
+                    operation=self,
                     problem="requested binary operator logging (BINOP) but did not "
                             "request two values from the stack")
         elif callable(self.log_as):
@@ -543,8 +536,8 @@ def Function(key, menu, push, description=None, retain=False, log_as=None):  # p
             return func(*positional_binding, **keyword_binding)
 
         # Add test definition functionality.
-        def ensure(before, after=None, raises=None):
-            tc = TestCase(before, after, raises)
+        def ensure(before, after=None, raises=None, close=False):
+            tc = TestCase(before, after, raises, close)
             wrapper.tests.append(tc)
         wrapper.ensure = ensure
         wrapper.tests = []
