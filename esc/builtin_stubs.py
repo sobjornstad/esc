@@ -2,10 +2,10 @@
 builtin_stubs.py - stub classes for built-in functions
 """
 
-from .commands import BuiltinFunction
+from .commands import EscBuiltin
 
 
-class StoreRegister(BuiltinFunction):
+class StoreRegister(EscBuiltin):
     """
     Copy the bottommost value on the stack into a register. Registers
     store values under a single-letter name until you need them again.
@@ -22,7 +22,7 @@ class StoreRegister(BuiltinFunction):
                     "one item on the stack to store.)")
 
 
-class RetrieveRegister(BuiltinFunction):
+class RetrieveRegister(EscBuiltin):
     """
     Copy the value of a register you've previously stored to the bottom
     of the stack. Registers store values under a single-letter name
@@ -40,7 +40,7 @@ class RetrieveRegister(BuiltinFunction):
                     "must first store a value to a register.)")
 
 
-class DeleteRegister(BuiltinFunction):
+class DeleteRegister(EscBuiltin):
     """
     Remove an existing register from your registers list and destroy its value.
     """
@@ -55,7 +55,7 @@ class DeleteRegister(BuiltinFunction):
                     "(You don't have any registers to delete.)")
 
 
-class Undo(BuiltinFunction):
+class Undo(EscBuiltin):
     """
     Undo the last change made to your stack. Registers are unaffected. (This
     is a feature, not a bug: a common esc workflow is to reach an answer,
@@ -72,7 +72,7 @@ class Undo(BuiltinFunction):
                 "would be undone.",)
 
 
-class Redo(BuiltinFunction):
+class Redo(EscBuiltin):
     """
     Undo your last undo.
     """
@@ -86,7 +86,7 @@ class Redo(BuiltinFunction):
                 "undid something).",)
 
 
-class Quit(BuiltinFunction):
+class Quit(EscBuiltin):
     """
     Quit esc. If you're in a menu, this option changes to "cancel" and gets
     you out of the menu instead.

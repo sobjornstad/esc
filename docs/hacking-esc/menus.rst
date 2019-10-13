@@ -37,7 +37,7 @@ Adding to existing menus
 
 Sometimes it's useful to extend menus defined by other plugins.
 This poses a challenge: how do we get access to those menu objects?
-The plugins directory is not a package,
+The plugins directory is not a package and we can't guarantee its contents,
 so it's tricky to import from other plugins.
 The easiest method uses the :meth:`esc.commands.EscMenu.child()` method:
 
@@ -62,7 +62,7 @@ We probably want to make sure we've actually gotten the trig menu
 and not some other menu that happened to have the access key ``t``,
 and we might want our plugin to add its own functions
 even if we don't have the trig-menu plugin installed.
-Let's try again:
+Let's add these features:
 
 .. code-block:: python
 
@@ -99,7 +99,7 @@ throwing an error if it isn't.
     to be alphabetically later than the plugin you're targeting;
     an easy way is to name your file
     as the target plugin with an additional suffix,
-    like ``trigext.py``.
+    like ``trigextensions.py``.
     (Don't use an underscore, though -- that sorts before the dot!)
 
 .. note::

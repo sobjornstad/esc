@@ -34,41 +34,63 @@ UNOP = 'unop'
 
 class EscCommand:
     """
-    Class for some esc functionality or operation the user can activate.
+    Base class for some esc functionality or operation the user can activate.
 
-    When the user activates this item, execute() is called. Execution takes
-    any action associated with the item, throwing an exception if something
-    didn't work right. It then returns the menu that the interface should
-    return to. A return value of None returns to the main menu.
+    When the user activates this item, :meth:`execute` is called. Execution
+    takes any action associated with the item, throwing an exception if
+    something didn't work right. It then returns the menu that the interface
+    should return to. A return value of None returns to the main menu.
     """
+    #: Class variable describing whether this class is a menu or not.
+    #  External code may occasionally need to know the difference.
     is_menu = False
 
     def __init__(self, key, description):
+        #: The key used to activate this item on its parent menu.
         self.key = key
+        #: How this item is described on its parent menu.
         self.description = description
+        #: An :class:`EscCommand` (hopefully a menu) this item is contained in.
         self.parent = None
+        #: Mapping from keys to :class:`EscCommand`\ s on the current menu,
+        #: if this is a menu. Add to this using :meth:`register_child()`, not directly.
         self.children = OrderedDict()
 
     @property
     def help_title(self):
-        raise NotImplementedError
+        """
+        The title this command should show in the help system. This is the
+        access key and description if a description is defined; otherwise it
+        is just the access key.
+        """
+        if self.description:
+            return f"{self.key} ({self.description})"
+        else:
+            return self.key
+
 
     @property
     def signature_info(self):
+        """An iterable of strings to display under the "Signature" section in help."""
         raise NotImplementedError
 
     def execute(self, access_key, ss, registry):
-        raise NotImplementedError
+        """
+        Execute this EscCommand. For operations or builtins, this involves
+        the class doing its own work; for menus, this returns the child
+        defined by *access_key*.
 
-    def simulated_result(self, ss, registry):  # pylint: disable=no-self-use, unused-argument
-        return None
-
-    def test(self):
+        :return: An instance of :class:`EscCommand` representing the menu
+                 the UI should now return to,
+                 or ``None`` to indicate the main menu.
+        """
         raise NotImplementedError
 
     def register_child(self, child):
         """
-        Register a new child of this menu (whether a menu or an operation).
+        Register a new child :class:`EscCommand` of this menu (either a menu
+        or an operation). This operation doesn't make sense for
+        :class:`EscOperation` instances; the caller should avoid doing this.
         """
         if child.key in self.children:
             conflicting = self.children[child.key].description
@@ -79,16 +101,37 @@ class EscCommand:
         child.parent = self
         self.children[child.key] = child
 
+    def simulated_result(self, ss, registry):  # pylint: disable=no-self-use, unused-argument
+        """
+        Execute this command against the given stack state and registry, but
+        instead of actually changing the state, return a string describing
+        the result.
+
+        May return ``None`` if the :class:`EscCommand` does not change the
+        stack state (e.g., a menu).
+        """
+        return None
+
+    def test(self):
+        """
+        Execute any self-tests associated with this :class:`EscCommand`.
+        If a test fails, raise a
+        :class:`ProgrammingError <esc.oops.ProgrammingError>`.
+        """
+        raise NotImplementedError
+
 
 class EscMenu(EscCommand):
     """
-    A type of EscCommand that serves as a container for other menus and operations.
+    A type of EscCommand that serves as a container for other menus
+    and operations. Executing it activates a child item.
     """
     is_menu = True
 
     def __init__(self, key, description, doc, mode_display=None):
         super().__init__(key, description)
         self.__doc__ = doc
+        #: An optional callable whose return value will be shown under the menu title.
         self.mode_display = mode_display
 
     def __repr__(self):
@@ -97,40 +140,25 @@ class EscMenu(EscCommand):
                 "]>")
 
     @property
-    def help_title(self):
-        if self.description:
-            return f"{self.key} ({self.description})"
-        else:
-            return self.key
-
-    @property
     def signature_info(self):
+        "Constant string that describes the menu as a menu."
         return ("    Type: Menu (categorizes operations)",)
 
     @property
     def is_main_menu(self):
-        """
-        This is the main menu if it has no parent.
-
-        Obviously a menu that's wrongly never been connected to anything
-        could cause a false positive, but then we normally would not be able
-        to obtain a reference to it anyway.
-        """
+        "This is the main menu if it has no parent."
         return self.parent is None
 
     @property
     def anonymous_children(self):
-        """
-        Iterate over children without a description. These are listed
-        differently in menus and so on.
-        """
+        "Iterable of children without a description."
         for i in self.children.values():
             if not i.description:
                 yield i
 
     @property
     def named_children(self):
-        "Iterate over children with a description."
+        "Iterable of children with a description."
         for i in self.children.values():
             if i.description:
                 yield i
@@ -147,19 +175,41 @@ class EscMenu(EscCommand):
             raise NotInMenuError(access_key)
 
     def execute(self, access_key, ss, registry):
+        """
+        Look up the child described by *access_key* and execute it. If said
+        child is a menu, return it (so the user can choose an item from that
+        menu). Otherwise, execute the child immediately.
+
+        :param access_key: A menu access key indicating which child to execute.
+        :param ss: The current stack state, passed through to a child operation.
+        :param registry: The current registry, passed through to a child operation.
+
+        :return: The :class:`EscMenu` to display next,
+                 or ``None`` to return to the main menu.
+                 This will be a child menu, if one was selected,
+                 or None if an operation runs.
+
+        :raises: :class:`FunctionExecutionError <esc.oops.FunctionExecutionError>`
+                 or a subclass, if a child operation was selected
+                 but does not complete successfully.
+
+        If the user chose the special quit command, return to the previous
+        menu, or raise ``SystemExit`` if this is the main menu.
+        """
         if access_key == QUIT_CHARACTER:
             if self.is_main_menu:
-                raise SystemExit(1)
+                raise SystemExit(0)
             else:
                 return self.parent
 
         child = self.child(access_key)
-        if isinstance(child, EscMenu):
+        if child.is_menu:
             return child
         else:
             return child.execute(access_key, ss, registry)
 
     def test(self):
+        "Execute the test method of all children."
         for child in self.children.values():
             child.test()
 
@@ -171,11 +221,20 @@ class EscOperation(EscCommand):
     def __init__(self, key, func, pop, push, description, menu, retain=False,
                  log_as=None):  # pylint: disable=too-many-arguments
         super().__init__(key, description)
-        self.function = func
-        self.pop = pop
-        self.push = push
         self.parent = menu
+        #: The function, decorated with @\ :func:`Function`,
+        #: that defines the logic of this operation.
+        self.function = func
+        #: The number of items the function gets from the bottom of the stack.
+        #: ``-1`` indicates the entire stack is popped.
+        self.pop = pop
+        #: The number of items the function returns to the stack.
+        #: ``-1`` indicates a variable number of items will be returned.
+        self.push = push
+        #: If true, items pulled from the stack before execution won't be removed.
         self.retain = retain
+        #: A description of how to log this function's execution
+        #: (see the docs for :func:`Function` for details on allowable values).
         self.log_as = log_as
 
     def __repr__(self):
@@ -189,14 +248,12 @@ class EscOperation(EscCommand):
             return self.function.__doc__
 
     @property
-    def help_title(self):
-        if self.description:
-            return f"{self.key} ({self.description})"
-        else:
-            return self.key
-
-    @property
     def signature_info(self):
+        """
+        A description of the function's signature as a tuple of strings
+        (one per line to display in the help system),
+        based on the :attr:`pop` and :attr:`push` values.
+        """
         items = "item" if self.pop == 1 else "items"
         results = "result" if self.push == 1 else "results"
         type_ = f"    Type: Function (performs calculations)"
@@ -218,32 +275,35 @@ class EscOperation(EscCommand):
 
         return (type_, input_, output)
 
-    def _simulated_description(self, args, log, results):
+    def _describe_operation(self, args, retvals, registry):
         """
-        Return a list of strings to display in esc's interface to describe an
-        operation that takes /args/, produces a log message of /log/, and
-        outputs /results/.
+        Given the values popped from the stack (args) and the values pushed
+        back to the stack (retvals), return a string describing what was done.
         """
-        description = [f"This calculation would occur:",
-                       f"    {log}"]
-        if self.retain:
-            description.append("The following stack items would be read as input:")
+        if self.log_as is None:
+            return self.description
+        elif self.log_as == UNOP:
+            try:
+                return f"{self.description} {args[0]} = {retvals[0]}"
+            except IndexError:
+                raise FunctionProgrammingError(
+                    operation=self,
+                    problem="requested unary operator logging (UNOP) but did not "
+                            "request any values from the stack")
+        elif self.log_as == BINOP:
+            try:
+                return f"{args[0]} {self.key} {args[1]} = {retvals[0]}"
+            except IndexError:
+                raise FunctionProgrammingError(
+                    operation=self,
+                    problem="requested binary operator logging (BINOP) but did not "
+                            "request two values from the stack")
+        elif callable(self.log_as):
+            return util.magic_call(
+                self.log_as,
+                {'args': args, 'retval': retvals, 'registry': registry})
         else:
-            description.append("The following stack items would be consumed:")
-
-        if args:
-            for i in args:
-                description.append(f"    {i}")
-        else:
-            description.append("    (none)")
-
-        description.append("The following results would be returned:")
-        if results:
-            for i in results:
-                description.append(f"    {i}")
-        else:
-            description.append("    (none)")
-        return description
+            return self.log_as.format(*itertools.chain(args, retvals))
 
     def _insufficient_items_on_stack(self, pops_requested=None):
         "Call for a FunctionExecutionError() if the stack is too empty."
@@ -286,6 +346,33 @@ class EscOperation(EscCommand):
 
         return args
 
+    def _simulated_description(self, args, log, results):
+        """
+        Return a list of strings to display in esc's interface to describe an
+        operation that takes /args/, produces a log message of /log/, and
+        outputs /results/.
+        """
+        description = [f"This calculation would occur:",
+                       f"    {log}"]
+        if self.retain:
+            description.append("The following stack items would be read as input:")
+        else:
+            description.append("The following stack items would be consumed:")
+
+        if args:
+            for i in args:
+                description.append(f"    {i}")
+        else:
+            description.append("    (none)")
+
+        description.append("The following results would be returned:")
+        if results:
+            for i in results:
+                description.append(f"    {i}")
+        else:
+            description.append("    (none)")
+        return description
+
     def _store_results(self, ss, args, return_values, registry):
         """
         Return the values computed by our function to the stack
@@ -303,41 +390,25 @@ class EscOperation(EscCommand):
                     problem="returned a value that cannot be converted "
                             "to a Decimal") from e
             ss.push(coerced_retvals,
-                    self.describe_operation(args, return_values, registry))
+                    self._describe_operation(args, return_values, registry))
         else:
-            ss.record_operation(self.describe_operation(args, (), registry))
-
-    def describe_operation(self, args, retvals, registry):
-        """
-        Given the values popped from the stack (args) and the values pushed
-        back to the stack (retvals), return a string describing what was done.
-        """
-        if self.log_as is None:
-            return self.description
-        elif self.log_as == UNOP:
-            try:
-                return f"{self.description} {args[0]} = {retvals[0]}"
-            except IndexError:
-                raise FunctionProgrammingError(
-                    operation=self,
-                    problem="requested unary operator logging (UNOP) but did not "
-                            "request any values from the stack")
-        elif self.log_as == BINOP:
-            try:
-                return f"{args[0]} {self.key} {args[1]} = {retvals[0]}"
-            except IndexError:
-                raise FunctionProgrammingError(
-                    operation=self,
-                    problem="requested binary operator logging (BINOP) but did not "
-                            "request two values from the stack")
-        elif callable(self.log_as):
-            return util.magic_call(
-                self.log_as,
-                {'args': args, 'retval': retvals, 'registry': registry})
-        else:
-            return self.log_as.format(*itertools.chain(args, retvals))
+            ss.record_operation(self._describe_operation(args, (), registry))
 
     def execute(self, access_key, ss, registry):  # pylint: disable=useless-return
+        """
+        Execute the esc operation wrapped by this instance on the given stack
+        state and registry.
+
+        :param access_key: Not used by this subclass.
+        :param ss: The current stack state, passed through to a child operation.
+        :param registry: The current registry, passed through to a child operation.
+
+        :return: A constant ``None``,
+                 indicating that we go back to the main menu.
+
+        :raises: ``FunctionExecutionError`` or a subclass,
+                 if the operation cannot be completed successfully.
+        """
         with ss.transaction():
             args = self._retrieve_arguments(ss)
             try:
@@ -358,9 +429,9 @@ class EscOperation(EscCommand):
 
     def simulated_result(self, ss, registry):
         """
-        Execute the operation on the provided StackState, but don't actually
-        change the state -- instead, provide a description of what would
-        happen.
+        Execute the operation on the provided :class:`StackState`, but don't
+        actually change the state -- instead, provide a description of what
+        would happen.
         """
         used_args = ss.last_n_items(self.pop)
         checkpoint = ss.memento()
@@ -382,6 +453,11 @@ class EscOperation(EscCommand):
         return self._simulated_description(used_args, log_message, results)
 
     def test(self):
+        r"""
+        If the function on this :class:`EscOperation` has associated
+        :class:`TestCase`\ s defined in its *tests* attribute,
+        execute those tests.
+        """
         # Some internal functions that are registered, such as mode changes,
         # don't have a tests attribute. We want to ignore those.
         if hasattr(self.function, 'tests'):
@@ -389,42 +465,44 @@ class EscOperation(EscCommand):
                 test_case.execute(self)
 
 
-class BuiltinFunction(EscCommand):
+class EscBuiltin(EscCommand):
     """
-    Mock class for built-in functions. Built-in EscCommand do not actually
-    get run and do anything -- they are special-cased because they need
-    access to internals normal functions cannot access. However, it's still
-    useful to have classes for them as stand-ins for things like retrieving
-    help.
+    Mock class for built-in commands. Built-in :class:`EscCommand`\ s do not
+    actually get run and do anything -- they are special-cased because they
+    need access to internals normal commands cannot access. However, it's
+    still useful to have classes for them as stand-ins for things like
+    retrieving help.
 
-    Unlike the other EscCommands, we subclass these because they each need
-    special behaviors. Subclasses should override the docstring (directly is
-    fine) and the simulated_result() method.
+    Unlike the other :class:`EscCommand`\ s, each :class:`EscBuiltin` has its
+    own subclass rather than its own instance, as they each need special
+    behaviors. The subclasses are defined in the
+    :mod:`builtin_stubs <esc.builtin_stubs>` module.
 
-    Subclasses should define key and description as class variables. They'll
-    be shadowed by instance variables once we instantiate the class, but the
-    values will be the same. That sounds dumb, but it makes sense for all
-    other classes in the hierarchy and doesn't hurt us here. We don't want to
-    define them in the __init__ of each subclass because then we have to
-    instantiate every class to match on them by key (see reflective search in
-    helpme.py).
+    Subclasses should override the docstring
+    and the :meth:`simulated_result` method.
+
+    Subclasses should also define :attr:`key` and :attr:`description` as
+    class variables. They'll be shadowed by instance variables once we
+    instantiate the class, but the values will be the same. That sounds dumb,
+    but it makes sense for all other classes in the hierarchy and doesn't
+    hurt us here. We don't want to define them in the ``__init__`` of each
+    subclass because then we have to instantiate every class to match on them
+    by key (see the reflective search in :mod:`helpme`).
     """
     def __init__(self):
         super().__init__(self.key, self.description)
         self.is_menu = False
 
     def execute(self, access_key, ss, registry):  # pylint: disable=useless-return
-        pass
+        "Executing a builtin does nothing."
 
     def simulated_result(self, ss, registry):
+        "Reimplemented by each subclass."
         raise NotImplementedError
 
     @property
-    def help_title(self):
-        return f"{self.key} ({self.description})"
-
-    @property
     def signature_info(self):
+        "Constant string that describes the built-in as a built-in."
         type_ = f"    Type: Built-in (performs special esc actions)"
         return (type_,)
 
@@ -494,8 +572,8 @@ def Constant(value, key, description, menu):  # pylint: disable=invalid-name
 
 def Function(key, menu, push, description=None, retain=False, log_as=None):  # pylint: disable=invalid-name
     """
-    Decorator to register a function on a given menu. This decorator does a
-    lot of magic to make defining functions as clean and easy as possible.
+    Decorator to register a function on a menu
+    and make it available for use as an esc operation.
 
     :param key:
         The key on the keyboard to press
@@ -514,9 +592,9 @@ def Function(key, menu, push, description=None, retain=False, log_as=None):  # p
         If this is ``None`` (the default), the function is "anonymous"
         and will be displayed at the top of the menu with just its *key*.
     :param retain:
-        If True, the items bound to this function's arguments
+        If ``True``, the items bound to this function's arguments
         will remain on the stack on successful execution.
-        The default is False
+        The default is ``False``
         (meaning the function's return value replaces whatever was there before).
     :param log_as:
         A specification describing what appears in the History window
@@ -524,7 +602,7 @@ def Function(key, menu, push, description=None, retain=False, log_as=None):  # p
         It may be ``None`` (the default), ``UNOP`` or ``BINOP``,
         a .format() string, or a callable.
 
-        * If it is None, the *description* is used.
+        * If it is ``None``, the *description* is used.
 
         * If it is the module constant :const:`esc.commands.UNOP`
           or :const:`esc.commands.BINOP`,
@@ -536,9 +614,9 @@ def Function(key, menu, push, description=None, retain=False, log_as=None):  # p
           :samp:`{argument} {key} {argument} = {return}`.
 
           .. note::
-            If the command does not have one or two arguments,
+            If the function being decorated does not take one or two arguments,
             respectively,
-            using ``UNOP`` or ``BINOP`` will raise a 
+            using ``UNOP`` or ``BINOP`` will raise a
             :class:`ProgrammingError <esc.oops.ProgrammingError>`.
 
         * If it is a format string, positional placeholders are replaced
@@ -551,7 +629,8 @@ def Function(key, menu, push, description=None, retain=False, log_as=None):  # p
 
         * If it is a callable, the parameters will be examined and bound
           by name to the following (none of these parameters are required,
-          but arguments other than these will raise a ProgrammingError):
+          but arguments other than these will raise a
+          :class:`ProgrammingError <esc.oops.ProgrammingError>`).
 
           :args: a list of the arguments the function requested
           :retval: a list of values the function returned
@@ -566,7 +645,8 @@ def Function(key, menu, push, description=None, retain=False, log_as=None):  # p
 
        * Most parameters are bound
          to a slice of values at the bottom of the stack, by position.
-         If the function has one parameter, it receives bos;
+         If the function has one parameter,
+         it receives :ref:`bos <Terminology and notation>`;
          if the function has two parameters,
          the first receives sos and the second bos;
          and so on.
@@ -587,14 +667,16 @@ def Function(key, menu, push, description=None, retain=False, log_as=None):  # p
          containing both of those representations and a few other things besides.
 
        * A varargs parameter, like ``*args``,
-         receives the entire contents of the stack.
+         receives the entire contents of the stack as a tuple.
          This is invalid with any other parameters except ``registry``.
          The ``_str`` and ``_stackitem`` suffixes still work.
          Again, it can have any name; ``*stack`` is conventional for esc operations.
 
        * The special parameter name ``registry``
-         receives a :class:`Registry` instance
+         receives a :class:`Registry <esc.registers.Registry>` instance
          containing the current state of all registers.
+         Using this parameter is generally discouraged;
+         see :ref:`Registry` for details.
 
     2. The function has a callable attached to it as an attribute,
        called ``ensure``, which can be used to test the function at startup

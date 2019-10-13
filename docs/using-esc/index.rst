@@ -12,6 +12,7 @@ you want the :ref:`Developer Manual`.
     :maxdepth: 2
     :caption: Contents
 
+    install
     notation
     concepts
     exercises

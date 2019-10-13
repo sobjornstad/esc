@@ -139,27 +139,32 @@ Other commands
 In addition to the arithmetic and stack manipulation commands described above,
 esc defines several special commands.
 
-.. autoclass:: esc.builtin_stubs.StoreRegister
+.. autofunction:: esc.functions.yank_bos
 
-    See :ref:`Registers` for more information on registers.
 
-.. autoclass:: esc.builtin_stubs.RetrieveRegister
+.. automodule:: esc.builtin_stubs
 
-    See :ref:`Registers` for more information on registers.
+    .. autoclass:: esc.builtin_stubs.StoreRegister
 
-.. autoclass:: esc.builtin_stubs.DeleteRegister
+        See :ref:`Registers` for more information on registers.
 
-    See :ref:`Registers` for more information on registers.
+    .. autoclass:: esc.builtin_stubs.RetrieveRegister
 
-.. autoclass:: esc.builtin_stubs.Undo
+        See :ref:`Registers` for more information on registers.
 
-    See :ref:`History` for more information on calculation history.
+    .. autoclass:: esc.builtin_stubs.DeleteRegister
 
-.. autoclass:: esc.builtin_stubs.Redo
+        See :ref:`Registers` for more information on registers.
 
-    See :ref:`History` for more information on calculation history.
+    .. autoclass:: esc.builtin_stubs.Undo
 
-.. autoclass:: esc.builtin_stubs.Quit
+        See :ref:`History` for more information on calculation history.
+
+    .. autoclass:: esc.builtin_stubs.Redo
+
+        See :ref:`History` for more information on calculation history.
+
+    .. autoclass:: esc.builtin_stubs.Quit
 
 
 Custom commands
@@ -235,3 +240,11 @@ In this case, you can store the number to a register.
 
     Doing a few simple calculations,
     including placing some numbers in registers.
+
+.. note::
+    Registers do not participate in the undo/redo history.
+    This is a feature, not a bug:
+    a common esc workflow is to perform some calculation,
+    then realize you needed those numbers again for something.
+    You can store your answer to a register,
+    then undo as needed to get those numbers back.

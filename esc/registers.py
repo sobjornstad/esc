@@ -11,7 +11,7 @@ from .stack import StackItem
 class Registry:
     """
     The Registry stores the values of esc registers. It's basically a fancy
-    dictionary with some validation and a display-sorted items() method.
+    dictionary with some validation and a display-sorted :meth:`items` method.
     """
     def __init__(self):
         self._registers: Dict[str, StackItem] = {}
@@ -26,6 +26,12 @@ class Registry:
         return self._registers[key]
 
     def __setitem__(self, key, value):
+        """
+        Set the value of a register.
+
+        :raises: :class:`InvalidNameError <esc.oops.InvalidNameError>`
+                 if the key (register name) isn't valid.
+        """
         if not self._valid_name(key):
             raise InvalidNameError(
                 "Register names must be uppercase or lowercase letters.")
@@ -36,9 +42,11 @@ class Registry:
 
     @staticmethod
     def _valid_name(name: str):
+        "A key (register name) is valid if it's exactly one alphabetic character."
         return len(name) == 1 and name.isalpha()
 
     def items(self):
+        "Return an iterable of items, sorted by register key."
         return sorted(self._registers.items(), key=lambda i: i[0])
 
     def values(self):

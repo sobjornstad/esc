@@ -76,7 +76,7 @@ Translating the algebraic notation above into Python:
 Note that we can specify any number of parameters we want here
 and name them anything we want,
 and esc will check the parameter list to see how many stack items we need,
-pluck that many items off the bottom of the stack,
+slice that many items off the bottom of the stack,
 and bind them to the parameters in order.
 (The details are somewhat more complicated;
 see the documentation

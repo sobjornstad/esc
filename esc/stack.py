@@ -23,18 +23,20 @@ class StackItem:
     more complicated than that!
 
     For one, we need a numeric value for calculations as well as a string
-    value to display on the screen. The functions finish_entry() and
-    _string_repr_from_value() can be used to update the numeric and string
+    value to display on the screen. The methods :meth:`finish_entry` and
+    :meth:`_string_repr_from_value` are used to update the numeric and string
     representations from the other. We could dynamically compute the string
     representation with reasonable performance, but see the next paragraph
     for why this isn't helpful.
 
-    For another, a stack item may be *incomplete* (self.is_entered = False).
-    That's because the user doesn't enter a number all at once, it will often
-    consist of multiple keystrokes. If so, there won't be a decimal
-    representation until we call finish_entry(). The StackState is in charge
-    of calling this method if needed before trying to do any calculations
-    with the number.
+    For another, a stack item may be *incomplete*
+    (:attr:`is_entered` attribute = ``False``).
+    That's because the user doesn't enter a number all at once --
+    it will typically consist of multiple keystrokes.
+    If so, there won't be a decimal representation
+    until we call :meth:`finish_entry`.
+    The StackState is in charge of calling this method if needed
+    before trying to do any calculations with the number.
     """
     def __init__(self, firstchar=None, decval=None):
         """
@@ -43,9 +45,23 @@ class StackItem:
         the value and then converting it to the Decimal value that is used for
         calculations) or by directly entering a Decimal value (for instance, as
         the result of a calculation).
+
+        Use one of the two parameters:
+
+        :param firstchar:
+            If specified, initialize the string representation to this string
+            and prepare for more characters to be entered with :meth:`add_character`.
+        :param decval:
+            If specified, make this Decimal the value of the StackItem
+            and create a string representation from it.
         """
+        #: Whether the number has been fully entered. If not entered,
+        #: many methods will not work as we don't have a Decimal representation yet.
         self.is_entered = None
+        #: Decimal representation.
+        #: This is ``None`` if :attr:`is_entered` is ``False``.
         self.decimal = None
+        #: String representation.
         self.string = None
 
         if firstchar is not None:
@@ -80,9 +96,15 @@ class StackItem:
 
     def add_character(self, nextchar):
         """
-        Add a character to the running string of the number being entered on
-        the stack. Return True if successful, False if the stack width has
-        been exceeded.
+        Add a character to the running string
+        of the number being entered on the stack.
+        Calling :meth:`add_character` is illegal
+        and will raise an ``AssertionError``
+        if the number has already been entered completely.
+        
+        :return: ``True`` if successful,
+                 ``False`` if the stack width (:attr:`esc.consts.STACKWIDTH`)
+                 has been exceeded.
         """
         assert not self.is_entered, "Number already entered!"
         if len(self.string) < STACKWIDTH:
@@ -93,19 +115,23 @@ class StackItem:
 
     def backspace(self, num_chars=1):
         """
-        Remove the last character from the string being entered. Calling
-        backspace() is illegal if the number has already been entered completely
-        (backspacing a number is a nonsensical operation).
+        Remove the last character(s) from the string being entered.
+        Calling :meth:`backspace` is illegal
+        and will raise an ``AssertionError``
+        if the number has already been entered completely.
         """
         assert not self.is_entered, "Cannot backspace an already-entered string!"
         self.string = self.string[0:-1*num_chars]
 
     def finish_entry(self):
         """
-        Signal that the user is done entering a string and it should be
-        converted to a Decimal value. If successful, return True; if the
-        entered string does not form a valid number, return False. This
-        should be called from ss.enter_number() and probably nowhere else.
+        Signal that the user is done entering a string
+        and it should be converted to a Decimal value.
+        If successful, return ``True``;
+        if the entered string does not form a valid number, return ``False``.
+        This should be called only by the
+        :meth:`enter_number <StackState.enter_number>` method
+        of :class:`StackState`.
         """
         try:
             self.decimal = Decimal(self.string)

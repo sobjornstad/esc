@@ -17,3 +17,4 @@ you want the :ref:`User Manual`.
     constants
     modes
     debugging
+    classref

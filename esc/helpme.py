@@ -18,7 +18,7 @@ def builtin_help(operation_key, menu):
     if menu.is_main_menu:
         matching_builtin = [obj for name, obj in inspect.getmembers(builtin_stubs)
                             if inspect.isclass(obj)
-                            and name != 'BuiltinFunction'
+                            and name != 'EscBuiltin'
                             and obj.key == operation_key]
         if matching_builtin:
             return matching_builtin[0]()
