@@ -10,10 +10,10 @@ class EscError(Exception):
 
 class ProgrammingError(EscError):
     """
-    Indicates an error caused by incorrectly written or defined esc functions
-    or other (possibly built-in ones). This includes modes, menus, and so on,
-    as well as actual functions. It does not include runtime errors within
-    functions themselves; these are FunctionExecutionErrors.
+    Indicates an error caused by incorrectly written or defined esc
+    plugins. This includes modes, menus, and so on, as well as actual
+    functions. It does not include runtime errors within functions
+    themselves; these are FunctionExecutionErrors.
     """
 
 
@@ -46,9 +46,10 @@ class FunctionProgrammingError(ProgrammingError):
 
 class NotInMenuError(EscError):
     """
-    Raised when a keypress is parsed as a menu option but that key doesn't
-    refer to any choice on the current menu. Describes the problem in a
-    message that can be printed to the status bar.
+    Raised when a keypress is parsed as a menu option or a menu's children
+    are programmatically accessed by key, but the key doesn't refer to any
+    choice on the current menu. Describes the problem in a message that can
+    be printed to the status bar.
     """
     def __init__(self, access_key):
         super().__init__()
@@ -70,33 +71,33 @@ class InvalidNameError(EscError):
 
 
 class FunctionExecutionError(EscError):
-    """
+    r"""
     A broad exception type that occurs when the code within a function
-    couldn't be executed successfully for some reason. It is raised automatically
-    when events like these happen:
+    couldn't be executed successfully for some reason. Examples include:
 
     - a number is in the middle of being entered and isn't a valid number
     - a function performed an undefined operation like dividing by zero
-    - a function raised FunctionExecutionError itself due to inability to
-      complete the task
     - there are too many or too few items on the stack
+    - a function directly raises this error due to invalid input
+      or inability to complete its task for some other reason
 
-    FunctionExecutionErrors normally result in the __str__ of the exception
-    being printed to the status bar, so exception messages should be concise.
+    :class:`FunctionExecutionError`\ s normally result in the ``__str__`` of
+    the exception being printed to the status bar, so exception messages
+    should be concise.
 
-    A FunctionExecutionError may be raised directly, or one of its subclasses
-    may be used.
+    A :class:`FunctionExecutionError` may be raised directly, or one of its
+    subclasses may be used.
     """
 
 class InsufficientItemsError(FunctionExecutionError):
     """
-    Raised directly by functions that use pop=-1 to indicate not enough items
-    are on the stack to finish their work, or by the menu logic when a
-    function requests /n/ pops and the stack contains fewer than /n/ items.
+    Raised directly by functions that request the entire stack to indicate
+    not enough items are on the stack to finish their work, or by the menu
+    logic when a function requests more parameters than items on the stack.
 
     Functions may use the simplified form of the exception, providing an int
     describing the number of items that should have been on the stack for the
-    number_required constructor parameter. The menu will then reraise the
+    *number_required* constructor parameter. esc will then reraise the
     exception with a more useful message; a fallback message is provided in
     case this doesn't happen for some reason.
     """

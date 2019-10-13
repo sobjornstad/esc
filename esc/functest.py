@@ -12,16 +12,48 @@ from .util import decimalize_iterable
 
 
 class TestCase:
-    """
-    Test case defined with function.ensure().
+    r"""
+    Test case defined with the ``.ensure()`` attribute of functions
+    decorated with ``@Function``.
 
-    Takes a "before" stack as input and either asserts that the operation
-    completes successfully and the resulting stack is "after", or that the
-    operation raises an exception of type "raises". "raises" also matches the
-    types of *nested* exceptions; while this does slightly increase the risk
-    of false positives, since esc will often wrap the exception actually
-    generated in a generic error (e.g., FunctionExecutionError), this allows
-    much more precise exception reasons to be checked.
+    :param before:
+        Required.
+        A list of Decimals or values that can be coerced to Decimals.
+        These values will be pushed onto a test stack
+        that the function will consume values from.
+    :param after:
+        Optional (either this or *raises* is required).
+        A list of Decimals or values that can be coerced to Decimals.
+        After the function is executed and changes the stack,
+        the stack is compared to this list,
+        and the test passes if they are identical.
+    :param raises:
+        Optional (either this or *after* is required).
+        An exception type you expect the function to raise.
+        This checks both the top-level exception type
+        and any nested exceptions
+        (since esc wraps many types of exceptions in
+        :class:`FunctionExecutionError <esc.oops.FunctionExecutionError>`\ s).
+        The test passes if executing the function
+        (including all the machinery inside esc
+        surrounding your actual function's execution,
+        like pulling values off the stack)
+        raises an exception of this type.
+    :param close:
+        If True, instead of doing an exact Decimal comparison,
+        ``math.isclose()`` is used to perform a floating-point comparison.
+        This is useful if dealing with irrational numbers
+        or other sources of rounding error
+        which may make it difficult
+        to define the exact result in your test.
+
+    Test cases are executed every time esc starts
+    (this is not a performance issue in practice
+    unless you have a *lot* of plugins).
+    If a test ever fails,
+    a :class:`ProgrammingError <esc.oops.ProgrammingError>` is raised.
+    Preventing the whole program from starting may sound extreme,
+    but wrong calculations are pretty bad news!
 
     Test cases are not inherently associated with an operation due to scope
     issues: Since the EscOperation itself is not returned to the functions

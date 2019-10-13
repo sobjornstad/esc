@@ -137,7 +137,8 @@ class EscMenu(EscCommand):
 
     def child(self, access_key):
         """
-        Return the child defined by /access_key/. Raises NotInMenuError
+        Return the child defined by *access_key*.
+        Raises :class:`NotInMenuError <esc.oops.NotInMenuError>`
         if it doesn't exist.
         """
         try:
@@ -446,7 +447,26 @@ main_menu = EscMenu('', "Main Menu", doc=MAIN_DOC)  # pylint: disable=invalid-na
 
 ### Constructor/registration functions to be used in functions.py ###
 def Menu(key, description, parent, doc, mode_display=None):  # pylint: disable=invalid-name
-    "Register a new submenu of the existing menu /parent/."
+    """
+    Register a new submenu of an existing menu.
+
+    :param key: The keyboard key used to select this menu from its parent.
+    :param description: A short description of this menu to show beside the key.
+    :param parent:
+        An :class:`EscMenu` to add this menu to.
+        This may be ``esc.commands.main_menu`` or another menu.
+    :param doc:
+        A string describing the menu, to be used in the help system.
+        This should be something like the docstring
+        of an operation function.
+    :param mode_display:
+        An optional callable returning a string whose value will be shown
+        beneath the name of the menu when the menu is open.
+        Ordinarily, this is used to show the current value of any modes
+        that apply to the functions on the menu.
+
+    :return: A new :class:`EscMenu`.
+    """
     menu = EscMenu(key, description, doc, mode_display)
     parent.register_child(menu)
     return menu
@@ -454,8 +474,15 @@ def Menu(key, description, parent, doc, mode_display=None):  # pylint: disable=i
 
 def Constant(value, key, description, menu):  # pylint: disable=invalid-name
     """
-    Register a new constant. Constants are just exceedingly boring functions,
+    Register a new constant. Constants are just exceedingly boring functions
+    that pop no values and push a constant value,
     so this is merely syntactic sugar.
+
+    :param value: The value of the constant,
+                  as a Decimal or a value that can be converted to one.
+    :param key: The key to press to select the constant from the menu.
+    :param description: A brief description to show next to the *key*.
+    :param menu: A :class:`Menu <EscMenu>` to place this function on.
     """
     @Function(key=key, menu=menu, push=1, description=description,
               log_as=f"insert constant {description}")
@@ -470,37 +497,116 @@ def Function(key, menu, push, description=None, retain=False, log_as=None):  # p
     Decorator to register a function on a given menu. This decorator does a
     lot of magic to make defining functions as clean and easy as possible.
 
-    The most obvious issues are as follows:
+    :param key:
+        The key on the keyboard to press
+        to trigger this function on the menu.
+    :param menu:
+        The :class:`Menu <EscMenu>` to place this function on.
+        The simplest choice is ``main_menu``,
+        which you can import from :mod:`esc.commands`.
+    :param push:
+        The number of items this function will return to the stack on success.
+        ``0`` means nothing is ever returned;
+        ``-1`` means a variable number of things are returned.
+    :param description:
+        A very brief description of the operation this function implements,
+        to be displayed next to it on the menu.
+        If this is ``None`` (the default), the function is "anonymous"
+        and will be displayed at the top of the menu with just its *key*.
+    :param retain:
+        If True, the items bound to this function's arguments
+        will remain on the stack on successful execution.
+        The default is False
+        (meaning the function's return value replaces whatever was there before).
+    :param log_as:
+        A specification describing what appears in the History window
+        after executing this function.
+        It may be ``None`` (the default), ``UNOP`` or ``BINOP``,
+        a .format() string, or a callable.
 
-    1. The function is wrapped with magic that binds function parameters to
-       stack values and other useful things by name. The rules are as follows:
+        * If it is None, the *description* is used.
 
-       Most positional parameters will simply be bound to values on the
-       bottom of the stack in order and will be of type Decimal. If you
-       define parameters (sos, bos), for example, sos will get the
-       second-to-last item on the stack and bos the last item on the stack.
-       (Note it's not the reverse; this order is like what you'd get if you
-       sliced the stack, not if you popped elements from it in order.)
+        * If it is the module constant :const:`esc.commands.UNOP`
+          or :const:`esc.commands.BINOP`,
+          the log string is a default suitable
+          for many unary or binary operations:
+          for ``UNOP`` it is
+          :samp:`{description} {argument} = {return}`
+          and for ``BINOP`` it is
+          :samp:`{argument} {key} {argument} = {return}`.
 
-       Positional parameters that end in _str instead get the string
-       representation of whatever object was on the stack at that position,
-       and those ending in _stackitem get the whole StackItem object.
+          .. note::
+            If the command does not have one or two arguments,
+            respectively,
+            using ``UNOP`` or ``BINOP`` will raise a 
+            :class:`ProgrammingError <esc.oops.ProgrammingError>`.
 
-       Any varargs parameter (e.g., *args, *stack) used instead of other
-       positionals receives the entire stack.
+        * If it is a format string, positional placeholders are replaced
+          with the parameters to the function in sequence,
+          then the return values.
+          Thus, a function with two arguments ``bos`` and ``sos``
+          returning two values replaces
+          ``{0}`` with ``bos``, ``{1}`` with ``sos``,
+          and ``{2}`` and ``{3}`` with the two return values.
 
-       Finally, the special name 'registry' receives the active Registry
-       instance.
+        * If it is a callable, the parameters will be examined and bound
+          by name to the following (none of these parameters are required,
+          but arguments other than these will raise a ProgrammingError):
 
-    2. The function has a function attached to it as an attribute,
-       called 'ensure', which is used for defining tests of that function:
+          :args: a list of the arguments the function requested
+          :retval: a list of values the function returned
+          :registry: the current :class:`Registry` instance
+
+          The function should return an appropriate string.
+
+    In addition to placing the function on the menu,
+    the function is wrapped with the following magic:
+
+    1. Function parameters are bound according to the following rules:
+
+       * Most parameters are bound
+         to a slice of values at the bottom of the stack, by position.
+         If the function has one parameter, it receives bos;
+         if the function has two parameters,
+         the first receives sos and the second bos;
+         and so on.
+         The parameters can have any names (see exceptions below).
+         Using ``bos`` and/or ``sos`` is conventional for general operations,
+         but if the operation is implementing some kind of formula,
+         it may be more useful to name the parameters
+         for their meaning in the formula.
+
+       * By default, passed parameters are of type `Decimal`_.
+         If the parameter name ends with ``_str``,
+         it instead receives a string representation
+         (this is exactly what shows up in the calculator window,
+         so it's helpful when doing something display-oriented
+         like copying to the clipboard).
+         If the parameter name ends with ``_stackitem``,
+         it receives the complete :class:`StackItem`,
+         containing both of those representations and a few other things besides.
+
+       * A varargs parameter, like ``*args``,
+         receives the entire contents of the stack.
+         This is invalid with any other parameters except ``registry``.
+         The ``_str`` and ``_stackitem`` suffixes still work.
+         Again, it can have any name; ``*stack`` is conventional for esc operations.
+
+       * The special parameter name ``registry``
+         receives a :class:`Registry` instance
+         containing the current state of all registers.
+
+    2. The function has a callable attached to it as an attribute,
+       called ``ensure``, which can be used to test the function at startup
+       to ensure the function never stops calculating the correct answers
+       due to updates or other issues:
 
        >>> def add(sos, bos):
        >>> ... return sos + bos
        >>> add.ensure(before=[1, 2, 3], after=[1, 5])
 
-       These tests are run every time esc starts. An exception will be thrown
-       if any of them fail.
+       See :class:`TestCase <esc.functest.TestCase>`
+       for further information on this testing feature.
     """
     def function_decorator(func):
         sig = signature(func)
@@ -558,12 +664,33 @@ def Function(key, menu, push, description=None, retain=False, log_as=None):  # p
 def Mode(name, default_value, allowable_values=None):  # pylint: disable=invalid-name
     """
     Register a new mode.
+
+    :param name:
+        The name of the mode. This is used to refer to it in code.
+        If a mode with this name already exists,
+        a :class:`ProgrammingError <esc.oops.ProgrammingError>` will be raised.
+    :param default_value: The value the mode starts at.
+    :param allowable_values:
+        An optional sequence of possible values for the mode.
+        If defined, if code ever tries to set a different value,
+        a :class:`ProgrammingError <esc.oops.ProgrammingError>` will be raised.
     """
     return modes.register(name, default_value, allowable_values)
 
 
 def ModeChange(key, description, menu, mode_name, to_value):  # pylint: disable=invalid-name
-    "Create a new mode change. Syntactic sugar for registering a function."
+    """
+    Create a new mode change operation the user can select from a menu.
+    Syntactic sugar for registering a function.
+
+    :param key: The key to press to select the constant from the menu.
+    :param description: A brief description to show next to the *key*.
+    :param menu: A :class:`Menu <EscMenu>` to place this function on.
+    :param mode_name: The name of the mode, registered with :func:`Mode`,
+                      to set.
+    :param to_value: The value the mode will be set to
+                     when this operation is selected.
+    """
     op = EscOperation(key=key, func=lambda _, __: modes.set(mode_name, to_value),
                       pop=0, push=0, description=description, menu=menu)
     menu.register_child(op)

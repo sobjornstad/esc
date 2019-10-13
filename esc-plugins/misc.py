@@ -10,7 +10,7 @@ from decimal import Decimal
 from functools import reduce
 from operator import add as add_operator
 
-from esc.commands import Function, main_menu, UNOP
+from esc.commands import Function, Menu, main_menu, UNOP
 from esc.oops import FunctionExecutionError, InsufficientItemsError
 
 
@@ -72,3 +72,16 @@ def sum_reg(registry):
     if not values:
         raise FunctionExecutionError("There are no registers defined.")
     return sum(i.decimal for i in values)
+
+
+submenu = Menu(key='m', description='submenu test', parent=main_menu,
+               doc="A menu with a submenu on it.")
+subsubmenu = Menu(key='m', description='subsubmenu test', parent=submenu,
+                  doc="A menu that is a submenu of a non-main menu.")
+
+@Function('t', menu=subsubmenu, push=1,
+          description='test identity function',
+          log_as=UNOP)
+def identity(bos):
+    "Identity function."
+    return bos

@@ -8,3 +8,12 @@ If you're looking for information on installing or running esc
 or performing calculations,
 you want the :ref:`User Manual`.
 
+.. toctree::
+    :maxdepth: 3
+    :caption: Contents
+
+    operations
+    menus
+    constants
+    modes
+    debugging
