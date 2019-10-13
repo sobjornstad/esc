@@ -200,6 +200,7 @@ def main():
     """
     function_loader.load_all()
     main_menu.test()
+    history.hs.clear()  # destroy undo history from tests
 
     ss = stack.StackState()
     registry = registers.Registry()

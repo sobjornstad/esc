@@ -4,13 +4,21 @@ history.py - manage a history of calculations
 
 class HistoricalStack:
     """
-    Manages the stack's history over time, as well as a list of the functions
-    the user has invoked. Responsible for undoing as well.
+    Manages a history of checkpoints of the stack over time
+    and undoes and redoes them.
     """
-
     def __init__(self):
         self.undo_stack = []
         self.redo_stack = []
+
+    def clear(self):
+        """
+        Clear all history. This is needed after doing testing: we don't want
+        the undo history to be cluttered with operations done by automated
+        test cases.
+        """
+        self.undo_stack.clear()
+        self.redo_stack.clear()
 
     def checkpoint_stack(self, ss):
         """
