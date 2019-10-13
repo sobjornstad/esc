@@ -27,7 +27,7 @@ class StatusState:
         and message is associated with each modality; this will be used unless
         overridden by an outstanding error or advisory.
         """
-        READY = (' ', "Ready")
+        READY = (' ', "Ready (<F1> for help)")
         ENTERING_NUMBER = ('i', "Insert")
         IN_MENU = ('m', "Expecting menu selection")
         EXPECTING_REGISTER = ('r', "Expecting register identifier (any letter)")
