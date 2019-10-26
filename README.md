@@ -41,7 +41,9 @@ Installation
 ============
 
 esc requires Python 3.6 or greater.
-It is lightweight and has no dependencies outside the standard library.
+It is lightweight and has no dependencies outside the standard library
+(except on Windows, where ``ncurses`` isn't available by default
+and the ``windows-curses`` package is transparently installed to fix that).
 The recommended installation method is through pip:
 
     $ pip install --user esc-calc

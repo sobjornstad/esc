@@ -42,6 +42,7 @@ so it's tricky to import from other plugins.
 The easiest method uses the :meth:`esc.commands.EscMenu.child()` method:
 
 .. automethod:: esc.commands.EscMenu.child
+    :noindex:
 
 We only need to know the menu access keys
 to get at any item from the main menu!

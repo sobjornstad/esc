@@ -222,7 +222,7 @@ class EscOperation(EscCommand):
                  log_as=None):  # pylint: disable=too-many-arguments
         super().__init__(key, description)
         self.parent = menu
-        #: The function, decorated with @\ :func:`Function`,
+        #: The function, decorated with :func:`@Operation <Operation>`,
         #: that defines the logic of this operation.
         self.function = func
         #: The number of items the function gets from the bottom of the stack.
@@ -234,7 +234,8 @@ class EscOperation(EscCommand):
         #: If true, items pulled from the stack before execution won't be removed.
         self.retain = retain
         #: A description of how to log this function's execution
-        #: (see the docs for :func:`Function` for details on allowable values).
+        #: (see the docs for :func:`@Operation <Operation>`
+        #: for details on allowable values).
         self.log_as = log_as
 
     def __repr__(self):
@@ -599,10 +600,12 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None):  # 
         If ``True``, the items bound to this function's arguments
         will remain on the stack on successful execution.
         The default is ``False``
-        (meaning the function's return value replaces whatever was there before).
+        (meaning the function's return value replaces
+        whatever was there before --
+        the usual behavior of an RPN calculator).
     :param log_as:
-        A specification describing what appears in the History window
-        after executing this function.
+        A specification describing what appears
+        in the :guilabel:`History` window after executing this function.
         It may be ``None`` (the default), ``UNOP`` or ``BINOP``,
         a .format() string, or a callable.
 
@@ -627,7 +630,7 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None):  # 
           with the parameters to the function in sequence,
           then the return values.
           Thus, a function with two arguments ``bos`` and ``sos``
-          returning two values replaces
+          returning a tuple of two values replaces
           ``{0}`` with ``bos``, ``{1}`` with ``sos``,
           and ``{2}`` and ``{3}`` with the two return values.
 
@@ -643,7 +646,7 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None):  # 
           The function should return an appropriate string.
 
     In addition to placing the function on the menu,
-    the function is wrapped with the following magic:
+    the function is wrapped with the following magic.
 
     1. Function parameters are bound according to the following rules:
 
@@ -655,7 +658,7 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None):  # 
          the first receives sos and the second bos;
          and so on.
          The parameters can have any names (see exceptions below).
-         Using ``bos`` and/or ``sos`` is conventional for general operations,
+         Using ``bos`` and ``sos`` is conventional for general operations,
          but if the operation is implementing some kind of formula,
          it may be more useful to name the parameters
          for their meaning in the formula.

@@ -5,6 +5,10 @@ Class Reference
 This page describes some miscellaneous classes
 you may encounter while developing esc plugins
 and want to know more about.
+This is not an exhaustive reference to all of esc's classes;
+for details on classes that plugin developers
+do not come into contact with,
+you'll want to dive into the source.
 
 
 EscCommands

@@ -21,8 +21,13 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
+    ],
+    install_requires=[
+        'windows-curses; platform_system == "Windows"',
     ],
     scripts=['package_scripts/esc'],
     python_requires='>=3.6',

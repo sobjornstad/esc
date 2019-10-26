@@ -2,15 +2,9 @@
 Operations
 ==========
 
-The most common thing to do in a plugin is to add a new operation
-(a.k.a. *function*).
-This page describes how to do that.
-
-
-Walkthrough
-===========
-
-In this walkthrough, we'll implement an operation on the main menu.
+The most common thing to do in a plugin is to add a new operation.
+In the walkthrough presented on this page,
+we'll implement a new operation on the main menu.
 Our operation will calculate a proportion, like:
 
 .. math::
@@ -22,7 +16,7 @@ we will obtain 6.
 
 
 Creating a plugin
------------------
+=================
 
 Create a new file in your :ref:`esc plugins directory <Plugin location>`
 and paste in the following template:
@@ -46,9 +40,10 @@ fix the file as necessary to resolve it.
 
 
 Writing a function
-------------------
+==================
 
-Operations are Python functions decorated with ``@Operation``.
+Operations are written as Python functions
+decorated with :func:`@Operation <esc.commands.Operation>`.
 We'll start with the function and then look at the decorator.
 
 How should we write this function?
@@ -73,14 +68,21 @@ Translating the algebraic notation above into Python:
     def proportion(a, b, c):
         return b * c / a
 
-Note that we can specify any number of parameters we want here
-and name them anything we want,
-and esc will check the parameter list to see how many stack items we need,
+We can specify any number of parameters we want here
+and name them anything we want.
+When the user runs our operation,
+esc will check the function's parameter list to see how many parameters it has,
 slice that many items off the bottom of the stack,
 and bind them to the parameters in order.
-(The details are somewhat more complicated;
-see the documentation
-for the :func:`@Operation <esc.commands.Operation>` decorator for more.)
+If there aren't enough items available,
+the user will get an error message telling them so.
+When we're done, we can return a single value or a tuple of values,
+and those values will replace the parameters that we received on the stack.
+
+This is an oversimplification,
+as there are additional options that can change much of this behavior;
+we'll get to those in the discussion
+of the :func:`@Operation <esc.commands.Operation>` decorator.
 
 .. note::
     esc uses the `Decimal`_ library to implement decimal arithmetic
@@ -100,20 +102,23 @@ for the :func:`@Operation <esc.commands.Operation>` decorator for more.)
     even the rounding error inherent in binary floating-point values,
     which may result in silly values like ``1.000000000083``
     appearing on the stack.
-    If your function includes non-integer constants,
-    it's a good idea to use the Decimal constructor for them.
+    If your function uses non-integer literals anywhere,
+    it's a good idea to head this issue off
+    by using the Decimal constructor to create them,
+    like ``from decimal import Decimal; x = Decimal("2.54")``.
 
 .. _Decimal: https://docs.python.org/3/library/decimal.html
 
 
-Registering a function
-----------------------
+Creating an @Operation
+======================
 
 If you save the file and start esc, you won't get any errors,
 but you won't have any new operations either.
 In order to get an operation to show up,
-we need to add the ``@Operation`` decorator described earlier.
-That will look like this:
+we need to add the :func:`@Operation <esc.commands.Operation>`
+decorator described earlier.
+That will make our code look like this:
 
 .. code-block:: python
 
@@ -143,8 +148,8 @@ so without further ado here are the dirty details:
 .. autofunction:: esc.commands.Operation
 
 
-Creating tests
---------------
+Writing tests
+=============
 
 You probably don't want a calculator that returns the wrong results,
 so it's important to test your custom function!
@@ -161,7 +166,8 @@ you can be confident that esc won't return incorrect results
 (at least to the extent of your test coverage).
 
 We can define automatic tests using the ``ensure`` attribute
-which the ``@Operation`` decorator adds to our function.
+which the :func:`@Operation <esc.commands.Operation>` decorator
+adds to our function.
 Let's define a test that tests
 the example we discussed at the start of this page:
 
@@ -190,7 +196,7 @@ Here's the full scoop on defining tests:
 
 
 Putting it all together
------------------------
+=======================
 
 Launch esc again.
 If you've made any mistakes, esc will hopefully catch them for you here
@@ -200,8 +206,8 @@ choose the function from the menu,
 and you should be set!
 
 
-Error handling
-==============
+Handling errors
+===============
 
 esc handles many kinds of errors that could occur in your functions for you:
 
@@ -264,7 +270,7 @@ As noted below, the message should be concise so it fits in the status bar
     If you do something complicated in your function
     that could result in an exception other than the types listed above,
     be aware that if you let an exception of another type
-    bubble up from your function, esc will crash.
+    bubble up from your function, esc will crash and show the traceback.
     This is generally reasonable behavior if you don't expect the error,
     since it makes it easy to spot and fix the problem,
     but if the error is an expected possibility you'll probably want to catch it
