@@ -290,4 +290,5 @@ def bootstrap(stdscr):
     main()
 
 
-curses.wrapper(bootstrap)
+if __name__ == '__main__':
+    curses.wrapper(bootstrap)

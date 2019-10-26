@@ -691,9 +691,11 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None):  # 
        to ensure the function never stops calculating the correct answers
        due to updates or other issues:
 
-       >>> def add(sos, bos):
-       >>> ... return sos + bos
-       >>> add.ensure(before=[1, 2, 3], after=[1, 5])
+       .. code-block:: python
+
+            def add(sos, bos):
+                return sos + bos
+            add.ensure(before=[1, 2, 3], after=[1, 5])
 
        See :class:`TestCase <esc.functest.TestCase>`
        for further information on this testing feature.

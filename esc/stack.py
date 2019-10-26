@@ -77,6 +77,26 @@ class StackItem:
     def __str__(self):
         return self.string
 
+    @staticmethod
+    def _remove_exponent(d):
+        """
+        Remove exponent and trailing zeros. Modified from the version in the
+        decimal docs: if there are not enough digits of precision to express the
+        coefficient without scientific notation, don't do anything.
+
+        >>> StackItem._remove_exponent(decimal.Decimal('5E+3'))
+        Decimal('5000')
+        """
+
+        retval = d.normalize()
+        if d == d.to_integral():
+            try:
+                retval = d.quantize(decimal.Decimal(1))
+            except decimal.InvalidOperation:
+                pass
+
+        return retval
+
     def _init_partial(self, firstchar):
         "Initialize a partial item from a string being entered by the user."
         self.is_entered = False
@@ -85,6 +105,9 @@ class StackItem:
 
     def _init_full(self, decval):
         "Initialize an item from a Decimal."
+        if not isinstance(decval, Decimal):
+            raise TypeError("Only Decimals are valid initial values "
+                            "for the decval constructor parameter.")
         self.is_entered = True
         self.decimal = decval
         self._string_repr_from_value()
@@ -92,7 +115,7 @@ class StackItem:
     def _string_repr_from_value(self):
         "(Re)set the string representation based on the attribute /value/."
         self.string = \
-            str(util.remove_exponent(self.decimal.normalize())).replace('E', 'e')
+            str(self._remove_exponent(self.decimal.normalize())).replace('E', 'e')
 
     def add_character(self, nextchar):
         """
@@ -205,8 +228,8 @@ class StackState:
 
     @bos.deleter
     def bos(self):
+        self.s.pop()  # raises IndexError if nothing here
         self.editing_last_item = False
-        self.s.pop()
         self.stack_posn -= 1
         self.cursor_posn = 0
 

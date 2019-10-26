@@ -1,10 +1,21 @@
+# General
 __pycache__/
 *.py[cod]
-.mypy_cache/
 venv/
-.vscode/
-docs/_build/
 
+# IDE and linters
+.mypy_cache/
+.vscode/
+
+# Tests
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Distribution
 build/
 dist/
 *.egg-info/
+
+# Documentation / Sphinx
+docs/_build/
