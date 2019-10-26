@@ -1,49 +1,90 @@
-About esc
-=========
+What is esc?
+============
 
-esc (pronounced /esk/) is an Extensible Stack-based Calculator which runs in a
-terminal using curses. What does this mean?
+**esc** (pronounced /esk/) is an Extensible Stack-based Calculator
+designed for efficiency and customizability.
+What does this mean?
 
-* esc is *stack-based*, operating using a Reverse Polish Notation (RPN)-like
-  syntax. Rather than typing `2 + 2`, you enter the two numbers **2** and **2**
-  onto the stack, then use the **+** function to add them. This can be slightly
-  awkward at first, but for most people becomes more efficient and elegant than
-  the standard method with a small amount of practice.
+* esc is *stack-based*,
+  operating using a [Reverse Polish Notation][]-like syntax.
+  Rather than typing `2 + 2` and pressing an equals key,
+  you enter the two numbers `2` and `2` onto the stack,
+  then choose `+` to add them.
+  This can be slightly awkward at first,
+  but it means no parentheses are necessary,
+  and for most people it becomes faster and more elegant
+  than the standard algebraic method
+  with a small amount of practice.
+  In addition, it is considerably easier to customize and program.
 
-* esc is *extensible*. If you frequently need to multiply two numbers together,
-  add five, and then divide the result by pi, you can add a function to the
-  calculator to do this using a single line of Python code. That is not an
-  exaggeration and does not involve any tricks, and you can learn how to do it
-  in a few minutes in the `extending.md` page of the documentation. The
-  extension features are simple enough to be accessible even to people who do
-  not know Python or do not have prior programming experience.
+* esc is *extensible*.
+  If you frequently need to
+  multiply two numbers together, add five, and then divide the result by pi,
+  you can add a function to the calculator to do this specific operation
+  using a couple of lines of Python code.
+  The extension features are simple enough to be accessible
+  even to people who do not know Python
+  or have little to no programming experience.
 
-* esc is *fast*, *simple*, and *terminal-based*. All you need is an 80x24
-  terminal and your keyboard.
+  esc operations are arbitrary Python code, so if you want to get fancy,
+  they can get arbitrarily complicated.
+  You can even call APIs to perform calculations or get data!
 
-esc should run on Unix-like systems and Mac OS X; the required `curses` module
-is not available on Windows versions of Python, but esc should work in Cygwin.
+* esc is *fast*, *simple*, and *terminal-based*.
+  All you need is a working terminal (at least 80×24)
+  and your keyboard.
 
-**esc is currently alpha software.** It calculates correctly and operates as
-expected, but there are a few noticeable missing features, such as the large
-windows labeled “history” and “registers” that do not yet do anything. The
-documentation is also a work in progress, although in my opinion it is still
-better than the documentation of some software that is allegedly completed.
+[Reverse Polish Notation]: https://en.wikipedia.org/wiki/Reverse_Polish_notation
 
-Manual
-======
 
-There are three documentation files located in the `docs/` folder:
-* **beginners.md** – this contains information about understanding the stack
-  and Reverse Polish Notation. If you have used another RPN calculator before,
-  you can skip this, but users new to RPN should read this first.
-* **manual.md** – this contains the user documentation for the program. You
-  should read this next, or first if you skipped the first file.
-* **extending.md** – this contains a beginner’s introduction to Python (as
-  useful for coding esc functions) and esc’s extension features. In here you
-  will learn how to add new operations and change the menus of your esc
-  calculator.
-* **devel.md** – this contains a programmer’s reference to the extension
-  features. If you’re comfortable with Python and programming terminology, you
-  may want to start here rather than `extending.md` for a reference of the
-  relevant functions.
+Installation
+============
+
+esc requires Python 3.6 or greater.
+It is lightweight and has no dependencies outside the standard library.
+The recommended installation method is through pip:
+
+    $ pip install --user esc-calc
+
+This will install an `esc` command to your system path which will launch esc.
+
+After installing esc, you may wish to install plugins
+(see the "Plugins" section in the [user guide](#documentation)).
+Official plugins can be downloaded
+from the `esc-plugins` folder of this repository.
+
+
+Development
+-----------
+
+For development, clone this repository,
+build a virtualenv with the necessary development tools,
+and install esc into it:
+
+    $ git clone https://github.com/sobjornstad/esc
+    $ cd esc
+    $ virtualenv --python=python3.7 venv  # or 3.6 if you don't have 3.7
+    $ . venv/bin/activate
+    $ pip install -r requirements.txt
+    $ pip install -e esc
+    $ esc
+
+
+Documentation
+=============
+
+The user manual and API documentation on writing plugins for esc
+are maintained on [Read The Docs][].
+
+[Read The Docs]: TODO
+
+
+Contributing
+============
+
+Bug reports, suggestions, and code contributions are welcome.
+
+In particular,
+if you write a plugin that might be useful to someone else,
+please consider submitting it for inclusion
+in the official `esc-plugins` directory.
