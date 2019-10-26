@@ -54,7 +54,7 @@ The function loader imports the built-in functions file
 and any function files in your :ref:`user config directory <Plugin location>`.
 Importing a function file causes
 calls to the constructors in :class:`EscCommand`
-to be run (:func:`Function`, :func:`Menu`, :func:`Constant`,
+to be run (:func:`Operation`, :func:`Menu`, :func:`Constant`,
 :func:`Mode`, and :func:`ModeChange`),
 and these constructors in turn create :class:`EscCommand` instances
 which are added to the :attr:`children <EscCommand.children>` attribute
@@ -70,7 +70,7 @@ StackItems
 Typically, you can request a Decimal or string representation of the stack item
 in your operation functions
 (see the documentation on parameter binding
-in :func:`Function <esc.commands.Function>` for details).
+in :func:`Operation <esc.commands.Operation>` for details).
 If you need both in one function, you may want to work with the full object:
 
 .. autoclass:: StackItem
@@ -96,7 +96,7 @@ will still deliver the correct values to the stack,
 since undoing and redoing restores past states
 rather than doing the calculations again,
 but history entries might not match the current values of registers anymore,
-and changes your function makes to registers won't be undone/redone.)
+and changes your operation makes to registers won't be undone/redone.)
 
 However, sometimes it may be useful to use registers as parameters
 or even as outputs in special-purpose custom operations.

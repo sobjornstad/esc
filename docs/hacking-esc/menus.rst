@@ -20,15 +20,15 @@ Example:
 
 .. code-block:: python
 
-    from esc.commands import Function, Menu, main_menu
+    from esc.commands import Operation, Menu, main_menu
 
     qdoc = """
-    This menu contains common functions needed when working with
+    This menu contains common operations needed when working with
     problems in queueing theory.
     """
     qmenu = Menu('Q', 'queueing menu', parent=main_menu, doc=qdoc)
 
-    # Here we would define functions whose @Function decorator
+    # Here we would define functions whose @Operation decorators
     # take 'qmenu' as their menu= argument.
 
 
@@ -45,7 +45,7 @@ The easiest method uses the :meth:`esc.commands.EscMenu.child()` method:
 
 We only need to know the menu access keys
 to get at any item from the main menu!
-Let's suppose we want to add a ``secant`` function
+Let's suppose we want to add a ``secant`` operation
 to the trig menu installed by the *trig* plugin bundled with esc.
 In order to do that, we need to obtain the trig menu.
 The key of this menu is ``t``.
@@ -60,7 +60,7 @@ Thus we would do:
 This isn't very robust, though.
 We probably want to make sure we've actually gotten the trig menu
 and not some other menu that happened to have the access key ``t``,
-and we might want our plugin to add its own functions
+and we might want our plugin to add its own operations
 even if we don't have the trig-menu plugin installed.
 Let's add these features:
 

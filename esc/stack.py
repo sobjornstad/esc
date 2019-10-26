@@ -358,7 +358,7 @@ class StackState:
         n == -1 => (a shallow copy of) the entire stack
 
         This matches the meaning of the pop and push values used in the
-        function execution logic. A function requests push=n>0 when it wants
+        operation execution logic. An operation requests push=n>0 when it wants
         to push n items, 0 if it pushes nothing, or -1 if whatever it pushes
         should replace the entire stack.
         """

@@ -4,12 +4,13 @@ Modes
 
 *Modes* are global state that can be used to allow esc operations
 to work in different ways.
-For instance, the trig functions in the *trig* plugin distributed with esc
+For instance, the trig operations in the *trig* plugin distributed with esc
 use a degrees/radians mode.
 Modes tend to be confusing to both users and programmers,
 so it's best to avoid them when possible,
 but sometimes it's difficult to do without them
-(do you really want to create and select a whole separate set of trig functions
+(do you really want to create and select
+a whole separate set of trig operations
 depending on whether you're calculating in degrees or radians?).
 
 Working with modes
@@ -34,7 +35,8 @@ You'll probably want to display the value of your mode somewhere
 -- as confusing as modes can be already,
 they're even worse when they're invisible!
 Typically, this is done by supplying a ``mode_display`` callable
-to the :class:`Menu <esc.commands.Menu>` that contains the functions.
+to the :class:`Menu <esc.commands.Menu>`
+that contains the associated operations.
 This callable takes no arguments
 and calls :meth:`modes.get <esc.modes.get>` to determine the display value:
 
@@ -53,7 +55,7 @@ Here's a complete silly example:
 
 .. code-block:: python
 
-    from esc.commands import Function, Mode, ModeChange, Menu, main_menu, BINOP
+    from esc.commands import Operation, Mode, ModeChange, Menu, main_menu, BINOP
     from esc import modes
 
     def opposite_mode():
@@ -67,9 +69,9 @@ Here's a complete silly example:
     ModeChange("O", "disable opposite day", menu=bool_menu,
                mode_name='opposite_day', to_value=False)
 
-    @Function('a', menu=bool_menu, push=1,
-              description="AND sos and bos",
-              log_as=BINOP)
+    @Operation('a', menu=bool_menu, push=1,
+               description="AND sos and bos",
+               log_as=BINOP)
     def and_(x, y):
         result = x and y
         return int((not result) if modes.get('opposite_day') else result)

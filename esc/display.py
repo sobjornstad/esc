@@ -215,7 +215,7 @@ class CommandsWindow(Window):
                     self._add_mode_display(self.menu.mode_display(), yposn+1)
                 yposn += 2
 
-            # Print anonymous functions to the screen.
+            # Print anonymous operations to the screen.
             for i in self.menu.anonymous_children:
                 self._add_command(i.key, None, yposn, xposn)
                 xposn += 2
@@ -223,7 +223,7 @@ class CommandsWindow(Window):
                     yposn += 1
                     xposn = min_xposn
 
-            # Now normal functions and menus.
+            # Now normal operations and menus.
             yposn += 1
             xposn = min_xposn
             for i in self.menu.named_children:
@@ -241,7 +241,7 @@ class CommandsWindow(Window):
                 self._add_command(REDO_CHARACTER.lower(), 'redo)', yposn+3, xposn + 8)
                 yposn += 4
 
-            # then the quit option, which is always there but is not a function
+            # then the quit option, which is always there but is not an operation
             quit_name = 'quit' if self.menu.is_main_menu else 'cancel'
             self._add_command(QUIT_CHARACTER, quit_name, yposn, xposn)
 
@@ -447,7 +447,7 @@ class EscScreen:
     def show_help_window(self, is_menu: bool, help_title: str,
                          signature_info: Sequence[str], docstring: str,
                          results_info: Sequence[str]) -> None:
-        "Display a help window for the function we requested."
+        "Display a help window for the command we requested."
         max_y, _ = self.stdscr.getmaxyx()
         self.helpw = HelpWindow(self, is_menu, help_title, signature_info,
                                 docstring, results_info, max_y)

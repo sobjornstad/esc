@@ -20,7 +20,7 @@ What does this mean?
 * esc is *extensible*.
   If you frequently need to
   multiply two numbers together, add five, and then divide the result by pi,
-  you can add a function to the calculator to do this specific operation
+  you can add an operation to the calculator to do this specific operation
   using a couple of lines of Python code.
   The extension features are simple enough to be accessible
   even to people who do not know Python

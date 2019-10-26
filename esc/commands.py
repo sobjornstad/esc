@@ -2,17 +2,17 @@
 commands.py - implement menus, operations, and other things that show up
               in the commands window
 
-We use menus to register and keep track of the functions the user can call.
-Actual calculator functionality is defined in functions.py (and in a future
-user-defined-functions file).
+We use menus to register and keep track of the commands the user can choose.
+Actual calculator functionality is defined in functions.py (and in user
+plugins).
 
 First come EscCommand and its subclasses, which implement both menus and
-function objects (which compose the actual Python functions in functions.py
-that perform actions) in a composite tree pattern. Then come
+operations (which wrap the actual Python functions in functions.py that
+perform calculations) in a composite tree pattern. Then come
 faux-constructors (actually functions) which can be imported from
-functions.py and called to register functions (we import functions.py from
-here so that it gets run). Through these constructors, all registered
-functions and submenus end up reachable from the main menu.
+functions.py and called to register functions as operations. Through these
+constructors, all registered operations and submenus end up reachable from
+the main menu.
 """
 
 from collections import OrderedDict
@@ -243,7 +243,7 @@ class EscOperation(EscCommand):
     @property
     def __doc__(self):
         if self.function.__doc__ is None:
-            return "The author of this function has not provided a description."
+            return "The author of this operation has not provided a description."
         else:
             return self.function.__doc__
 
@@ -256,7 +256,7 @@ class EscOperation(EscCommand):
         """
         items = "item" if self.pop == 1 else "items"
         results = "result" if self.push == 1 else "results"
-        type_ = f"    Type: Function (performs calculations)"
+        type_ = f"    Type: Operation (performs calculations)"
 
         if self.pop == -1:
             input_ = f"    Input: entire stack"
@@ -502,7 +502,6 @@ class EscBuiltin(EscCommand):
 
     def test(self):
         "Testing a builtin with esc's function test feature does nothing."
-        pass
 
     @property
     def signature_info(self):
@@ -527,7 +526,7 @@ MAIN_DOC = """
 main_menu = EscMenu('', "Main Menu", doc=MAIN_DOC)  # pylint: disable=invalid-name
 
 
-### Constructor/registration functions to be used in functions.py ###
+### Constructor/registration functions ###
 def Menu(key, description, parent, doc, mode_display=None):  # pylint: disable=invalid-name
     """
     Register a new submenu of an existing menu.
@@ -556,7 +555,7 @@ def Menu(key, description, parent, doc, mode_display=None):  # pylint: disable=i
 
 def Constant(value, key, description, menu):  # pylint: disable=invalid-name
     """
-    Register a new constant. Constants are just exceedingly boring functions
+    Register a new constant. Constants are just exceedingly boring operations
     that pop no values and push a constant value,
     so this is merely syntactic sugar.
 
@@ -566,34 +565,35 @@ def Constant(value, key, description, menu):  # pylint: disable=invalid-name
     :param description: A brief description to show next to the *key*.
     :param menu: A :class:`Menu <EscMenu>` to place this function on.
     """
-    @Function(key=key, menu=menu, push=1, description=description,
-              log_as=f"insert constant {description}")
+    @Operation(key=key, menu=menu, push=1, description=description,
+               log_as=f"insert constant {description}")
     def func():
         return value
     # You can't define a dynamic docstring from within the function.
     func.__doc__ = f"Add the constant {description} = {value} to the stack."
 
 
-def Function(key, menu, push, description=None, retain=False, log_as=None):  # pylint: disable=invalid-name
+def Operation(key, menu, push, description=None, retain=False, log_as=None):  # pylint: disable=invalid-name
     """
     Decorator to register a function on a menu
     and make it available for use as an esc operation.
 
     :param key:
         The key on the keyboard to press
-        to trigger this function on the menu.
+        to trigger this operation on the menu.
     :param menu:
-        The :class:`Menu <EscMenu>` to place this function on.
+        The :class:`Menu <EscMenu>` to place this operation on.
         The simplest choice is ``main_menu``,
         which you can import from :mod:`esc.commands`.
     :param push:
-        The number of items this function will return to the stack on success.
+        The number of items the decorated function
+        will return to the stack on success.
         ``0`` means nothing is ever returned;
         ``-1`` means a variable number of things are returned.
     :param description:
         A very brief description of the operation this function implements,
         to be displayed next to it on the menu.
-        If this is ``None`` (the default), the function is "anonymous"
+        If this is ``None`` (the default), the operation is "anonymous"
         and will be displayed at the top of the menu with just its *key*.
     :param retain:
         If ``True``, the items bound to this function's arguments
@@ -767,11 +767,11 @@ def Mode(name, default_value, allowable_values=None):  # pylint: disable=invalid
 def ModeChange(key, description, menu, mode_name, to_value):  # pylint: disable=invalid-name
     """
     Create a new mode change operation the user can select from a menu.
-    Syntactic sugar for registering a function.
+    Syntactic sugar for registering an operation.
 
     :param key: The key to press to select the constant from the menu.
     :param description: A brief description to show next to the *key*.
-    :param menu: A :class:`Menu <EscMenu>` to place this function on.
+    :param menu: A :class:`Menu <EscMenu>` to place this operation on.
     :param mode_name: The name of the mode, registered with :func:`Mode`,
                       to set.
     :param to_value: The value the mode will be set to

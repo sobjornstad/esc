@@ -18,9 +18,10 @@ where ``~`` represents your home or user directory.
 If this directory doesn't exist but ``$XDG_CONFIG_HOME/esc``
 (or ``~/.config/esc`` if that environment variable is unset)
 does, that is used instead.
-(See `here`_ for why you might want to use the XDG folders specification.)
+(See `here <xdg-here>`_
+for why you might want to use the XDG folders specification.)
 
-.. _here: https://ploum.net/207-modify-your-application-to-use-xdg-folders/
+.. _xdg-here: https://ploum.net/207-modify-your-application-to-use-xdg-folders/
 
 
 Installing plugins
@@ -54,6 +55,6 @@ You can write your own plugins
 or get plugins from someone else.
 Some plugins providing common features like trig and log functions
 are available for download in the esc repository
-under ``esc-plugins`` (see `here`_).
+under `esc-plugins`_.
 
-.. _here: https://github.com/sobjornstad/esc/tree/master/esc-plugins
+.. _esc-plugins: https://github.com/sobjornstad/esc/tree/master/esc-plugins

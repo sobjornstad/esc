@@ -11,7 +11,7 @@ class StatusState:
     Describes the current status of the calculator.
 
     This includes the UI modality the calculator is in (not to be confused
-    with *modes* configurable by functions), such as "Ready", "Insert",
+    with *modes* configurable by plugins), such as "Ready", "Insert",
     waiting for a register, etc. It also includes information about whether
     an error just occurred and what information about said error should be
     displayed on the status bar.

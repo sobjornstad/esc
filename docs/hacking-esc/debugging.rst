@@ -8,7 +8,7 @@ a :class:`ProgrammingError <esc.oops.ProgrammingError>` will be raised:
 .. autoclass:: esc.oops.ProgrammingError
 
 The traceback will usually contain enough information to identify the problem.
-If you have difficulty with the function itself
+If you have difficulty with the operation function itself
 (rather than interacting with the esc framework),
 you may wish to pull the function out into a test script
 or use the ``logging`` standard library module,

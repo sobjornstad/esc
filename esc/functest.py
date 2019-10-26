@@ -14,13 +14,13 @@ from .util import decimalize_iterable
 class TestCase:
     r"""
     Test case defined with the ``.ensure()`` attribute of functions
-    decorated with ``@Function``.
+    decorated with :func:`@Operation <esc.commands.Operation>`.
 
     :param before:
         Required.
         A list of Decimals or values that can be coerced to Decimals.
         These values will be pushed onto a test stack
-        that the function will consume values from.
+        that the operation will consume values from.
     :param after:
         Optional (either this or *raises* is required).
         A list of Decimals or values that can be coerced to Decimals.
@@ -56,12 +56,14 @@ class TestCase:
     but wrong calculations are pretty bad news!
 
     Test cases are not inherently associated with an operation due to scope
-    issues: Since the EscOperation itself is not returned to the functions
-    file, only a decorated function, the function author can't access the
-    EscOperation. Instead, they are associated with the function itself, and
-    when the test() method is called on an EscOperation, it retrieves the
-    test cases from the function and passes itself into the execute() method
-    of each test case.
+    issues: Since the :class:`EscOperation <esc.commands.EscOperation>`
+    itself is not returned to the functions file, only a decorated function,
+    the function author can't access the :class:`EscOperation
+    <esc.commands.EscOperation>`. Instead, they are associated with the
+    function itself, and when the test() method is called on an
+    :class:`EscOperation <esc.commands.EscOperation>`, it retrieves the test
+    cases from the function and passes itself into the execute() method of
+    each test case.
     """
     def __init__(self, before, after=None, raises=None, close=False):
         self.before = before

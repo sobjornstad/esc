@@ -11,7 +11,7 @@ class Mode:
     """
     esc modes implement basic calculator state like a degrees/radians switch.
     In esc, they are created and used by menus
-    with families of related functions,
+    with families of related operations,
     where they can also be displayed.
     They have a name, a current value, and optionally a set of allowable values;
     if something ever causes the value to be set to a non-allowable value,

@@ -11,8 +11,8 @@ class EscError(Exception):
 class ProgrammingError(EscError):
     """
     Indicates an error caused by incorrectly written or defined esc
-    plugins. This includes modes, menus, and so on, as well as actual
-    functions. It does not include runtime errors within functions
+    plugins. This includes modes, menus, operations, and so on.
+    It does not include runtime errors within operation functions
     themselves; these are :class:`FunctionExecutionError`\ s.
     """
 
@@ -20,7 +20,7 @@ class ProgrammingError(EscError):
 class FunctionProgrammingError(ProgrammingError):
     """
     A more specific type of :class:`ProgrammingError` that occurs when a
-    user's :func:`@Function <esc.commands.Function>` decorator or function
+    user's :func:`@Operation <esc.commands.Operation>` decorator or function
     parameters are invalid or function tests fail.
 
     The distinction is mostly for convenience within esc's codebase rather
@@ -72,8 +72,9 @@ class InvalidNameError(EscError):
 
 class FunctionExecutionError(EscError):
     r"""
-    A broad exception type that occurs when the code within a function
-    couldn't be executed successfully for some reason. Examples include:
+    A broad exception type that occurs when the code within an operation
+    function couldn't be executed successfully for some reason. Examples
+    include:
 
     - a number is in the middle of being entered and isn't a valid number
     - a function performed an undefined operation like dividing by zero
@@ -91,9 +92,10 @@ class FunctionExecutionError(EscError):
 
 class InsufficientItemsError(FunctionExecutionError):
     """
-    Raised directly by functions that request the entire stack to indicate
-    not enough items are on the stack to finish their work, or by the menu
-    logic when a function requests more parameters than items on the stack.
+    Raised directly by operations functions that request the entire stack to
+    indicate not enough items are on the stack to finish their work, or by
+    the menu logic when an operation requests more parameters than items on
+    the stack.
 
     Functions may use the simplified form of the exception, providing an int
     describing the number of items that should have been on the stack for the

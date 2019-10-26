@@ -20,7 +20,7 @@ Calculate the answers to the following algebraic expressions:
 6. :math:`\frac{1.52 \times 10^3}{12^{-2}}` [6]_
 
 Enter the numbers listed in the left column into the stack,
-then manipulate it using arithmetic or stack functions or registers
+then manipulate it using arithmetic or stack operations or registers
 to match the right column.
 You *cannot* enter any new numbers by typing them.
 
@@ -76,7 +76,7 @@ but is more of a concern on hardware RPN calculators,
 which may hold as few as 3.
 
 .. note::
-    Keystroke sequences are rendered with spaces between every keystroke
+    Keystroke sequences are rendered with spaces between operations
     for readability here.
     Many of these spaces are not necessary when typing into esc
     or will even give the error "No number to finish adding".
@@ -105,6 +105,7 @@ which may hold as few as 3.
 .. [8] ``c``
 
 .. [9] ``r r``,
-       or more playfully ``x y p x ^V``, where ^V means to paste into esc!
+       or more playfully ``x y p x ^V``, where ^V means to paste into esc
+       using whatever method your terminal emulator requires!
 
 .. [10] ``>x + + <x d + <x``

@@ -9,14 +9,14 @@ This plugin is provided with the esc distribution:
 from decimal import Decimal, InvalidOperation
 import math
 
-from esc.commands import Menu, Function, main_menu
+from esc.commands import Menu, Operation, main_menu
 
 
 log_doc = """Calculate the values of natural or base-10 logarithms."""
 log_menu = Menu('l', 'log menu', parent=main_menu, doc=log_doc)
 
 
-@Function('l', menu=log_menu, push=1, description='log x', log_as="log {0} = {1}")
+@Operation('l', menu=log_menu, push=1, description='log x', log_as="log {0} = {1}")
 def log(bos):
     "Take the base-10 logarithm of bos."
     return bos.log10()
@@ -28,7 +28,7 @@ log.ensure(before=[0], after=[Decimal("-Infinity")])
 log.ensure(before=[-10], raises=InvalidOperation)
 
 
-@Function('1', menu=log_menu, push=1, description='10^x', log_as="10^{0} = {1}")
+@Operation('1', menu=log_menu, push=1, description='10^x', log_as="10^{0} = {1}")
 def tentothex(bos):
     "Take 10 to the power of bos."
     return 10**bos
@@ -39,7 +39,7 @@ tentothex.ensure(before=[0], after=[1])
 tentothex.ensure(before=[-2], after=[Decimal(1)/100])
 
 
-@Function('n', menu=log_menu, push=1, description='ln x', log_as="ln {0} = {1}")
+@Operation('n', menu=log_menu, push=1, description='ln x', log_as="ln {0} = {1}")
 def ln(bos):
     "Take the base-e natural logarithm of bos."
     return bos.ln()
@@ -50,7 +50,7 @@ ln.ensure(before=[0], after=[Decimal("-Infinity")])
 ln.ensure(before=[-2], raises=InvalidOperation)
 
 
-@Function('e', menu=log_menu, push=1, description='e^x', log_as="e^{0} = {1}")
+@Operation('e', menu=log_menu, push=1, description='e^x', log_as="e^{0} = {1}")
 def etothex(bos):
     "Take e to the power of bos."
     return bos.exp()

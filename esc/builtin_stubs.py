@@ -1,5 +1,5 @@
 """
-builtin_stubs.py - stub classes for built-in functions
+builtin_stubs.py - stub classes for built-in commands
 """
 
 from .commands import EscBuiltin

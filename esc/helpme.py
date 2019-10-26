@@ -29,10 +29,10 @@ def get_help(operation_key, menu, ss, registry, recursing=False):
     """
     Display the on-line help page for the provided operation.
     """
-    esc_function = builtin_help(operation_key, menu)
-    if not esc_function:
+    esc_command = builtin_help(operation_key, menu)
+    if not esc_command:
         try:
-            esc_function = menu.child(operation_key)
+            esc_command = menu.child(operation_key)
         except NotInMenuError as e:
             if not recursing:
                 status.error(str(e))
@@ -41,27 +41,27 @@ def get_help(operation_key, menu, ss, registry, recursing=False):
             return
 
     screen().refresh_stack(ss)
-    # For anonymous functions (those whose description is None),
-    # use the key to describe the function.
-    description = esc_function.description or esc_function.key
-    if esc_function.is_menu:
+    # For anonymous operations (those whose description is None),
+    # use the key to describe the command.
+    description = esc_command.description or esc_command.key
+    if esc_command.is_menu:
         msg = f"Help: {description} (select a command or 'q' to return)"
     else:
         msg = f"Help: '{description}' (press any key to return)"
     status.advisory(msg)
     screen().refresh_status()
-    screen().show_help_window(esc_function.is_menu,
-                              esc_function.help_title,
-                              esc_function.signature_info,
-                              esc_function.__doc__,
-                              esc_function.simulated_result(ss, registry))
+    screen().show_help_window(esc_command.is_menu,
+                              esc_command.help_title,
+                              esc_command.signature_info,
+                              esc_command.__doc__,
+                              esc_command.simulated_result(ss, registry))
 
     # If this is a menu, we can select items on the menu to dive into.
-    if esc_function.is_menu:
+    if esc_command.is_menu:
         menu.execute(operation_key, ss, registry)
-        screen().display_menu(esc_function)
+        screen().display_menu(esc_command)
         c = fetch_input(True)
-        get_help(chr(c), esc_function, ss, registry, recursing=True)
+        get_help(chr(c), esc_command, ss, registry, recursing=True)
     else:
         c = fetch_input(True)
 

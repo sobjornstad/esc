@@ -36,7 +36,7 @@ and paste in the following template:
     {additional details}
     """
 
-    from esc.commands import Function, main_menu
+    from esc.commands import Operation, main_menu
 
 Change the sections in brackets to appropriate values for your plugins.
 Of course, the docstring is just a suggestion.
@@ -48,7 +48,7 @@ fix the file as necessary to resolve it.
 Writing a function
 ------------------
 
-Operations are Python functions decorated with ``@Function``.
+Operations are Python functions decorated with ``@Operation``.
 We'll start with the function and then look at the decorator.
 
 How should we write this function?
@@ -80,7 +80,7 @@ slice that many items off the bottom of the stack,
 and bind them to the parameters in order.
 (The details are somewhat more complicated;
 see the documentation
-for the :func:`Function <esc.commands.Function>` decorator for more.)
+for the :func:`@Operation <esc.commands.Operation>` decorator for more.)
 
 .. note::
     esc uses the `Decimal`_ library to implement decimal arithmetic
@@ -112,14 +112,14 @@ Registering a function
 If you save the file and start esc, you won't get any errors,
 but you won't have any new operations either.
 In order to get an operation to show up,
-we need to add the ``@Function`` decorator described earlier.
+we need to add the ``@Operation`` decorator described earlier.
 That will look like this:
 
 .. code-block:: python
 
-    @Function(key='P', menu=main_menu, push=1,
-              description="proportion from abc",
-              log_as="{0}:{1} :: {2}:[{3}]")
+    @Operation(key='P', menu=main_menu, push=1,
+               description="proportion from abc",
+               log_as="{0}:{1} :: {2}:[{3}]")
     def proportion(a, b, c):
         """
         Quickly calculate a proportion.
@@ -137,10 +137,10 @@ but a couple of points are worth noting.
   The formatted version will be used in the history window and help system.
 * The function's docstring is used as the description in the help system.
 
-``@Function`` can get more complicated,
+``@Operation`` can get more complicated,
 so without further ado here are the dirty details:
 
-.. autofunction:: esc.commands.Function
+.. autofunction:: esc.commands.Operation
 
 
 Creating tests
@@ -161,7 +161,7 @@ you can be confident that esc won't return incorrect results
 (at least to the extent of your test coverage).
 
 We can define automatic tests using the ``ensure`` attribute
-which the ``@Function`` decorator adds to our function.
+which the ``@Operation`` decorator adds to our function.
 Let's define a test that tests
 the example we discussed at the start of this page:
 
@@ -181,6 +181,8 @@ which is caught by the interface.
     proportion.ensure(before=[0, 2, 3], raises=ZeroDivisionError)
 
 And it's that easy.
+If you don't get a :class:`ProgrammingError <esc.oops.ProgrammingError>`
+after restarting esc, your tests pass.
 
 Here's the full scoop on defining tests:
 

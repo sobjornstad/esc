@@ -151,7 +151,7 @@ def delete_register(ss, registry):
 def try_special(c, ss, registry, menu):
     """
     Handle special values that aren't digits to be entered or
-    functions/operations to be called, e.g., Enter, Backspace, and undo.
+    operations to be called, e.g., Enter, Backspace, and undo.
 
     Returns True if the value was handled, False if not.
     """

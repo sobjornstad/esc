@@ -189,7 +189,7 @@ to get specific help on that item.
     :align: center
     :width: 80%
 
-    Getting help on the division function with several numbers on the stack.
+    Getting help on the division operation with several numbers on the stack.
     Press :kbd:`F1 /` to reach this screen.
 
 

@@ -8,7 +8,7 @@ This plugin is provided with the esc distribution:
 import math
 
 from esc import modes
-from esc.commands import Menu, Function, Mode, ModeChange, UNOP, main_menu
+from esc.commands import Menu, Operation, Mode, ModeChange, UNOP, main_menu
 
 TRIG_MODE_NAME = 'trig_mode'
 
@@ -22,26 +22,24 @@ def trig_mode_display():
     return f"[{modes.get(TRIG_MODE_NAME)}]"
 
 
-trig_menu = Menu('t',
-                 'trig menu',
-                 parent=main_menu,
+trig_menu = Menu('t', 'trig menu', parent=main_menu,
                  doc=trig_doc,
                  mode_display=trig_mode_display)
 
 
 def trig_wrapper(bos, func, arc=False):
     """
-    Used anytime a trig Function is called. Performs any conversions from
+    Used anytime a trig Operation is called. Performs any conversions from
     degrees to radians and vice versa, as called for by modes.trigMode (all
     Python math module functions use only radians).
 
-    Takes the requested stack item, a Function to be called on the value
+    Takes the requested stack item, a Operation to be called on the value
     after/before the appropriate conversion, and a boolean indicating whether
-    this is an arc/inverse Function (requiring radian->degree after
+    this is an arc/inverse Operation (requiring radian->degree after
     computation) or a forward one (requiring degree->radian before
     computation).
 
-    Returns the new value of the stack as passed out by the provided Function,
+    Returns the new value of the stack as passed out by the provided Operation,
     after possible conversion to degrees.
     """
     if modes.get(TRIG_MODE_NAME) == 'degrees' and not arc:
@@ -52,7 +50,7 @@ def trig_wrapper(bos, func, arc=False):
     return ret
 
 
-@Function('s', menu=trig_menu, push=1, description='sine', log_as=UNOP)
+@Operation('s', menu=trig_menu, push=1, description='sine', log_as=UNOP)
 def sine(bos):
     """
     Take the sine of bos. Affected by the mode 'degrees' or 'radians'
@@ -61,7 +59,7 @@ def sine(bos):
     return trig_wrapper(bos, math.sin)
 
 
-@Function('c', menu=trig_menu, push=1, description='cosine', log_as=UNOP)
+@Operation('c', menu=trig_menu, push=1, description='cosine', log_as=UNOP)
 def cosine(bos):
     """
     Take the cosine of bos. Affected by the mode 'degrees' or 'radians'
@@ -70,7 +68,7 @@ def cosine(bos):
     return trig_wrapper(bos, math.cos)
 
 
-@Function('t', menu=trig_menu, push=1, description='tangent', log_as=UNOP)
+@Operation('t', menu=trig_menu, push=1, description='tangent', log_as=UNOP)
 def tangent(bos):
     """
     Take the tangent of bos. Affected by the mode 'degrees' or 'radians'
@@ -79,7 +77,7 @@ def tangent(bos):
     return trig_wrapper(bos, math.tan)
 
 
-@Function('i', menu=trig_menu, push=1, description='arc sin', log_as=UNOP)
+@Operation('i', menu=trig_menu, push=1, description='arc sin', log_as=UNOP)
 def arc_sine(bos):
     """
     Take the arc sine (a.k.a., inverse sine) of bos. Affected by the mode
@@ -88,7 +86,7 @@ def arc_sine(bos):
     return trig_wrapper(bos, math.sin)
 
 
-@Function('o', menu=trig_menu, push=1, description='arc cos', log_as=UNOP)
+@Operation('o', menu=trig_menu, push=1, description='arc cos', log_as=UNOP)
 def arc_cosine(bos):
     """
     Take the arc cosine (a.k.a., inverse cosine) of bos. Affected by the mode
@@ -97,7 +95,7 @@ def arc_cosine(bos):
     return trig_wrapper(bos, math.cos)
 
 
-@Function('a', menu=trig_menu, push=1, description='arc tan', log_as=UNOP)
+@Operation('a', menu=trig_menu, push=1, description='arc tan', log_as=UNOP)
 def arc_tangent(bos):
     """
     Take the arc cosine (a.k.a., inverse cosine) of bos. Affected by the mode
