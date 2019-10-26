@@ -60,8 +60,8 @@ class StatusState:
         if self.error_state == StatusState.SuccessCode.OK:
             err_str = "No Error"
         else:
-            err_str = (f"Error {self.error_state} "
-                       "(seen) :" if self.error_seen else "(not seen) :"
+            err_str = (f"Error {self.error_state} " +
+                       ("(seen) :" if self.error_seen else "(not seen) :") +
                        f"message {self.override_msg})")
         return f"<StatusState: {self.state} - {err_str}>"
 

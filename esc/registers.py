@@ -22,6 +22,9 @@ class Registry:
     def __len__(self):
         return len(self._registers)
 
+    def __nonzero__(self):
+        return bool(self._registers)
+
     def __getitem__(self, key):
         return self._registers[key]
 

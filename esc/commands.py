@@ -218,8 +218,9 @@ class EscOperation(EscCommand):
     """
     A type of EscCommand that can be run to make some changes on the stack.
     """
+    # pylint: disable=too-many-arguments
     def __init__(self, key, func, pop, push, description, menu, retain=False,
-                 log_as=None):  # pylint: disable=too-many-arguments
+                 log_as=None):
         super().__init__(key, description)
         self.parent = menu
         #: The function, decorated with :func:`@Operation <Operation>`,
@@ -467,7 +468,7 @@ class EscOperation(EscCommand):
 
 
 class EscBuiltin(EscCommand):
-    """
+    r"""
     Mock class for built-in commands. Built-in :class:`EscCommand`\ s do not
     actually get run and do anything -- they are special-cased because they
     need access to internals normal commands cannot access. However, it's

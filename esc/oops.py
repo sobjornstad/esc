@@ -9,7 +9,7 @@ class EscError(Exception):
 
 
 class ProgrammingError(EscError):
-    """
+    r"""
     Indicates an error caused by incorrectly written or defined esc
     plugins. This includes modes, menus, operations, and so on.
     It does not include runtime errors within operation functions
@@ -18,7 +18,7 @@ class ProgrammingError(EscError):
 
 
 class FunctionProgrammingError(ProgrammingError):
-    """
+    r"""
     A more specific type of :class:`ProgrammingError` that occurs when a
     user's :func:`@Operation <esc.commands.Operation>` decorator or function
     parameters are invalid or function tests fail.

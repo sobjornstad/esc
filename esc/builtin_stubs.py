@@ -32,7 +32,7 @@ class RetrieveRegister(EscBuiltin):
     description = "get bos from reg"
 
     def simulated_result(self, ss, registry):
-        if len(registry) > 0:  # pylint: disable=len-as-condition
+        if registry:
             return ("A register of your choice would have its value",
                     "retrieved and added to the bottom of the stack.")
         else:
@@ -48,7 +48,7 @@ class DeleteRegister(EscBuiltin):
     description = "delete register"
 
     def simulated_result(self, ss, registry):
-        if len(registry) > 0:  # pylint: disable=len-as-condition
+        if registry:
             return ("A register of your choice would be deleted.",)
         else:
             return ("You wouldn't be able to do anything useful.",

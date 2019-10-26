@@ -101,7 +101,7 @@ class StackItem:
         Calling :meth:`add_character` is illegal
         and will raise an ``AssertionError``
         if the number has already been entered completely.
-        
+
         :return: ``True`` if successful,
                  ``False`` if the stack width (:attr:`esc.consts.STACKWIDTH`)
                  has been exceeded.

@@ -16,8 +16,7 @@ from .consts import (STACKDEPTH, STACKWIDTH, PROGRAM_NAME,
 from .status import status
 from .util import truncate, quit_if_screen_too_small, centered_position
 
-# pylint: disable=invalid-name
-_screen = None
+_SCREEN = None
 
 
 class Window:
@@ -294,10 +293,11 @@ class RegistersWindow(Window):
         self.register_pairs = registry.items()
 
 
-class HelpWindow(Window):
+class HelpWindow(Window):  # pylint: disable=too-many-instance-attributes
     "Temporary window displaying help messages."
     heading = "Help"
 
+    # pylint: disable=too-many-arguments
     def __init__(self, scr, is_menu, help_title, signature_info, docstring,
                  results_info, max_y):
         self.height = max_y - 1
@@ -411,9 +411,9 @@ class EscScreen:
         self.stackw.ss = ss
         self.stackw.set_cursor_posn()
 
-    def backspace(self, ss, ssReturn):
+    def backspace(self, ss, ss_return):
         self.stackw.ss = ss
-        self.stackw.backspace(ssReturn)
+        self.stackw.backspace(ss_return)
 
     def getch_stack(self):
         return self.stackw.getch()
@@ -444,6 +444,7 @@ class EscScreen:
 
 
     ### Auxiliary windows ###
+    # pylint: disable=too-many-arguments
     def show_help_window(self, is_menu: bool, help_title: str,
                          signature_info: Sequence[str], docstring: str,
                          results_info: Sequence[str]) -> None:
@@ -459,7 +460,7 @@ def screen():
     access it with an import from another module because it won't have been
     defined at that time.
     """
-    return _screen
+    return _SCREEN
 
 
 def fetch_input(in_menu) -> int:
@@ -477,5 +478,5 @@ def fetch_input(in_menu) -> int:
 
 def init(stdscr):
     "Initialize the screen() from curses' stdscr."
-    global _screen
-    _screen = EscScreen(stdscr)
+    global _SCREEN
+    _SCREEN = EscScreen(stdscr)
