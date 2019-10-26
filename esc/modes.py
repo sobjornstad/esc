@@ -39,7 +39,10 @@ class Mode:
 
 
 def get(name):
-    "Retrieve the value of a mode with a given name."
+    """
+    Retrieve the value of a mode with a given name. Return None if no mode by
+    that name has been registered.
+    """
     try:
         return MODES[name].value
     except KeyError:
