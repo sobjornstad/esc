@@ -7,5 +7,5 @@ fi
 
 . venv/bin/activate
 rm -rf dist/
-python3.7 setup.py sdist bdist_wheel || exit 1
+python setup.py sdist bdist_wheel || exit 1
 twine upload --repository-url https://test.pypi.org/legacy dist/*

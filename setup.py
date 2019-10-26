@@ -25,5 +25,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     scripts=['package_scripts/esc'],
-    python_requires='>=3.7',
+    python_requires='>=3.6',
 )

@@ -2,16 +2,11 @@
 modes.py - Manage calculator state/modes
 """
 
-
-from dataclasses import dataclass
-from typing import Any, Optional, Sequence
-
 from .oops import ProgrammingError
-
 
 MODES = {}
 
-@dataclass
+
 class Mode:
     """
     esc modes implement basic calculator state like a degrees/radians switch.
@@ -26,9 +21,10 @@ class Mode:
     Modes are usually created by the :func:`esc.commands.Mode` factory function,
     not by calling this constructor directly.
     """
-    name: str
-    _value: Any
-    allowable_values: Optional[Sequence[Any]]
+    def __init__(self, name, value, allowable_values):
+        self.name = name
+        self._value = value
+        self.allowable_values = allowable_values
 
     @property
     def value(self):

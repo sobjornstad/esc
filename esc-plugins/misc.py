@@ -89,4 +89,3 @@ def identity(bos):
 @Function('E', menu=main_menu, push=0, description="explode")
 def set_register_E(registry):
     registry['E'] = 64
-
