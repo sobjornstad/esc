@@ -3,6 +3,7 @@ function_loader.py - load esc functions from builtins and plugins onto menus
 """
 
 import importlib
+import os
 from pathlib import Path
 import sys
 
@@ -15,14 +16,15 @@ def _import_user_functions():
 
     The plugins directory is just inside the esc config directory (which
     presently doesn't contain anything else!) This is the first of ~/.esc or
-    ~/.config/esc that is found.
+    $XDG_CONFIG_HOME/share/esc or ~/.config/esc that is found.
 
     The files are imported with the esc namespace first on the path, so doing
     e.g., 'from esc.commands import main_menu' will work automagically,
     even if esc isn't on the PYTHONPATH.
     """
+    xdg_home = os.environ.get('XDG_CONFIG_HOME', str(Path.home() / ".config"))
     possible_dirs = (Path.home() / ".esc" / "plugins",
-                     Path.home() / ".config" / "esc" / "plugins")
+                     Path(xdg_home) / "esc" / "plugins")
     try:
         config_path = next(i for i in possible_dirs
                            if i.exists() and i.is_dir())

@@ -15,8 +15,12 @@ Plugins are Python modules (``.py`` files)
 stored in the ``plugins`` subdirectory of your esc configuration directory.
 By default your esc configuration directory is ``~/.esc``,
 where ``~`` represents your home or user directory.
-If this directory doesn't exist but ``~/.config/esc`` does,
-that is used instead.
+If this directory doesn't exist but ``$XDG_CONFIG_HOME/esc``
+(or ``~/.config/esc`` if that environment variable is unset)
+does, that is used instead.
+(See `here`_ for why you might want to use the XDG folders specification.)
+
+.. _here: https://ploum.net/207-modify-your-application-to-use-xdg-folders/
 
 
 Installing plugins
@@ -32,7 +36,7 @@ The next time you start esc, the plugins will be loaded.
 .. warning::
     esc plugins can execute arbitrary Python code on your computer,
     which could include malicious code,
-    so you should not install esc plugins that you do not trust.
+    so you should not install esc plugins from sources that you do not trust.
 
 .. tip::
     Plugins are loaded
