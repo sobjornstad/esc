@@ -13,20 +13,20 @@ class ProgrammingError(EscError):
     Indicates an error caused by incorrectly written or defined esc
     plugins. This includes modes, menus, and so on, as well as actual
     functions. It does not include runtime errors within functions
-    themselves; these are FunctionExecutionErrors.
+    themselves; these are :class:`FunctionExecutionError`\ s.
     """
 
 
 class FunctionProgrammingError(ProgrammingError):
     """
-    A more specific type of ProgrammingError that occurs when a user's
-    @Function decorator or function parameters are invalid or function
-    tests fail.
+    A more specific type of :class:`ProgrammingError` that occurs when a
+    user's :func:`@Function <esc.commands.Function>` decorator or function
+    parameters are invalid or function tests fail.
 
     The distinction is mostly for convenience within esc's codebase rather
     than because client code needs to tell the difference from other
-    ProgrammingErrors; this class wraps some handy logic for generating a
-    standardized message.
+    :class:`ProgrammingError`\ s; this class wraps some handy logic for
+    generating a standardized message.
     """
     def __init__(self, operation, problem):
         super().__init__()
@@ -97,7 +97,7 @@ class InsufficientItemsError(FunctionExecutionError):
 
     Functions may use the simplified form of the exception, providing an int
     describing the number of items that should have been on the stack for the
-    *number_required* constructor parameter. esc will then reraise the
+    :attr:`number_required` constructor parameter. esc will then reraise the
     exception with a more useful message; a fallback message is provided in
     case this doesn't happen for some reason.
     """

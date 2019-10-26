@@ -108,3 +108,36 @@ and you will receive the following object:
     :private-members:
     :special-members: __contains__, __len__, __getitem__, __setitem__, __delitem__
     :undoc-members:
+
+
+Exceptions
+==========
+
+The most important exceptions are described (and indexed) in the context
+where you need to deal with them,
+but here is the complete hierarchy for reference.
+
+.. currentmodule:: esc.oops
+
+.. inheritance-diagram:: EscError FunctionExecutionError
+                         InsufficientItemsError ProgrammingError
+                         FunctionProgrammingError InvalidNameError
+                         NotInMenuError
+    :parts: 1
+
+.. autoclass:: EscError
+
+.. autoclass:: FunctionExecutionError
+    :noindex:
+
+.. autoclass:: InsufficientItemsError
+    :noindex:
+
+.. autoclass:: ProgrammingError
+    :noindex:
+
+.. autoclass:: FunctionProgrammingError
+
+.. autoclass:: InvalidNameError
+
+.. autoclass:: NotInMenuError
