@@ -2,6 +2,7 @@ __pycache__/
 *.py[cod]
 .mypy_cache/
 venv/
+.vscode/
 docs/_build/
 
 build/
