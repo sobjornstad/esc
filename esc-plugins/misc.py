@@ -87,5 +87,6 @@ def identity(bos):
     return bos
 
 @Function('E', menu=main_menu, push=0, description="explode")
-def explode():
-    raise Exception("I'm an exception!")
+def set_register_E(registry):
+    registry['E'] = 64
+

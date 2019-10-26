@@ -198,6 +198,9 @@ def setup_decimal_context():
 
 
 def user_loop(ss, registry):
+    """
+    Main loop to retrieve user input and perform calculator operations.
+    """
     menu = None
     while True:
         status.mark_seen()
@@ -235,6 +238,7 @@ def user_loop(ss, registry):
             screen().refresh_status()
         else:
             screen().refresh_stack(ss)
+            screen().update_registers(registry)
             status.ready()
 
 
