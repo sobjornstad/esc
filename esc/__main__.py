@@ -5,7 +5,11 @@ main.py - startup code and main loop for esc
 
 import curses
 import curses.ascii
+import datetime
 import decimal
+from pathlib import Path
+from traceback import format_exc
+import sys
 
 from .commands import main_menu
 from .consts import (UNDO_CHARACTER, REDO_CHARACTER, STORE_REG_CHARACTER,
@@ -193,21 +197,8 @@ def setup_decimal_context():
     context.traps[decimal.Overflow] = 0  # return infinity
 
 
-def main():
-    """
-    Where the magic happens. Initializes the important constructs and manages
-    the main loop.
-    """
-    function_loader.load_all()
-    main_menu.test()
-    history.hs.clear()  # destroy undo history from tests
-
-    ss = stack.StackState()
-    registry = registers.Registry()
+def user_loop(ss, registry):
     menu = None
-    setup_decimal_context()
-
-    # Main loop.
     while True:
         status.mark_seen()
         screen().refresh_status()
@@ -245,6 +236,46 @@ def main():
         else:
             screen().refresh_stack(ss)
             status.ready()
+
+
+def main():
+    """
+    Initializes the important constructs and launches the main loop.
+    """
+    setup_decimal_context()
+    function_loader.load_all()
+    main_menu.test()
+    history.hs.clear()  # destroy undo history from tests
+
+    ss = stack.StackState()
+    registry = registers.Registry()
+
+    try:
+        user_loop(ss, registry)
+    except Exception:
+        path = Path.home() / ".esc_dump.txt"
+        with open(path, 'a') as f:
+            f.write(f"\n--- Error dump at {datetime.datetime.now()} ---\n")
+            f.write(f"Stack:\n")
+            for stackitem in ss.s:
+                f.write(str(stackitem) + "\n")
+            f.write(f"\nRegisters:\n")
+            for k, v in registry.items():
+                f.write(f"{k} = {v}\n")
+            f.write(f"\nException:\n")
+            f.write(format_exc())
+
+        curses.endwin()
+        sys.stderr.write("*" * 80 + "\n")
+        sys.stderr.write("Something went wrong, sorry about that!\n")
+        sys.stderr.write(
+            "The error message below may provide some insight into the problem.\n")
+        sys.stderr.write(
+            "Your current stack and registers and a log of this error "
+            "have been written to ~/.esc_dump.txt.\n")
+        sys.stderr.write(
+            "You can recover your work if necessary by looking in that file.\n\n")
+        raise
 
 
 def bootstrap(stdscr):
