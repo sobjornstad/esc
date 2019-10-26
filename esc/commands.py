@@ -500,6 +500,10 @@ class EscBuiltin(EscCommand):
         "Reimplemented by each subclass."
         raise NotImplementedError
 
+    def test(self):
+        "Testing a builtin with esc's function test feature does nothing."
+        pass
+
     @property
     def signature_info(self):
         "Constant string that describes the built-in as a built-in."
