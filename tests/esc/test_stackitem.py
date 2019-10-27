@@ -98,6 +98,23 @@ def test_stackitem_finish_empty():
     assert not si.finish_entry()
 
 
+def test_stackitem_backspace_too_far():
+    "Backspacing too far simply does nothing."
+    si = StackItem(firstchar="2")
+    si.backspace()
+    si.backspace()
+    si.add_character("7")
+    assert si.string == "7"
+
+
+def test_stackitem_backspace_entered():
+    "Clients must not backspace an entered StackItem. This raises AssertionError."
+    si = StackItem(firstchar="2")
+    si.finish_entry()
+    with pytest.raises(AssertionError):
+        si.backspace()
+
+
 def test_stackitem_invalid_entry():
     """
     We can enter things composed of valid characters that aren't valid,

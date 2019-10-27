@@ -48,18 +48,14 @@ def try_add_to_number(c, ss):
     if util.is_number(char):
         if char == '_':
             char = '-' # negative sign, like dc
-        if ss.editing_last_item:
-            if not ss.s[ss.stack_posn].add_character(char):
-                # No more stack width left.
+        if not ss.add_character(char):
+            if ss.editing_last_item:
                 status.error("No more precision available. "
                              "Consider scientific notation.")
-                return True
-        else:
-            ok = ss.add_partial(char)
-            if not ok: # no more space on the stack
+            else:
                 status.error("Stack is full.")
-                return True
-            screen().place_cursor(ss)
+                screen().place_cursor(ss)
+            return True
 
         screen().putch_stack(char)
         ss.cursor_posn += 1

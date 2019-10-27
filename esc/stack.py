@@ -187,7 +187,7 @@ class StackState:
         self._editing_last_item = False
 
     def __repr__(self):
-        vals = [item if idx != self.stack_posn else f"({item})"
+        vals = [repr(item) if idx != self.stack_posn else f"({item!r})"
                 for idx, item in enumerate(self.s)]
         if self.editing_last_item:
             vals[-1] += "..."
@@ -245,16 +245,10 @@ class StackState:
     def last_operation(self):
         return self.operation_history[-1] if self.operation_history else None
 
-    def as_decimal(self):
+    def _new_entry_stack_item(self, c):
         """
-        Return the stack as a list of its Decimal values.
-        """
-        return [i.decimal for i in self.s]
-
-    def add_partial(self, c):
-        """
-        Start a new item on the stack with the given character /c/. Return
-        False if we have exceeded the maximum capacity of the stack.
+        Create a new stack item for the user to type into beginning with the
+        character /c/.
         """
         if not self.has_push_space(1):
             return False
@@ -264,6 +258,26 @@ class StackState:
         self.s.append(StackItem(firstchar=c))
         self.editing_last_item = True
         return True
+
+    def as_decimal(self):
+        """
+        Return the stack as a list of its Decimal values.
+        """
+        return [i.decimal for i in self.s]
+
+    def add_character(self, c):
+        """
+        Append to an existing incomplete item on the stack with the given
+        character (or string) /c/. If bos is not incomplete, start a new
+        stack item beginning with the character /c/.
+
+        Return True if successful, False if we have exceeded the maximum
+        capacity of the stack.
+        """
+        if self.editing_last_item:
+            return self.s[self.stack_posn].add_character(c)
+        else:
+            return self._new_entry_stack_item(c)
 
     def backspace(self):
         """

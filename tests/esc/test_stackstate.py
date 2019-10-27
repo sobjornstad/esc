@@ -60,3 +60,26 @@ def iter_stack(sample_stack):
     lst = list(iter(sample_stack))
     assert lst[0].string == "2"
     assert lst[1].string == "4"
+
+
+### Workflows
+def test_add_item(sample_stack):
+    """
+    You add new items to the stack by using add_partial.
+    """
+    assert not sample_stack.editing_last_item
+    assert len(sample_stack.s) == 2
+
+    sample_stack.add_character("1")
+    assert sample_stack.editing_last_item
+    assert len(sample_stack.s) == 3
+    assert sample_stack.bos.decimal is None
+
+    sample_stack.add_character(".")
+    sample_stack.add_character("2")
+    assert sample_stack.enter_number()
+    print(repr(sample_stack))
+    assert sample_stack.bos.decimal == Decimal("1.2")
+
+    # If we do it a second time, we get False back.
+    assert not sample_stack.enter_number()
