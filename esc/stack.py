@@ -14,7 +14,6 @@ from .consts import STACKDEPTH, STACKWIDTH
 from . import history
 from .oops import RollbackTransaction
 from .status import status
-from . import util
 
 
 class StackItem:
