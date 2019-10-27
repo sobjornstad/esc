@@ -286,5 +286,9 @@ def bootstrap(stdscr):
     main()
 
 
-if __name__ == '__main__':
+def curses_wrapper():
     curses.wrapper(bootstrap)
+
+
+if __name__ == '__main__':
+    curses_wrapper()
