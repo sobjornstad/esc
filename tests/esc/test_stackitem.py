@@ -69,7 +69,7 @@ def test_stackitem_string_input():
 def test_stackitem_invalid_constructor():
     "We have to give either firstchar or decval as a constructor argument."
     with pytest.raises(AssertionError):
-        si = StackItem()
+        StackItem()
 
 
 def test_stackitem_backspace():

@@ -58,7 +58,6 @@ def try_add_to_number(c, ss):
             return True
 
         screen().putch_stack(char)
-        ss.cursor_posn += 1
         return True
     return False
 

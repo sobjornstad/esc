@@ -183,7 +183,6 @@ class StackState:
         self.s = []
         self.operation_history = []
         self.stack_posn = -1
-        self.cursor_posn = 0
         self._editing_last_item = False
 
     def __repr__(self):
@@ -231,7 +230,13 @@ class StackState:
         self.s.pop()  # raises IndexError if nothing here
         self.editing_last_item = False
         self.stack_posn -= 1
-        self.cursor_posn = 0
+
+    @property
+    def cursor_posn(self):
+        if self.bos is None or not self.editing_last_item:
+            return 0
+        else:
+            return len(self.bos.string)
 
     @property
     def free_stack_spaces(self):
@@ -254,7 +259,6 @@ class StackState:
             return False
 
         self.stack_posn += 1
-        self.cursor_posn = 0
         self.s.append(StackItem(firstchar=c))
         self.editing_last_item = True
         return True
@@ -295,14 +299,12 @@ class StackState:
             return 1
         else:
             self.bos.backspace()
-            self.cursor_posn -= 1
             return 0
 
     def clear(self):
         "Clear the stack."
         self.s.clear()
         self.stack_posn = -1
-        self.cursor_posn = 0
         self.editing_last_item = False
 
     def enter_number(self, running_op=None):
@@ -329,7 +331,6 @@ class StackState:
         if self.editing_last_item:
             if self.s[self.stack_posn].finish_entry():
                 self.editing_last_item = False
-                self.cursor_posn = 0
                 return True
             else:
                 if running_op:
