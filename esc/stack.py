@@ -77,6 +77,11 @@ class StackItem:
     def __str__(self):
         return self.string
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
     @staticmethod
     def _remove_exponent(d):
         """
@@ -195,6 +200,11 @@ class StackState:
     def __iter__(self):
         for i in self.s:
             yield i
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
 
     @property
     def editing_last_item(self):
@@ -346,7 +356,7 @@ class StackState:
 
     def push(self, vals, description=None):
         """
-        Push an iterable of numbers or StackItems onto the stack.
+        Push an iterable of decimals or StackItems onto the stack.
 
         If a /description/ of the operation is specified, it will be recorded
         for display as a step in the history pane.
