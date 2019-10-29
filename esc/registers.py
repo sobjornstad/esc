@@ -16,14 +16,14 @@ class Registry:
     def __init__(self):
         self._registers: Dict[str, StackItem] = {}
 
+    def __bool__(self):
+        return bool(self._registers)
+
     def __contains__(self, value):
         return value in self._registers
 
     def __len__(self):
         return len(self._registers)
-
-    def __nonzero__(self):
-        return bool(self._registers)
 
     def __getitem__(self, key):
         return self._registers[key]
