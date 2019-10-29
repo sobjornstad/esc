@@ -77,7 +77,7 @@ class TestCase:
         else:
             return f"<{self.before!r} ==> {self.raises.__name__}>"
 
-    def _fpe(self, problem, operation):
+    def _oops_it(self, problem, operation):
         return FunctionProgrammingError(operation=operation,
                                         problem=f"under test {repr(self)} {problem}")
 
@@ -108,6 +108,10 @@ class TestCase:
         Execute this test case against the EscOperation /operation/.
         Test cases raise an exception if they fail and otherwise do nothing.
         """
+        if self.after and self.raises:
+            raise self._oops_it("included both 'after' and 'raises' clauses "
+                                "(only one is allowed)", operation)
+
         try:
             start_dec = decimalize_iterable(self.before)
             if self.after is None:
@@ -115,8 +119,8 @@ class TestCase:
             else:
                 end_dec = decimalize_iterable(self.after)
         except (decimal.InvalidOperation, TypeError) as e:
-            raise self._fpe(
-                "test case tried to place a non-decimal value on a test stack",
+            raise self._oops_it(
+                "tried to place a non-decimal value on a test stack",
                 operation) from e
 
         ss = StackState()
@@ -126,18 +130,18 @@ class TestCase:
             operation.execute(access_key=None, ss=ss, registry=registry)
         except Exception as e:
             if self.raises is None or not _recursive_exception_instance(e, self.raises):
-                raise self._fpe(
+                raise self._oops_it(
                     f"failed a self-test: {type(e).__name__} was raised and "
                     f"was not listed as the exception type "
                     f"in a raises parameter",
                     operation) from e
         else:
             if self.raises:
-                raise self._fpe(
+                raise self._oops_it(
                     f"failed a self-test: {self.raises.__name__} was not raised",
                     operation)
             elif not self._equal(ss.as_decimal(), end_dec):
-                raise self._fpe(
+                raise self._oops_it(
                     f"failed a self-test: Expected {end_dec}, "
                     f"but got {ss.as_decimal()} as the final stack",
                     operation)
