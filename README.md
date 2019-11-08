@@ -78,7 +78,7 @@ Documentation
 The user manual and API documentation on writing plugins for esc
 are maintained on [Read The Docs][].
 
-[Read The Docs]: TODO
+[Read The Docs]: https://esc-calc.readthedocs.io
 
 
 Contributing
