@@ -74,8 +74,8 @@ stages:
 
   - stage: PyPiDeploy
     jobs:
-      - deployment: PyPiTest
-        environment: PyPiTest
+      - deployment: PyPi
+        environment: PyPi
         condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
         pool:
           vmImage: 'ubuntu-latest'
@@ -93,12 +93,13 @@ stages:
 
                 - task: TwineAuthenticate@1
                   inputs:
-                    pythonUploadServiceConnection: 'TestPyPi'
+                    pythonUploadServiceConnection: 'PyPi'
 
                 - script: |
                     pip install setuptools twine wheel
-                    twine upload -r "TestPyPi" --config-file $(PYPIRC_PATH) "$(Pipeline.Workspace)/deploy/esc"*
+                    twine upload -r "PyPi" --config-file $(PYPIRC_PATH) "$(Pipeline.Workspace)/deploy/esc"*
                     echo "##vso[task.setvariable variable=Project.Version;]$(cat "$(Pipeline.Workspace)/deploy/.version")"
+
                 - task: GitHubRelease@1
                   inputs:
                     gitHubConnection: 'sobjornstad2'
