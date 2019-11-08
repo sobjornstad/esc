@@ -33,7 +33,8 @@ continue working on it without screaming, the most visible changes include:
 * Some functionality that was in base esc has been factored out into plugins so
   you can plug-and-play only the pieces you need and use.
 
-* Precision is globally decreased to 12 significant figures, which prevents the
+* Decimal arithmetic is now used instead of floating-point, and precision is
+  globally decreased to 12 significant figures, which prevents the
   stack window from overflowing with more digits than will ever be useful.
 
 * A number of small, irritating bugs have been fixed.
