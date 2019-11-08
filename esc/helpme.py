@@ -14,6 +14,18 @@ def builtin_help(operation_key, menu):
     """
     Return an instance of the builtin class for the menu choice represented
     by operation_key, if one exists; otherwise return None.
+
+    >>> from esc.commands import main_menu
+    >>> builtin_help('q', main_menu)
+    <esc.builtin_stubs.Quit object at ...>
+
+    >>> undoer = builtin_help('u', main_menu)
+    >>> undoer.key
+    'u'
+    >>> undoer.description
+    'undo'
+    >>> undoer.simulated_result(None, None)
+    ('The last change made to your stack (if any)', 'would be undone.')
     """
     if menu.is_main_menu:
         matching_builtin = [obj for name, obj in inspect.getmembers(builtin_stubs)
@@ -23,6 +35,20 @@ def builtin_help(operation_key, menu):
         if matching_builtin:
             return matching_builtin[0]()
     return None
+
+
+def status_message(command):
+    """
+    Determine the status message to use to describe the command we're looking
+    at.
+    """
+    # For anonymous operations (those whose description is None),
+    # use the key to describe the command.
+    description = command.description or command.key
+    if command.is_menu:
+        return f"Help: {description} (select a command or 'q' to return)"
+    else:
+        return f"Help: '{description}' (press any key to return)"
 
 
 def get_help(operation_key, menu, ss, registry, recursing=False):
@@ -41,14 +67,7 @@ def get_help(operation_key, menu, ss, registry, recursing=False):
             return
 
     screen().refresh_stack(ss)
-    # For anonymous operations (those whose description is None),
-    # use the key to describe the command.
-    description = esc_command.description or esc_command.key
-    if esc_command.is_menu:
-        msg = f"Help: {description} (select a command or 'q' to return)"
-    else:
-        msg = f"Help: '{description}' (press any key to return)"
-    status.advisory(msg)
+    status.advisory(status_message(esc_command))
     screen().refresh_status()
     screen().show_help_window(esc_command.is_menu,
                               esc_command.help_title,
