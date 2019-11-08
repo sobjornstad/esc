@@ -1,4 +1,5 @@
 [![Build Status](https://dev.azure.com/thetechnicalgeekery/TTGProjects/_apis/build/status/sobjornstad.esc?branchName=master)](https://dev.azure.com/thetechnicalgeekery/TTGProjects/_build/latest?definitionId=2&branchName=master)
+[![Documentation Status](https://readthedocs.org/projects/esc-calc/badge/?version=latest)](https://esc-calc.readthedocs.io/en/latest/?badge=latest)
 
 What is esc?
 ============
