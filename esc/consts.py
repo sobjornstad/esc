@@ -4,6 +4,7 @@ consts.py - constant values used across esc
 
 VERSION = "0.2.1"
 PROGRAM_NAME = f"esc {VERSION}"
+TESTING = False  # set to True by the test framework
 STACKDEPTH = 12
 PRECISION = 12
 STACKWIDTH = 21  # needs room for sci notation and labels on top of precision

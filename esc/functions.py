@@ -180,7 +180,7 @@ Constant(math.e, 'e', description='e', menu=constants_menu)
            retain=True,
            log_as="yank {0} to clipboard",
            simulate=False)
-def yank_bos(bos_str):
+def yank_bos(bos_str, testing):
     """
     Copy the value of bos to your system clipboard.
     """
@@ -188,8 +188,9 @@ def yank_bos(bos_str):
         'Windows': ['clip'],
         'Darwin': ['pbcopy'],
         'Linux': ['xsel', '-bi'], }[platform.system()]
-    p = Popen(cmd, stdin=PIPE)
-    p.communicate(input=bos_str.encode())
+    if not testing:
+        p = Popen(cmd, stdin=PIPE)
+        p.communicate(input=bos_str.encode())
     status.advisory(f'"{bos_str}" placed on system clipboard.')
 
 yank_bos.ensure(before=[3, 5], after=[3, 5])

@@ -21,7 +21,7 @@ from functools import wraps
 from inspect import signature, Parameter
 import itertools
 
-from .consts import QUIT_CHARACTER
+from . import consts
 from .functest import TestCase
 from . import modes
 from .oops import (FunctionExecutionError, InsufficientItemsError, NotInMenuError,
@@ -196,7 +196,7 @@ class EscMenu(EscCommand):
         If the user chose the special quit command, return to the previous
         menu, or raise ``SystemExit`` if this is the main menu.
         """
-        if access_key == QUIT_CHARACTER:
+        if access_key == consts.QUIT_CHARACTER:
             if self.is_main_menu:
                 raise SystemExit(0)
             else:
@@ -210,8 +210,13 @@ class EscMenu(EscCommand):
 
     def test(self):
         "Execute the test method of all children."
-        for child in self.children.values():
-            child.test()
+        old_testing = consts.TESTING
+        consts.TESTING = True
+        try:
+            for child in self.children.values():
+                child.test()
+        finally:
+            consts.TESTING = old_testing
 
 
 class EscOperation(EscCommand):
@@ -700,6 +705,13 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
          Using this parameter is generally discouraged;
          see :ref:`Registry` for details.
 
+       * The special parameter name ``testing``
+         receives a boolean describing whether the current execution is a test
+         (see :func:`esc.functest.TestCase`).
+         This can be useful if your function has side effects
+         that you don't want to execute during testing,
+         but you'd still like to test the rest of the function.
+
     2. The function has a callable attached to it as an attribute,
        called ``ensure``, which can be used to test the function at startup
        to ensure the function never stops calculating the correct answers
@@ -719,7 +731,7 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
         parms = sig.parameters.values()
 
         bind_all = [i for i in parms if i.kind == Parameter.VAR_POSITIONAL]
-        stack_parms = [i for i in parms if i.name not in ('registry',)]
+        stack_parms = [i for i in parms if i.name not in ('registry', 'testing')]
         pop = len(stack_parms) if not bind_all else -1
 
         def _bind_stack_parm(stack_item, parm):
@@ -745,6 +757,8 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
                                         in zip(stack_slice, stack_parms)})
             if 'registry' in (i.name for i in parms):
                 keyword_binding['registry'] = registry
+            if 'testing' in (i.name for i in parms):
+                keyword_binding['testing'] = consts.TESTING
             return func(*positional_binding, **keyword_binding)
 
         # Add test definition functionality.
