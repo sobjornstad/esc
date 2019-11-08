@@ -81,6 +81,9 @@ class StatusState:
         else:
             return self.override_msg
 
+    def _clear_errors(self):
+        self.error_state = StatusState.SuccessCode.OK
+
     def ready(self):
         "Clear errors and put calculator in a READY state."
         self.state = StatusState.Modality.READY
@@ -95,10 +98,12 @@ class StatusState:
 
     def expecting_register(self):
         "Clear errors and put calculator in a state to select a register."
+        self._clear_errors()
         self.state = StatusState.Modality.EXPECTING_REGISTER
 
     def expecting_help(self):
         "Clear errors and put calculator in a state to select a command to get help on."
+        self._clear_errors()
         self.state = StatusState.Modality.EXPECTING_HELP
 
     def advisory(self, msg):
@@ -127,7 +132,7 @@ class StatusState:
         been seen yet, we mark it as seen. If it has, then we get rid of it.
         """
         if self.error_seen:
-            self.error_state = StatusState.SuccessCode.OK
+            self._clear_errors()
         else:
             self.error_seen = True
 
