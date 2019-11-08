@@ -101,6 +101,7 @@ stages:
                     pip install setuptools twine wheel
                     twine upload -r "PyPi" --config-file $(PYPIRC_PATH) "$(Pipeline.Workspace)/deploy/esc"*
                     echo "##vso[task.setvariable variable=Project.Version;]$(cat "$(Pipeline.Workspace)/deploy/.version")"
+                  displayName: 'Deploy to PyPi'
 
                 - task: GitHubRelease@1
                   inputs:
@@ -114,3 +115,4 @@ stages:
                     assets: 
                     isDraft: true
                     addChangeLog: false
+                  displayName: 'Create GitHub Draft Release'
