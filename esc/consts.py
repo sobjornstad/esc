@@ -2,7 +2,7 @@
 consts.py - constant values used across esc
 """
 
-VERSION = "1.0.0-rc"
+VERSION = "1.0.0-rc1"
 PROGRAM_NAME = f"esc {VERSION}"
 TESTING = False  # set to True by the test framework
 STACKDEPTH = 12
