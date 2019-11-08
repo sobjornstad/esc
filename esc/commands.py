@@ -220,7 +220,7 @@ class EscOperation(EscCommand):
     """
     # pylint: disable=too-many-arguments
     def __init__(self, key, func, pop, push, description, menu, retain=False,
-                 log_as=None):
+                 log_as=None, simulate=True):
         super().__init__(key, description)
         self.parent = menu
         #: The function, decorated with :func:`@Operation <Operation>`,
@@ -238,6 +238,9 @@ class EscOperation(EscCommand):
         #: (see the docs for :func:`@Operation <Operation>`
         #: for details on allowable values).
         self.log_as = log_as
+        #: Whether this function should be run when a simulation is requested for
+        #: help purposes. Turn off if the function is slow or has side effects.
+        self.simulate_allowed = simulate
 
     def __repr__(self):
         return f"<EscOperation '{self.key}': {self.description}"
@@ -435,6 +438,9 @@ class EscOperation(EscCommand):
         actually change the state -- instead, provide a description of what
         would happen.
         """
+        if not self.simulate_allowed:
+            return ("The author of this operation has disabled", "simulations.")
+
         used_args = ss.last_n_items(self.pop)
         checkpoint = ss.memento()
         try:
@@ -575,7 +581,7 @@ def Constant(value, key, description, menu):  # pylint: disable=invalid-name
     func.__doc__ = f"Add the constant {description} = {value} to the stack."
 
 
-def Operation(key, menu, push, description=None, retain=False, log_as=None):  # pylint: disable=invalid-name
+def Operation(key, menu, push, description=None, retain=False, log_as=None, simulate=True):  # pylint: disable=invalid-name
     """
     Decorator to register a function on a menu
     and make it available for use as an esc operation.
@@ -645,6 +651,14 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None):  # 
           :registry: the current :class:`Registry` instance
 
           The function should return an appropriate string.
+    :param simulate:
+        If ``True`` (the default), function execution will be simulated
+        when the user looks at the help page for the function,
+        so they can see what would happen to the stack
+        if they actually chose the function.
+        You should disable this option
+        if your function is extremely slow or has side effects
+        (e.g., changing the system clipboard, editing registers).
 
     In addition to placing the function on the menu,
     the function is wrapped with the following magic.
@@ -743,7 +757,7 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None):  # 
         # Create a new EscOperation instance and place it on the menu.
         op = EscOperation(key=key, func=wrapper, pop=pop, push=push,
                           description=description, menu=menu, log_as=log_as,
-                          retain=retain)
+                          retain=retain, simulate=simulate)
         menu.register_child(op)
 
         # Return the wrapped function to functions.py to complete

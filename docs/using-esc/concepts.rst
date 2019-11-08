@@ -35,6 +35,8 @@ and the numbers will appear in the stack window as you type.
 When you’re done typing the number, press :kbd:`Enter` or :kbd:`Space`;
 your cursor will then move to the next line of the stack.
 If you make a typo, correct it with :kbd:`Backspace`.
+(If you've already pressed :kbd:`Enter`,
+an :ref:`undo <History>` will let you edit the number again.)
 
 .. figure:: images/entering-stack.*
     :align: center

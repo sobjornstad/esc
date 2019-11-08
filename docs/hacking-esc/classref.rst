@@ -104,6 +104,8 @@ and changes your operation makes to registers won't be undone/redone.)
 
 However, sometimes it may be useful to use registers as parameters
 or even as outputs in special-purpose custom operations.
+*You should do this only if you fully understand the consequences
+as described in the previous paragraph!*
 In this case, you can provide a parameter called ``registry``,
 and you will receive the following object:
 
@@ -112,6 +114,13 @@ and you will receive the following object:
     :private-members:
     :special-members: __contains__, __len__, __getitem__, __setitem__, __delitem__
     :undoc-members:
+
+.. warning::
+    If you *set* a register in your operation,
+    be sure to turn the :attr:`simulate <esc.commands.Operation.simulate>`
+    option off in your :func:`Operation <esc.commands.Operation>` decorator,
+    or users may end up inadvertently setting registers
+    when viewing the help for your function.
 
 
 Exceptions

@@ -178,7 +178,8 @@ Constant(math.e, 'e', description='e', menu=constants_menu)
 @Operation('y', menu=main_menu, push=0,
            description='yank bos to cboard',
            retain=True,
-           log_as="yank {0} to clipboard")
+           log_as="yank {0} to clipboard",
+           simulate=False)
 def yank_bos(bos_str):
     """
     Copy the value of bos to your system clipboard.

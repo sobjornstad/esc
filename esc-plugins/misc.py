@@ -85,8 +85,3 @@ subsubmenu = Menu(key='m', description='subsubmenu test', parent=submenu,
 def identity(bos):
     "Identity function."
     return bos
-
-
-@Operation('E', menu=main_menu, push=0, description="explode")
-def set_register_E(registry):
-    registry['E'] = 64
