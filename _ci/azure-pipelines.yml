@@ -76,7 +76,9 @@ stages:
     jobs:
       - deployment: PyPi
         environment: PyPi
-        condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+        condition: and(succeeded(),
+                       or(eq(variables['build.sourceBranch'], 'refs/heads/master'),
+                          startswith(variables['build.sourceBranch'], 'refs/heads/release')))
         pool:
           vmImage: 'ubuntu-latest'
         strategy:
