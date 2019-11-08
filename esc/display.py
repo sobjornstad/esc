@@ -63,7 +63,7 @@ class StatusWindow(Window):
     start_x = 0
     start_y = 0
     status_start = 16
-    max_width = 80
+    max_width = 79
 
     def __init__(self, scr, max_x):
         self.width = max_x
@@ -88,7 +88,10 @@ class StatusWindow(Window):
 
     def refresh(self):
         self.window.addstr(0, 1, self.status_char, curses.color_pair(1))
-        self.window.addstr(0, self.status_start, ' ' * (79 - 15), curses.color_pair(1))
+        self.window.addstr(0,
+                           self.status_start,
+                           ' ' * (self.max_width - self.status_start),
+                           curses.color_pair(1))
         self.window.addstr(0, self.status_start, self.status_msg, curses.color_pair(1))
         super().refresh()
 
