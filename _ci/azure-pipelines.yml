@@ -6,36 +6,109 @@
 trigger:
 - master
 
-pool:
-  vmImage: 'ubuntu-latest'
-strategy:
-  matrix:
-    Python36:
-      python.version: '3.6'
-    Python37:
-      python.version: '3.7'
+stages:
+  - stage: Build
+    jobs:
+    - job: Build
+      pool:
+        vmImage: 'ubuntu-latest'
+      strategy:
+        matrix:
+          linux_python36:
+            build.publishArtifact: false
+            python.version: '3.6'
+          linux_python37:
+            build.publishArtifact: true
+            python.version: '3.7'
+      steps:
+        - task: UsePythonVersion@0
+          inputs:
+            versionSpec: '$(python.version)'
+          displayName: 'Use Python $(python.version)'
 
-steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '$(python.version)'
-  displayName: 'Use Python $(python.version)'
+        - script: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+            pip install pytest-azurepipelines
+            sudo apt-get install graphviz
+          displayName: 'Install dependencies'
 
-- script: |
-    python -m pip install --upgrade pip
-    pip install -r requirements.txt
-  displayName: 'Install dependencies'
+        - script: |
+            pytest --junitxml=junit/test-results.xml --cov=esc --cov-report=xml
+          displayName: 'pytest'
 
-- script: |
-    pip install pytest-azurepipelines
-    pytest --junitxml=junit/test-results.xml --cov=esc --cov-report=xml
+        - script: |
+            cd docs
+            # -Ea: always do a complete build without saved environment
+            # -n: missing references are warnings
+            # -W: any warnings fail the build
+            # --keep-going: keep building after first error so as to see all warnings at once
+            sphinx-build -EanW --keep-going -b html . _build
+          displayName: 'sphinx verification'
 
-  displayName: 'pytest'
+        - script: |
+            python setup.py sdist bdist_wheel
+          displayName: 'pip package build'
 
-- script: |
-    cd docs
-    # -Ea: always do a complete build without saved environment
-    # -W: warnings are errors
-    # -n: complain about missing references
-    # --keep-going: keep building after first error so as to see all warnings
-    sphinx-build -EanW --keep-going -b html . _build
+        - script: |
+            python -c 'from esc.consts import VERSION; print(VERSION)' >>.version
+          displayName: 'set package version'
+
+        - task: CopyFiles@2
+          inputs:
+            Contents: |
+              dist/**
+              .version
+              CHANGES.md
+            TargetFolder: '$(Build.ArtifactStagingDirectory)'
+            CleanTargetFolder: true
+            OverWrite: true
+            flattenFolders: true
+          displayName: 'Stage PyPi package'
+          condition: and(succeeded(), eq(variables['Build.PublishArtifact'], true))
+
+        - publish: $(Build.ArtifactStagingDirectory)
+          artifact: deploy
+          condition: and(succeeded(), eq(variables['Build.PublishArtifact'], true))
+          displayName: 'Publish package artifact'
+
+  - stage: PyPiDeploy
+    jobs:
+      - deployment: PyPiTest
+        environment: PyPiTest
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: UsePythonVersion@0
+                  inputs:
+                    versionSpec: '3.7'
+                  displayName: 'Use Python 3.7'
+
+                - download: current
+                  artifact: deploy
+
+                - script: |
+                    ls -lR
+                - task: TwineAuthenticate@1
+                  inputs:
+                    pythonUploadServiceConnection: 'TestPyPi'
+                - script: |
+                    cat $(PYPIRC_PATH)
+                    pip install setuptools twine wheel
+                    twine upload -r "TestPyPi" --config-file $(PYPIRC_PATH) "$(Pipeline.Workspace)/deploy/"*
+                    echo "##vso[task.setvariable variable=Project.Version;]$(cat "$(Pipeline.Workspace)/deploy/.version")"
+                - task: GitHubRelease@1
+                  inputs:
+                    gitHubConnection: 'sobjornstad2'
+                    repositoryName: '$(Build.Repository.Name)'
+                    action: 'create'
+                    target: '$(Build.SourceVersion)'
+                    tagSource: 'userSpecifiedTag'
+                    tag: 'v$(Project.Version)'
+                    releaseNotesFilePath: '$(Pipeline.Workspace)/deploy/CHANGES.md'
+                    assets: 
+                    isDraft: true
+                    addChangeLog: false
