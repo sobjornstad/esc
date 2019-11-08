@@ -1,0 +1,17 @@
+# this package
+-e .
+
+# docs
+sphinx==1.8.5
+sphinx_rtd_theme==0.4.3
+graphviz
+
+# dev tools
+yapf
+pylint
+setuptools
+twine
+wheel
+doc8
+pytest
+pytest-cov
