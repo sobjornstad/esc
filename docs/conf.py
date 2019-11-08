@@ -23,10 +23,11 @@ project = 'esc'
 copyright = '2019, Soren Bjornstad'
 author = 'Soren Bjornstad'
 
+from esc.consts import VERSION
 # The short X.Y version
-version = '0.2.1'
+version = VERSION
 # The full version, including alpha/beta/rc tags
-release = '0.2.1'
+release = VERSION
 
 
 # -- General configuration ---------------------------------------------------
@@ -110,3 +111,7 @@ html_static_path = ['_static']
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
+# Prefix section labels with the names of their documents, to avoid ambiguity
+# when the same heading appears on several pages.
+autosectionlabel_prefix_document = False

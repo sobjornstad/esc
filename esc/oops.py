@@ -99,7 +99,7 @@ class InsufficientItemsError(FunctionExecutionError):
 
     Functions may use the simplified form of the exception, providing an int
     describing the number of items that should have been on the stack for the
-    :attr:`number_required` constructor parameter. esc will then reraise the
+    ``number_required`` constructor parameter. esc will then reraise the
     exception with a more useful message; a fallback message is provided in
     case this doesn't happen for some reason.
     """

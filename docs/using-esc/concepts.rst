@@ -125,8 +125,8 @@ the contents of the stack.
 .. autofunction:: esc.functions.clear
 
 
-Menus
------
+Command menus
+-------------
 
 Some entries in the :guilabel:`Commands` window
 don't immediately do anything
@@ -183,7 +183,7 @@ Getting help on commands
 esc has a built-in help system you can use to discover what a command does,
 including the exact effect it would have on your current stack if you ran it.
 Simply press :kbd:`F1`, then the key associated with the command.
-If you choose a :ref:`menu <Menus>`, you'll get a description of the menu,
+If you choose a :ref:`menu <Command menus>`, you'll get a description of the menu,
 but you can also choose an item from the menu
 to get specific help on that item.
 

@@ -52,7 +52,7 @@ def get(name):
 def register(name, default_value, allowable_values=None):
     """
     Create a new mode. If the mode already exists,
-    a :class:`ProgrammingError` is raised.
+    a :class:`ProgrammingError <esc.oops.ProgrammingError>` is raised.
 
     Modes should be registered by the :func:`esc.commands.Mode` factory function,
     not by calling this function directly.

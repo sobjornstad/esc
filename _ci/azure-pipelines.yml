@@ -31,3 +31,11 @@ steps:
     pytest --junitxml=junit/test-results.xml --cov=esc --cov-report=xml
 
   displayName: 'pytest'
+
+- script: |
+    cd docs
+    # -Ea: always do a complete build without saved environment
+    # -W: warnings are errors
+    # -n: complain about missing references
+    # --keep-going: keep building after first error so as to see all warnings
+    sphinx-build -EanW --keep-going -b html . _build

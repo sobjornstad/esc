@@ -416,7 +416,8 @@ class EscOperation(EscCommand):
         :return: A constant ``None``,
                  indicating that we go back to the main menu.
 
-        :raises: ``FunctionExecutionError`` or a subclass,
+        :raises: :class:`FunctionExecutionError <esc.oops.FunctionExecutionError>`
+                 or a subclass,
                  if the operation cannot be completed successfully.
         """
         with ss.transaction():
@@ -439,9 +440,9 @@ class EscOperation(EscCommand):
 
     def simulated_result(self, ss, registry):
         """
-        Execute the operation on the provided :class:`StackState`, but don't
-        actually change the state -- instead, provide a description of what
-        would happen.
+        Execute the operation on the provided `StackState`,
+        but don't actually change the state --
+        instead, provide a description of what would happen.
         """
         if not self.simulate_allowed:
             return ("The author of this operation has disabled", "simulations.")
@@ -468,7 +469,8 @@ class EscOperation(EscCommand):
     def test(self):
         r"""
         If the function on this :class:`EscOperation` has associated
-        :class:`TestCase`\ s defined in its *tests* attribute,
+        :class:`TestCase <esc.functest.TestCase>`\ s
+        defined in its *tests* attribute,
         execute those tests.
         """
         # Some internal functions that are registered, such as mode changes,
@@ -494,13 +496,14 @@ class EscBuiltin(EscCommand):
     Subclasses should override the docstring
     and the :meth:`simulated_result` method.
 
-    Subclasses should also define :attr:`key` and :attr:`description` as
-    class variables. They'll be shadowed by instance variables once we
+    Subclasses should also define :attr:`key <esc.commands.EscCommand.key>`
+    and :attr:`description <esc.commands.EscCommand.description>`
+    as class variables. They'll be shadowed by instance variables once we
     instantiate the class, but the values will be the same. That sounds dumb,
     but it makes sense for all other classes in the hierarchy and doesn't
     hurt us here. We don't want to define them in the ``__init__`` of each
     subclass because then we have to instantiate every class to match on them
-    by key (see the reflective search in :mod:`helpme`).
+    by key (see the reflective search in ``esc.helpme``).
     """
     def __init__(self):
         super().__init__(self.key, self.description)
@@ -597,7 +600,7 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
     :param menu:
         The :class:`Menu <EscMenu>` to place this operation on.
         The simplest choice is ``main_menu``,
-        which you can import from :mod:`esc.commands`.
+        which you can import from :mod:``esc.commands``.
     :param push:
         The number of items the decorated function
         will return to the stack on success.
@@ -623,8 +626,8 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
 
         * If it is ``None``, the *description* is used.
 
-        * If it is the module constant :const:`esc.commands.UNOP`
-          or :const:`esc.commands.BINOP`,
+        * If it is the module constant ``esc.commands.UNOP``
+          or ``esc.commands.BINOP``,
           the log string is a default suitable
           for many unary or binary operations:
           for ``UNOP`` it is
@@ -653,7 +656,7 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
 
           :args: a list of the arguments the function requested
           :retval: a list of values the function returned
-          :registry: the current :class:`Registry` instance
+          :registry: the current :class:`Registry <esc.registers.Registry>` instance
 
           The function should return an appropriate string.
     :param simulate:
@@ -690,7 +693,7 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
          so it's helpful when doing something display-oriented
          like copying to the clipboard).
          If the parameter name ends with ``_stackitem``,
-         it receives the complete :class:`StackItem`,
+         it receives the complete :class:`StackItem <esc.stack.StackItem>`,
          containing both of those representations and a few other things besides.
 
        * A varargs parameter, like ``*args``,

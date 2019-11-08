@@ -23,7 +23,7 @@ and :class:`ModeChange <esc.commands.ModeChange>` constructors:
 
 .. autofunction:: esc.commands.ModeChange
 
-Aside from defining :class:`ModeChange` operations,
+Aside from defining :func:`ModeChange <esc.commands.ModeChange>` operations,
 you can view and edit the values of modes
 using the :mod:`modes <esc.modes>` module:
 

@@ -22,11 +22,11 @@ class StackItem:
     more complicated than that!
 
     For one, we need a numeric value for calculations as well as a string
-    value to display on the screen. The methods :meth:`finish_entry` and
-    :meth:`_string_repr_from_value` are used to update the numeric and string
-    representations from the other. We could dynamically compute the string
-    representation with reasonable performance, but see the next paragraph
-    for why this isn't helpful.
+    value to display on the screen. The method :meth:`finish_entry` updates
+    the numeric representation from the string representation.
+    We could dynamically compute the string representation
+    with reasonable performance,
+    but see the next paragraph for why this isn't helpful.
 
     For another, a stack item may be *incomplete*
     (:attr:`is_entered` attribute = ``False``).
@@ -130,7 +130,7 @@ class StackItem:
         if the number has already been entered completely.
 
         :return: ``True`` if successful,
-                 ``False`` if the stack width (:attr:`esc.consts.STACKWIDTH`)
+                 ``False`` if the stack width (``esc.consts.STACKWIDTH``)
                  has been exceeded.
         """
         assert not self.is_entered, "Number already entered!"
@@ -157,8 +157,7 @@ class StackItem:
         If successful, return ``True``;
         if the entered string does not form a valid number, return ``False``.
         This should be called only by the
-        :meth:`enter_number <StackState.enter_number>` method
-        of :class:`StackState`.
+        ``enter_number`` method of ``StackState``.
         """
         try:
             self.decimal = Decimal(self.string)

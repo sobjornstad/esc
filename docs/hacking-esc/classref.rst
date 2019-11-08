@@ -117,7 +117,7 @@ and you will receive the following object:
 
 .. warning::
     If you *set* a register in your operation,
-    be sure to turn the :attr:`simulate <esc.commands.Operation.simulate>`
+    be sure to turn the ``simulate <esc.commands.Operation.simulate>``
     option off in your :func:`Operation <esc.commands.Operation>` decorator,
     or users may end up inadvertently setting registers
     when viewing the help for your function.
