@@ -39,7 +39,7 @@ What does this mean?
 
 [Reverse Polish Notation]: https://en.wikipedia.org/wiki/Reverse_Polish_notation
 
-![A screenshot of esc in use, taken from the esc documentation.](https://esc-calc.readthedocs.io/en/oneoh/_images/register-use.png)
+![A screenshot of esc in use, taken from the esc documentation.](https://esc-calc.readthedocs.io/en/latest/_images/register-use.png)
 
 Installation
 ============
