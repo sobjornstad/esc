@@ -7,29 +7,32 @@ to update the screen.
 
 import curses
 import itertools
+import math
 import textwrap
 from typing import Sequence
 
-from .consts import (STACKDEPTH, STACKWIDTH, PROGRAM_NAME,
+from .consts import (PROGRAM_NAME,
                      QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
-                     RETRIEVE_REG_CHARACTER, STORE_REG_CHARACTER, DELETE_REG_CHARACTER)
+                     RETRIEVE_REG_CHARACTER, STORE_REG_CHARACTER,
+                     DELETE_REG_CHARACTER)
+from .layout import compute_layout, MIN_TERM_WIDTH, MIN_TERM_HEIGHT
 from .status import status
-from .util import truncate, quit_if_screen_too_small, centered_position
+from .util import truncate, centered_position
 
 _SCREEN = None
 
 
 class Window:
     "One of the curses windows making up esc's interface."
-    width = None
-    height = None
-    start_x = None
-    start_y = None
     heading = None
 
-    def __init__(self, scr):
+    def __init__(self, scr, width, height, start_x, start_y):
         self.scr = scr
-        self.window = curses.newwin(self.height, self.width, self.start_y, self.start_x)
+        self.width = width
+        self.height = height
+        self.start_x = start_x
+        self.start_y = start_y
+        self.window = curses.newwin(height, width, start_y, start_x)
         self.window.keypad(True)
 
     def _display_heading(self):
@@ -59,23 +62,24 @@ class Window:
 
 class StatusWindow(Window):
     "Window for the status bar at the top of the screen."
-    height = 1
-    start_x = 0
-    start_y = 0
     status_start = 16
-    max_width = 79
 
-    def __init__(self, scr, max_x):
-        self.width = max_x
-        super().__init__(scr)
+    def __init__(self, scr, spec):
+        super().__init__(scr, spec.width, spec.height, spec.x, spec.y)
+        self.max_width = self.width - 1
 
         self.status_char = ' '
         self._status_msg = ''
 
-        self.window.addstr(0, 0, (' ' * 79), curses.color_pair(1))
-        self.window.addstr(0, 0, f"[{self.status_char}] {PROGRAM_NAME} |",
-                           curses.color_pair(1))
-        self.window.move(0, 1)
+        try:
+            self.window.addstr(
+                0, 0, (' ' * self.max_width), curses.color_pair(1))
+            self.window.addstr(
+                0, 0, f"[{self.status_char}] {PROGRAM_NAME} |",
+                curses.color_pair(1))
+            self.window.move(0, 1)
+        except curses.error:
+            pass
         self.refresh()
 
     @property
@@ -87,12 +91,16 @@ class StatusWindow(Window):
         self._status_msg = truncate(msg, self.max_width - self.status_start)
 
     def refresh(self):
-        self.window.addstr(0, 1, self.status_char, curses.color_pair(1))
-        self.window.addstr(0,
-                           self.status_start,
-                           ' ' * (self.max_width - self.status_start),
-                           curses.color_pair(1))
-        self.window.addstr(0, self.status_start, self.status_msg, curses.color_pair(1))
+        try:
+            self.window.addstr(0, 1, self.status_char, curses.color_pair(1))
+            self.window.addstr(0,
+                               self.status_start,
+                               ' ' * (self.max_width - self.status_start),
+                               curses.color_pair(1))
+            self.window.addstr(0, self.status_start, self.status_msg,
+                               curses.color_pair(1))
+        except curses.error:
+            pass
         super().refresh()
 
     def emplace_cursor(self):
@@ -104,66 +112,84 @@ class StatusWindow(Window):
         return super().getch()
 
 
-
 class StackWindow(Window):
     "Window for the stack, where the numbers go."
-    width = 24
-    height = 3 + STACKDEPTH
-    start_x = 0
-    start_y = 1
     heading = "Stack"
 
-    def __init__(self, scr):
-        super().__init__(scr)
+    def __init__(self, scr, spec):
+        super().__init__(scr, spec.width, spec.height, spec.x, spec.y)
         self.ss = None
+        self._scroll_offset = 0
 
         self.window.border()
         self.refresh()
 
     def refresh(self):
-        self.window.clear()
-        self.window.border()
-        if self.ss:
-            for index, stack_item in enumerate(self.ss):
-                self.window.addstr(1 + index, 1, str(stack_item))
+        try:
+            self.window.clear()
+            self.window.border()
+            if self.ss:
+                visible_slots = self.height - 3
+                items = list(self.ss)
+                visible_items = items[-visible_slots:]
+                self._scroll_offset = max(0, len(items) - visible_slots)
+                for index, stack_item in enumerate(visible_items):
+                    text = truncate(str(stack_item), self.width - 2)
+                    self.window.addstr(1 + index, 1, text)
+        except curses.error:
+            pass
         super().refresh()
+
+    def _display_row(self, stack_posn):
+        """
+        Map an absolute stack position to a display row in the window,
+        using the scroll offset from the last refresh() so that row
+        numbers stay consistent with what is actually on screen.
+        """
+        return 1 + stack_posn - self._scroll_offset
 
     def set_cursor_posn(self):
         """
         Place the cursor after the current character or on the next available
         line, as appropriate.
         """
-        if self.ss.editing_last_item:
-            self.window.move(1 + self.ss.stack_posn, self.ss.cursor_posn + 1)
-        else:
-            # when not editing a number, cursor goes on *next line*
-            self.window.move(2 + self.ss.stack_posn, self.ss.cursor_posn + 1)
+        try:
+            if self.ss.editing_last_item:
+                row = self._display_row(self.ss.stack_posn)
+            else:
+                # when not editing a number, cursor goes on *next line*
+                row = self._display_row(self.ss.stack_posn) + 1
+            row = max(1, min(row, self.height - 2))
+            self.window.move(row, self.ss.cursor_posn + 1)
+        except curses.error:
+            pass
 
     def backspace(self, bs_status):
         """
         Update the screen to show that a character was backspaced off the
         stack line being edited.
         """
-        if bs_status == 0:  # character backspaced
-            self.window.addstr(1 + self.ss.stack_posn, self.ss.cursor_posn + 1, ' ')
-            self.window.move(1 + self.ss.stack_posn, self.ss.cursor_posn + 1)
-        elif bs_status == 1:  # stack item wiped out
-            self.window.addstr(2 + self.ss.stack_posn, self.ss.cursor_posn + 1, ' ')
-            self.window.move(2 + self.ss.stack_posn, self.ss.cursor_posn + 1)
-        else:  # nothing to backspace
+        try:
+            if bs_status == 0:  # character backspaced
+                row = self._display_row(self.ss.stack_posn)
+                self.window.addstr(row, self.ss.cursor_posn + 1, ' ')
+                self.window.move(row, self.ss.cursor_posn + 1)
+            elif bs_status == 1:  # stack item wiped out
+                row = self._display_row(self.ss.stack_posn) + 1
+                self.window.addstr(row, self.ss.cursor_posn + 1, ' ')
+                self.window.move(row, self.ss.cursor_posn + 1)
+            else:  # nothing to backspace
+                pass
+        except curses.error:
             pass
 
 
 class HistoryWindow(Window):
     "Window displaying a history of past actions."
-    width = 32
-    height = 3 + STACKDEPTH
-    start_x = 24
-    start_y = 1
     heading = "History"
 
-    def __init__(self, scr):
-        super().__init__(scr)
+    def __init__(self, scr, spec):
+        super().__init__(scr, spec.width, spec.height, spec.x, spec.y)
         self.operations = []
         self.refresh()
 
@@ -171,91 +197,129 @@ class HistoryWindow(Window):
         self.operations = ss.operation_history[:]
 
     def refresh(self):
-        self.window.clear()
-        self.window.border()
+        try:
+            self.window.clear()
+            self.window.border()
 
-        available_lines = self.height - 2
-        visible_operations = self.operations[-available_lines:]
-        for yposn, description in enumerate(visible_operations, 1):
-            max_item_width = self.width - 2
-            self.window.addstr(yposn, 1, truncate(description, max_item_width-3))
+            available_lines = self.height - 2
+            visible_operations = self.operations[-available_lines:]
+            for yposn, description in enumerate(visible_operations, 1):
+                max_item_width = self.width - 2
+                self.window.addstr(
+                    yposn, 1, truncate(description, max_item_width - 3))
+        except curses.error:
+            pass
 
         super().refresh()
 
 
 class CommandsWindow(Window):
     "Window displaying available commands/actions."
-    width = 24
-    start_x = 56
-    start_y = 1
     heading = "Commands"
 
     border_width = 2  #: columns consumed by the window border
     key_width = 2     #: columns consumed by the menu char and space
-    max_display_width = width - border_width - key_width
 
-    def __init__(self, scr, max_y):
-        self.height = max_y - 1
-        super().__init__(scr)
+    def __init__(self, scr, spec):
+        super().__init__(scr, spec.width, spec.height, spec.x, spec.y)
+        self.max_display_width = self.width - self.border_width - self.key_width
         self.menu = None
         self.refresh()
 
     def refresh(self):
-        self.window.clear()
-        self.window.border()
+        try:
+            self.window.clear()
+            self.window.border()
 
-        if self.menu is not None:
-            min_xposn = 1
-            max_xposn = 22
-            xposn = min_xposn
-            yposn = 1
+            if self.menu is not None:
+                min_xposn = 1
+                max_xposn = self.width - 2
+                xposn = min_xposn
+                yposn = 1
+                truncated = False
 
-            # Print menu title.
-            if not self.menu.is_main_menu:
-                self._add_menu(self.menu.description, yposn)
-                if self.menu.mode_display:
-                    self._add_mode_display(self.menu.mode_display(), yposn+1)
-                yposn += 2
+                # Print menu title.
+                if not self.menu.is_main_menu:
+                    self._add_menu(self.menu.description, yposn)
+                    if self.menu.mode_display:
+                        self._add_mode_display(
+                            self.menu.mode_display(), yposn+1)
+                    yposn += 2
 
-            # Print anonymous operations to the screen.
-            for i in self.menu.anonymous_children:
-                self._add_command(i.key, None, yposn, xposn)
-                xposn += 2
-                if xposn >= max_xposn - 2:
-                    yposn += 1
-                    xposn = min_xposn
+                # Print anonymous operations to the screen.
+                for i in self.menu.anonymous_children:
+                    if yposn >= self.height - 1:
+                        truncated = True
+                        break
+                    self._add_command(i.key, None, yposn, xposn)
+                    xposn += 2
+                    if xposn >= max_xposn - 2:
+                        yposn += 1
+                        xposn = min_xposn
 
-            # Now normal operations and menus.
-            yposn += 1
-            xposn = min_xposn
-            for i in self.menu.named_children:
-                self._add_command(i.key, i.description, yposn, xposn)
+                # Now normal operations and menus.
                 yposn += 1
+                xposn = min_xposn
+                for i in self.menu.named_children:
+                    if yposn >= self.height - 1:
+                        truncated = True
+                        break
+                    self._add_command(i.key, i.description, yposn, xposn)
+                    yposn += 1
 
-            # then the special options, if on the main menu
-            if self.menu.is_main_menu:
-                self._add_command(STORE_REG_CHARACTER, 'store bos to reg', yposn, xposn)
-                self._add_command(RETRIEVE_REG_CHARACTER, 'get bos from reg',
-                                  yposn+1, xposn)
-                self._add_command(DELETE_REG_CHARACTER, 'delete register',
-                                  yposn+2, xposn)
-                self._add_command(UNDO_CHARACTER, 'undo (', yposn+3, xposn)
-                self._add_command(REDO_CHARACTER.lower(), 'redo)', yposn+3, xposn + 8)
-                yposn += 4
+                # then the special options, if on the main menu
+                if self.menu.is_main_menu:
+                    if yposn < self.height - 1:
+                        self._add_command(STORE_REG_CHARACTER,
+                                          'store bos to reg', yposn, xposn)
+                    else:
+                        truncated = True
+                    if yposn + 1 < self.height - 1:
+                        self._add_command(RETRIEVE_REG_CHARACTER,
+                                          'get bos from reg', yposn+1, xposn)
+                    else:
+                        truncated = True
+                    if yposn + 2 < self.height - 1:
+                        self._add_command(DELETE_REG_CHARACTER,
+                                          'delete register', yposn+2, xposn)
+                    else:
+                        truncated = True
+                    if yposn + 3 < self.height - 1:
+                        self._add_command(UNDO_CHARACTER,
+                                          'undo (', yposn+3, xposn)
+                        redo_x = min(xposn + 8, max_xposn - 6)
+                        self._add_command(REDO_CHARACTER.lower(),
+                                          'redo)', yposn+3, redo_x)
+                    else:
+                        truncated = True
+                    yposn += 4
 
-            # then the quit option, which is always there but is not an operation
-            quit_name = 'quit' if self.menu.is_main_menu else 'cancel'
-            self._add_command(QUIT_CHARACTER, quit_name, yposn, xposn)
+                # then the quit option, which is always there but not an op
+                if yposn < self.height - 1:
+                    quit_name = ('quit' if self.menu.is_main_menu
+                                 else 'cancel')
+                    self._add_command(
+                        QUIT_CHARACTER, quit_name, yposn, xposn)
+                else:
+                    truncated = True
+
+                if truncated:
+                    fill = " " * max(0, self.width - 5)
+                    self.window.addstr(self.height - 2, 1, "..." + fill)
+        except curses.error:
+            pass
 
         # finally, make curses figure out how it's supposed to draw this
         super().refresh()
 
     def _add_menu(self, text, yposn):
         text = "(%s)" % text
-        self._add_command('', text, yposn, centered_position(text, STACKWIDTH))
+        self._add_command(
+            '', text, yposn, centered_position(text, self.width - 2))
 
     def _add_mode_display(self, text, yposn):
-        self._add_command('', text, yposn, centered_position(text, STACKWIDTH))
+        self._add_command(
+            '', text, yposn, centered_position(text, self.width - 2))
 
     def _add_command(self, char, descr, yposn, xposn):
         self.window.addstr(yposn, xposn, char, curses.color_pair(2))
@@ -267,25 +331,52 @@ class CommandsWindow(Window):
 
 class RegistersWindow(Window):
     "Window displaying registers/variables currently defined."
-    width = 56
-    start_x = 0
-    start_y = 4 + STACKDEPTH
     heading = "Registers"
 
-    def __init__(self, scr, max_y):
-        self.height = max_y - 1 - (3 + STACKDEPTH)
+    def __init__(self, scr, spec):
+        super().__init__(scr, spec.width, spec.height, spec.x, spec.y)
         self.register_pairs = []
-        super().__init__(scr)
         self.refresh()
 
     def refresh(self):
-        self.window.clear()
-        self.window.border()
+        try:
+            self.window.clear()
+            self.window.border()
 
-        for yposn, (register, stack_item) in enumerate(self.register_pairs, 1):
-            assert len(register) == 1
-            self.window.addstr(yposn, 1, register, curses.color_pair(2))
-            self.window.addstr(yposn, 3, str(stack_item))
+            pairs = list(self.register_pairs)
+            rows_available = self.height - 2
+            min_col_width = 8
+
+            if len(pairs) <= rows_available:
+                num_cols = 1
+            else:
+                num_cols = math.ceil(len(pairs) / rows_available)
+                max_cols = max(1, (self.width - 2) // min_col_width)
+                num_cols = min(num_cols, max_cols)
+
+            col_width = (self.width - 2) // num_cols
+            total_slots = num_cols * rows_available
+            truncated = len(pairs) > total_slots
+
+            for idx, (register, stack_item) in enumerate(pairs):
+                if idx >= total_slots:
+                    break
+                col = idx // rows_available
+                row = idx % rows_available
+                x_offset = col * col_width + 1
+                assert len(register) == 1
+                self.window.addstr(row + 1, x_offset,
+                                   register, curses.color_pair(2))
+                value_width = col_width - 3
+                if value_width > 3:
+                    text = truncate(str(stack_item), value_width)
+                    self.window.addstr(row + 1, x_offset + 2, text)
+
+            if truncated and rows_available >= 2:
+                last_col_x = (num_cols - 1) * col_width + 1
+                self.window.addstr(self.height - 2, last_col_x, "...")
+        except curses.error:
+            pass
 
         super().refresh()
 
@@ -302,18 +393,19 @@ class HelpWindow(Window):  # pylint: disable=too-many-instance-attributes
 
     # pylint: disable=too-many-arguments
     def __init__(self, scr, is_menu, help_title, signature_info, docstring,
-                 results_info, max_y):
-        self.height = max_y - 1
+                 results_info):
+        layout = scr._layout
         if is_menu:
-            self.width = StackWindow.width + HistoryWindow.width
-            self.start_x = StackWindow.start_x
-            self.start_y = StackWindow.start_y
+            w = layout.stack.width + layout.history.width
+            x = layout.stack.x
+            y = layout.stack.y
         else:
-            self.width = HistoryWindow.width + CommandsWindow.width
-            self.start_x = HistoryWindow.start_x
-            self.start_y = HistoryWindow.start_y
+            w = layout.history.width + layout.commands.width
+            x = layout.history.x
+            y = layout.history.y
+        h = layout.commands.height
 
-        super().__init__(scr)
+        super().__init__(scr, w, h, x, y)
         self.help_title = help_title
         self.signature_info = signature_info
         self.docstring = docstring
@@ -322,36 +414,46 @@ class HelpWindow(Window):  # pylint: disable=too-many-instance-attributes
 
     def refresh(self):
         self.scr.hide_registers_window()
-        self.window.clear()
-        self.window.border()
-        self.window.addstr(self.start_y,
-                           centered_position(self.help_title, self.width),
-                           self.help_title,
-                           curses.color_pair(2))
+        try:
+            self.window.clear()
+            self.window.border()
+            max_content_width = self.width - 2
+            self.window.addstr(
+                1,
+                centered_position(self.help_title, self.width),
+                self.help_title,
+                curses.color_pair(2))
 
-        indent = "    "
-        docstring_lines = (indent + i for i in
-                           textwrap.wrap(textwrap.dedent(self.docstring).strip(),
-                                         self.width - 2 - len(indent)))
+            indent = "    "
+            docstring_lines = (indent + i for i in
+                               textwrap.wrap(
+                                   textwrap.dedent(self.docstring).strip(),
+                                   max_content_width - len(indent)))
 
-        if self.results_info is not None:
-            rest = (
-                "",
-                "If you executed this command now...",
-                *(f"    {i}" for i in self.results_info))
-        else:
-            rest = (())
-        display_iterable = itertools.chain(
-            ("Description:",),
-            docstring_lines,
-            ("", "Signature:"),
-            self.signature_info,
-            rest
-        )
-        for yposn, text in enumerate(display_iterable, self.start_y+1):
-            self.window.addstr(yposn, 1, text)
-            if yposn > self.height - 2:
-                break
+            if self.results_info is not None:
+                rest = (
+                    "",
+                    "If you executed this command now...",
+                    *(f"    {i}" for i in self.results_info))
+            else:
+                rest = (())
+            display_iterable = itertools.chain(
+                ("Description:",),
+                docstring_lines,
+                ("", "Signature:"),
+                self.signature_info,
+                rest
+            )
+            last_content_row = self.height - 2
+            for yposn, text in enumerate(display_iterable, 2):
+                if yposn >= last_content_row:
+                    self.window.addstr(last_content_row, 1, "...")
+                    break
+                if max_content_width > 3:
+                    text = truncate(text, max_content_width)
+                self.window.addstr(yposn, 1, text)
+        except curses.error:
+            pass
         super().refresh()
 
 
@@ -367,6 +469,8 @@ class EscScreen:
         self.commandsw = None
         self.registersw = None
         self.helpw = None
+        self._layout = None
+        self._too_small = False
         self._setup()
 
     def _setup(self):
@@ -375,16 +479,51 @@ class EscScreen:
         as well as curses settings.
         """
         max_y, max_x = self.stdscr.getmaxyx()
-        quit_if_screen_too_small(max_y, max_x)
+
+        if max_y < MIN_TERM_HEIGHT or max_x < MIN_TERM_WIDTH:
+            self._too_small = True
+            self._show_too_small_message(max_y, max_x)
+            return
+
+        self._too_small = False
+        self._layout = compute_layout(max_y, max_x)
+        layout = self._layout
 
         curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_GREEN)
         curses.init_pair(2, curses.COLOR_BLUE, curses.COLOR_BLACK)
 
-        self.statusw = StatusWindow(self, max_x)
-        self.stackw = StackWindow(self)
-        self.historyw = HistoryWindow(self)
-        self.commandsw = CommandsWindow(self, max_y)
-        self.registersw = RegistersWindow(self, max_y)
+        self.statusw = StatusWindow(self, layout.status)
+        self.stackw = StackWindow(self, layout.stack)
+        self.historyw = HistoryWindow(self, layout.history)
+        self.commandsw = CommandsWindow(self, layout.commands)
+        if layout.registers is not None:
+            self.registersw = RegistersWindow(self, layout.registers)
+        else:
+            self.registersw = _NullWindow()
+
+    def _show_too_small_message(self, max_y, max_x):
+        "Display a centered 'terminal too small' message on stdscr."
+        self.stdscr.clear()
+        msg = (f"Terminal too small ({max_x}x{max_y}). "
+               f"Need {MIN_TERM_WIDTH}x{MIN_TERM_HEIGHT}.")
+        row = max(0, max_y // 2)
+        col = max(0, (max_x - len(msg)) // 2)
+        try:
+            self.stdscr.addstr(row, col, msg)
+        except curses.error:
+            pass
+        self.stdscr.refresh()
+
+    @property
+    def too_small(self):
+        return self._too_small
+
+    def handle_resize(self):
+        "Recreate all windows after a terminal resize."
+        curses.update_lines_cols()
+        self.stdscr.clear()
+        self.stdscr.refresh()
+        self._setup()
 
     def refresh_all(self):
         self.refresh_status()
@@ -452,9 +591,22 @@ class EscScreen:
                          signature_info: Sequence[str], docstring: str,
                          results_info: Sequence[str]) -> None:
         "Display a help window for the command we requested."
-        max_y, _ = self.stdscr.getmaxyx()
         self.helpw = HelpWindow(self, is_menu, help_title, signature_info,
-                                docstring, results_info, max_y)
+                                docstring, results_info)
+
+
+class _NullWindow:
+    """Stand-in for a window that isn't displayed (e.g. registers when
+    the terminal is too short)."""
+
+    def refresh(self):
+        pass
+
+    def clear(self):
+        pass
+
+    def update_registry(self, registry):
+        pass
 
 
 def screen():

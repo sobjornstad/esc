@@ -3,7 +3,7 @@ from decimal import Decimal
 import itertools
 
 import pytest
-from esc.consts import STACKDEPTH
+from esc.consts import STACK_CAPACITY
 from esc.oops import RollbackTransaction
 from esc.stack import StackItem, StackState
 from esc.util import decimalize_iterable
@@ -156,9 +156,9 @@ def test_push_out_of_space(sample_stack):
     new_item = StackItem(decval=Decimal(25))
     sample_stack.clear()
     assert sample_stack.has_push_space(1)
-    assert sample_stack.free_stack_spaces == STACKDEPTH
+    assert sample_stack.free_stack_spaces == STACK_CAPACITY
 
-    assert sample_stack.push(list(itertools.repeat(new_item, STACKDEPTH)))
+    assert sample_stack.push(list(itertools.repeat(new_item, STACK_CAPACITY)))
 
     assert not sample_stack.has_push_space(1)
     assert sample_stack.free_stack_spaces == 0

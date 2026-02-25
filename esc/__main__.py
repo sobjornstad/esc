@@ -192,12 +192,29 @@ def setup_decimal_context():
     context.traps[decimal.Overflow] = 0  # return infinity
 
 
+def _handle_resize(ss, registry, menu):
+    """Handle a terminal resize event."""
+    screen().handle_resize()
+    if not screen().too_small:
+        screen().refresh_stack(ss)
+        screen().update_registers(registry)
+        if menu is not None:
+            screen().display_menu(menu)
+
+
 def user_loop(ss, registry):
     """
     Main loop to retrieve user input and perform calculator operations.
     """
     menu = None
     while True:
+        # If the terminal is too small, wait for a resize event.
+        if screen().too_small:
+            c = screen().stdscr.getch()
+            if c == curses.KEY_RESIZE:
+                _handle_resize(ss, registry, menu)
+            continue
+
         status.mark_seen()
         screen().refresh_status()
         screen().update_history(ss)
@@ -210,6 +227,10 @@ def user_loop(ss, registry):
         screen().place_cursor(ss)
         if menu is main_menu:
             c = fetch_input(False)
+
+            if c == curses.KEY_RESIZE:
+                _handle_resize(ss, registry, menu)
+                continue
 
             # Are we entering a number?
             r = try_add_to_number(c, ss)
@@ -224,6 +245,10 @@ def user_loop(ss, registry):
             status.in_menu()
             screen().refresh_status()
             c = fetch_input(True)
+
+            if c == curses.KEY_RESIZE:
+                _handle_resize(ss, registry, menu)
+                continue
 
         # Try to interpret the input as a function.
         try:

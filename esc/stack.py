@@ -10,7 +10,7 @@ import copy
 import decimal
 from decimal import Decimal
 
-from .consts import STACKDEPTH, STACKWIDTH
+from .consts import STACK_CAPACITY, STACKWIDTH
 from . import history
 from .oops import RollbackTransaction
 from .status import status
@@ -248,7 +248,7 @@ class StackState:
 
     @property
     def free_stack_spaces(self):
-        return STACKDEPTH - self.stack_posn - 1
+        return STACK_CAPACITY - self.stack_posn - 1
 
     @property
     def is_empty(self):
@@ -350,7 +350,7 @@ class StackState:
             return False
 
     def has_push_space(self, spaces):
-        return STACKDEPTH >= len(self.s) + spaces
+        return STACK_CAPACITY >= len(self.s) + spaces
 
     def push(self, vals, description=None):
         """
