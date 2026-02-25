@@ -29,6 +29,10 @@ setuptools.setup(
     install_requires=[
         'windows-curses; platform_system == "Windows"',
     ],
-    scripts=['package_scripts/esc'],
+    entry_points={
+        "console_scripts": [
+            "esc = esc.__main__:curses_wrapper"
+        ],
+    },
     python_requires='>=3.6',
 )

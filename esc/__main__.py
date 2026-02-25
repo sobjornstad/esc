@@ -154,7 +154,7 @@ def try_special(c, ss, registry, menu):
         if enter_new_number(ss) is False:
             # could also be None, which would be different
             return True
-    elif c in (curses.KEY_BACKSPACE, 127):
+    elif c in (curses.KEY_BACKSPACE, 127) or curses.ascii.unctrl(c) == '^H':
         r = ss.backspace()
         screen().backspace(ss, r)
     elif chr(c) == UNDO_CHARACTER:
