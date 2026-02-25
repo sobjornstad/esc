@@ -1,0 +1,129 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "esc-calc"
+dynamic = ["version"]
+description = "extensible stack-based RPN calculator based on curses"
+readme = "README.md"
+license = "GPL-3.0-only"
+requires-python = ">=3.10"
+authors = [
+    { name = "Soren I. Bjornstad", email = "contact@sorenbjornstad.com" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    'windows-curses; platform_system == "Windows"',
+]
+
+[project.scripts]
+esc = "esc.__main__:curses_wrapper"
+
+[project.urls]
+Homepage = "https://github.com/sobjornstad/esc"
+Documentation = "https://esc-calc.readthedocs.io"
+
+[tool.hatch.build.targets.wheel]
+packages = ["esc"]
+
+[tool.hatch.version]
+path = "esc/consts.py"
+pattern = 'VERSION = "(?P<version>[^"]+)"'
+
+[dependency-groups]
+dev = ["pylint", "yapf"]
+test = ["pytest", "pytest-cov"]
+docs = ["sphinx>=7", "sphinx-rtd-theme>=2", "graphviz", "doc8"]
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules --cov=esc --cov-report=term --cov-report=html"
+
+[tool.pylint.main]
+ignore = "CVS"
+persistent = true
+load-plugins = []
+
+[tool.pylint."messages control"]
+disable = [
+    "no-else-return",
+    "no-else-raise",
+    "broad-except",
+    "global-statement",
+]
+
+[tool.pylint.reports]
+output-format = "colorized"
+reports = false
+evaluation = "10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)"
+
+[tool.pylint.format]
+max-line-length = 88
+ignore-long-lines = '^.*(# )?<?https?://\\S+>?$|# type:'
+single-line-if-stmt = false
+max-module-lines = 1000
+indent-string = "    "
+
+[tool.pylint.variables]
+dummy-variables-rgx = '_$|dummy'
+additional-builtins = []
+
+[tool.pylint.basic]
+module-rgx = '(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$'
+const-rgx = '(([A-Z_][A-Z0-9_]*)|(__.*__))$|[A-Z][a-zA-Z0-9]+$'
+class-rgx = '[A-Z][a-zA-Z0-9]+$'
+function-rgx = '[_a-z][_a-z0-9]{2,35}$'
+method-rgx = '[_a-z][_a-z0-9]{2,35}$|__[a-zA-Z0-9]{2,35}__$'
+attr-rgx = '[_a-z][_a-z0-9]{0,35}$'
+argument-rgx = '[_a-z][_a-z0-9]{0,35}$'
+variable-rgx = '[a-z][_a-z0-9]{0,35}$'
+class-attribute-rgx = '([A-Za-z_][A-Za-z0-9_]{2,35}|(__.*__))$'
+inlinevar-rgx = '[a-z][_a-z0-9]*$'
+good-names = ["i", "j", "k", "r", "_"]
+bad-names = ["foo", "bar", "baz", "quux", "toto", "tutu", "tata"]
+no-docstring-rgx = '__.*__|execute'
+docstring-min-length = 4
+
+[tool.pylint.similarities]
+min-similarity-lines = 4
+ignore-comments = true
+ignore-docstrings = true
+ignore-imports = false
+
+[tool.pylint.miscellaneous]
+notes = ["FIXME", "TODO"]
+
+[tool.pylint.typecheck]
+ignore-mixin-members = true
+ignored-classes = ["SQLObject"]
+
+[tool.pylint.imports]
+deprecated-modules = ["regsub", "TERMIOS", "Bastion", "rexec"]
+
+[tool.pylint.design]
+max-args = 6
+ignored-argument-names = '_.*'
+max-locals = 15
+max-returns = 6
+max-branches = 12
+max-statements = 50
+max-parents = 7
+max-attributes = 7
+min-public-methods = 1
+max-public-methods = 20
+
+[tool.pylint.classes]
+defining-attr-methods = ["__init__", "__new__", "setUp"]
+valid-classmethod-first-arg = ["cls"]
+valid-metaclass-classmethod-first-arg = ["mcs"]
+
+[tool.pylint.exceptions]
+overgeneral-exceptions = ["builtins.Exception"]

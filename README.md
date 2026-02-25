@@ -1,4 +1,4 @@
-[![Build Status](https://dev.azure.com/thetechnicalgeekery/TTGProjects/_apis/build/status/sobjornstad.esc?branchName=master)](https://dev.azure.com/thetechnicalgeekery/TTGProjects/_build/latest?definitionId=2&branchName=master)
+[![CI](https://github.com/sobjornstad/esc/actions/workflows/ci.yml/badge.svg)](https://github.com/sobjornstad/esc/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/esc-calc/badge/?version=latest)](https://esc-calc.readthedocs.io/en/latest/?badge=latest)
 
 What is esc?
@@ -44,7 +44,7 @@ What does this mean?
 Installation
 ============
 
-esc requires Python 3.6 or greater.
+esc requires Python 3.10 or greater.
 It is lightweight and has no dependencies outside the standard library
 (except on Windows, where ``ncurses`` isn't available by default
 and the ``windows-curses`` package is transparently installed to fix that).
@@ -63,17 +63,12 @@ from the `esc-plugins` folder of this repository.
 Development
 -----------
 
-For development, clone this repository,
-build a virtualenv with the necessary development tools,
-and install esc into it:
+For development, clone this repository and use [uv](https://docs.astral.sh/uv/):
 
     $ git clone https://github.com/sobjornstad/esc
     $ cd esc
-    $ virtualenv --python=python3.7 venv  # or 3.6 if you don't have 3.7
-    $ . venv/bin/activate
-    $ pip install -r requirements.txt
-    $ pip install -e esc
-    $ esc
+    $ uv sync --group dev --group test --group docs
+    $ uv run esc
 
 
 Documentation

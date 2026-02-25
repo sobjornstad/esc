@@ -1,11 +1,12 @@
 # General
 __pycache__/
 *.py[cod]
-venv/
+.venv/
 
 # IDE and linters
 .mypy_cache/
 .vscode/
+.claude/
 
 # Tests
 .coverage

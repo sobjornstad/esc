@@ -4,26 +4,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-esc is an extensible stack-based RPN (Reverse Polish Notation) calculator with a curses terminal UI. It runs on Python 3.6+ with no runtime dependencies beyond the standard library (plus `windows-curses` on Windows). Published on PyPI as `esc-calc`.
+esc is an extensible stack-based RPN (Reverse Polish Notation) calculator with a curses terminal UI. It runs on Python 3.10+ with no runtime dependencies beyond the standard library (plus `windows-curses` on Windows). Published on PyPI as `esc-calc`.
 
 ## Development Setup
 
 ```bash
-virtualenv --python=python3 venv
-. venv/bin/activate
-pip install -r requirements.txt
-pip install -e .
-esc  # launch the calculator
+uv sync --group dev --group test --group docs
+uv run esc  # launch the calculator
 ```
 
 ## Commands
 
-- **Run tests:** `pytest` (configured in pytest.ini with `--doctest-modules --cov=esc`)
-- **Run a single test file:** `pytest tests/esc/test_stackitem.py`
-- **Run a single test:** `pytest tests/esc/test_stackitem.py::test_stackitem_decimal`
-- **Lint:** `pylint esc/` (config in pylintrc; 88-char line limit)
-- **Format:** `yapf` (config in .style.yapf; PEP 8 base, 88-char columns)
-- **Build docs:** `cd docs && make html` (Sphinx with RTD theme)
+- **Run tests:** `uv run pytest` (configured in pyproject.toml with `--doctest-modules --cov=esc`)
+- **Run a single test file:** `uv run pytest tests/esc/test_stackitem.py`
+- **Run a single test:** `uv run pytest tests/esc/test_stackitem.py::test_stackitem_decimal`
+- **Lint:** `uv run pylint esc/` (config in pyproject.toml; 88-char line limit)
+- **Format:** `uv run yapf` (config in .style.yapf; PEP 8 base, 88-char columns)
+- **Build docs:** `uv run sphinx-build -b html docs docs/_build` (Sphinx with RTD theme)
 
 ## Architecture
 
@@ -58,7 +55,7 @@ esc  # launch the calculator
 
 ## Code Style
 
-- Formatter: yapf (`.style.yapf`), linter: pylint (`pylintrc`)
+- Formatter: yapf (`.style.yapf`), linter: pylint (`pyproject.toml`)
 - 88-character line limit
 - Single double-quote docstrings for one-liners: `"Close the connection."`
 - Doctest-friendly: pytest runs `--doctest-modules`

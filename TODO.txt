@@ -1,0 +1,23 @@
+## Bugs
+
+- [ ] The status bar is misaligned if the version number is longer than 5 characters
+- [ ] On Windows, the installed 'esc' script is not python-executable
+
+## Refactor
+
+- [ ] Consider putting some builtin functionality in the stub classes
+
+## Features
+
+- [ ] Interval arithmetic
+- [ ] Provide a way to handle modes and registers in function testing
+- [ ] Dynamic window resizing
+- [ ] Infinite stack?
+- [ ] Scrollable history and commands
+- [ ] tox
+
+## Command line
+
+- [ ] Start w/ numbers on stack
+- [ ] Output stack to a file on quit (like ranger)
+- [ ] Execute things automatically and return nonzero exit code on error
