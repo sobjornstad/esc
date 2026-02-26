@@ -1,9 +1,7 @@
 from copy import deepcopy
 from decimal import Decimal
-import itertools
 
 import pytest
-from esc.consts import STACK_CAPACITY
 from esc.oops import RollbackTransaction
 from esc.stack import StackItem, StackState
 from esc.util import decimalize_iterable
@@ -151,18 +149,13 @@ def test_push_stackitem(sample_stack):
     assert sample_stack.last_operation == "I am the walrus"
 
 
-def test_push_out_of_space(sample_stack):
-    "We can run out of space on the stack."
+def test_push_beyond_twelve(sample_stack):
+    "The stack has no fixed size limit."
     new_item = StackItem(decval=Decimal(25))
     sample_stack.clear()
-    assert sample_stack.has_push_space(1)
-    assert sample_stack.free_stack_spaces == STACK_CAPACITY
-
-    assert sample_stack.push(list(itertools.repeat(new_item, STACK_CAPACITY)))
-
-    assert not sample_stack.has_push_space(1)
-    assert sample_stack.free_stack_spaces == 0
-    assert not sample_stack.push((new_item,))
+    for _ in range(50):
+        sample_stack.push((new_item,))
+    assert len(sample_stack.s) == 50
 
 
 def test_push_decimals(sample_stack):

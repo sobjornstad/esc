@@ -1,8 +1,8 @@
 from esc.layout import compute_layout, MIN_TERM_WIDTH, MIN_TERM_HEIGHT
 
 
-def test_layout_80x24_matches_original():
-    """At 80x24, the layout must exactly match the old hardcoded values."""
+def test_layout_80x24():
+    """At 80x24, stack expands to fill available space."""
     layout = compute_layout(24, 80)
 
     # Status: row 0, full width
@@ -11,17 +11,17 @@ def test_layout_80x24_matches_original():
     assert layout.status.width == 80
     assert layout.status.height == 1
 
-    # Stack: 24 wide, 15 tall (STACKDEPTH + 3), starts at (0, 1)
+    # Stack: 24 wide, 18 tall (23 main - 5 registers), starts at (0, 1)
     assert layout.stack.x == 0
     assert layout.stack.y == 1
     assert layout.stack.width == 24
-    assert layout.stack.height == 15
+    assert layout.stack.height == 18
 
     # History: 32 wide, same height as stack, starts at (24, 1)
     assert layout.history.x == 24
     assert layout.history.y == 1
     assert layout.history.width == 32
-    assert layout.history.height == 15
+    assert layout.history.height == 18
 
     # Commands: 24 wide, full remaining height (23), starts at (56, 1)
     assert layout.commands.x == 56
@@ -29,16 +29,16 @@ def test_layout_80x24_matches_original():
     assert layout.commands.width == 24
     assert layout.commands.height == 23
 
-    # Registers: 56 wide, 8 tall, starts at (0, 16)
+    # Registers: 56 wide, 5 tall, starts at (0, 19)
     assert layout.registers is not None
     assert layout.registers.x == 0
-    assert layout.registers.y == 16
+    assert layout.registers.y == 19
     assert layout.registers.width == 56
-    assert layout.registers.height == 8
+    assert layout.registers.height == 5
 
 
 def test_layout_60x16_minimum():
-    """At minimum terminal size, all windows fit."""
+    """At minimum terminal size, stack gets priority, registers compress."""
     layout = compute_layout(16, 60)
 
     assert layout.status.width == 60
@@ -47,33 +47,37 @@ def test_layout_60x16_minimum():
     assert layout.history.width == 12  # 60 - 24 - 24
     assert layout.stack.height == layout.history.height
 
+    # Stack gets minimum 11 rows, registers get compressed to 4
+    assert layout.stack.height == 11
+    assert layout.registers is not None
+    assert layout.registers.height == 4
+
     # Commands span full height
     assert layout.commands.height == 15  # 16 - 1
 
-    # Registers are visible (3 rows)
-    assert layout.registers is not None
-    assert layout.registers.height >= 3
-
 
 def test_layout_120x40_large():
-    """At a large terminal, history gets extra width."""
+    """At a large terminal, stack expands, registers stay at preferred size."""
     layout = compute_layout(40, 120)
 
     assert layout.history.width == 72  # 120 - 24 - 24
     assert layout.commands.height == 39  # 40 - 1
+    assert layout.stack.height == 34   # 39 - 5
     assert layout.registers is not None
-    assert layout.registers.height > 8  # more space than 80x24
+    assert layout.registers.height == 5
 
 
 def test_layout_registers_hidden_when_too_short():
     """When terminal is very short, registers are hidden."""
-    layout = compute_layout(16, 80)
+    # At 14 rows: main=13, stack wants 11, registers get 2 → hidden (< 3).
+    layout = compute_layout(14, 80)
+    assert layout.registers is None
+    assert layout.stack.height == 11
 
-    # With 16 rows: status=1, main=15.
-    # Stack wants 15, leaving 0 for registers → hidden.
-    if layout.registers is not None:
-        # If somehow there's room, they should be at least 3 rows
-        assert layout.registers.height >= 3
+    # At 13 rows: main=12, stack wants 11, registers get 1 → hidden.
+    layout = compute_layout(13, 80)
+    assert layout.registers is None
+    assert layout.stack.height == 11
 
 
 def test_layout_columns_tile_horizontally():

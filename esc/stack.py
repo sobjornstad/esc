@@ -10,7 +10,7 @@ import copy
 import decimal
 from decimal import Decimal
 
-from .consts import STACK_CAPACITY, STACKWIDTH
+from .consts import STACKWIDTH
 from . import history
 from .oops import RollbackTransaction
 from .status import status
@@ -247,10 +247,6 @@ class StackState:
             return len(self.bos.string)
 
     @property
-    def free_stack_spaces(self):
-        return STACK_CAPACITY - self.stack_posn - 1
-
-    @property
     def is_empty(self):
         return not bool(self.s)
 
@@ -263,9 +259,6 @@ class StackState:
         Create a new stack item for the user to type into beginning with the
         character /c/.
         """
-        if not self.has_push_space(1):
-            return False
-
         self.stack_posn += 1
         self.s.append(StackItem(firstchar=c))
         self.editing_last_item = True
@@ -349,9 +342,6 @@ class StackState:
         else:
             return False
 
-    def has_push_space(self, spaces):
-        return STACK_CAPACITY >= len(self.s) + spaces
-
     def push(self, vals, description=None):
         """
         Push an iterable of decimals or StackItems onto the stack.
@@ -359,9 +349,6 @@ class StackState:
         If a /description/ of the operation is specified, it will be recorded
         for display as a step in the history pane.
         """
-        if not self.has_push_space(len(vals)):
-            return False
-
         if description is not None:
             self.record_operation(description)
 

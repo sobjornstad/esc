@@ -336,14 +336,6 @@ class EscOperation(EscCommand):
         except ValueError as e:
             raise FunctionExecutionError(str(e))
 
-        # Make sure there will be space to push the results.
-        # If requesting the whole stack, it's the function's responsibility to check.
-        if not ss.has_push_space(self.push - self.pop) and self.pop != -1:
-            num_short = self.push - self.pop - ss.free_stack_spaces
-            spaces = 'space' if num_short == 1 else 'spaces'
-            msg = f"'{self.key}': stack is too full (short {num_short} {spaces})."
-            raise FunctionExecutionError(msg)
-
         if self.pop == -1:
             # Whole stack requested; will push the whole stack back later.
             args = ss.s[:]

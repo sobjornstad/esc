@@ -78,7 +78,7 @@ class FunctionExecutionError(EscError):
 
     - a number is in the middle of being entered and isn't a valid number
     - a function performed an undefined operation like dividing by zero
-    - there are too many or too few items on the stack
+    - there are too few items on the stack
     - a function directly raises this error due to invalid input
       or inability to complete its task for some other reason
 

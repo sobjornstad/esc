@@ -49,12 +49,8 @@ def try_add_to_number(c, ss):
         if char == '_':
             char = '-' # negative sign, like dc
         if not ss.add_character(char):
-            if ss.editing_last_item:
-                status.error("No more precision available. "
-                             "Consider scientific notation.")
-            else:
-                status.error("Stack is full.")
-                screen().place_cursor(ss)
+            status.error("No more precision available. "
+                         "Consider scientific notation.")
             return True
 
         screen().putch_stack(char)
@@ -130,8 +126,7 @@ def retrieve_register(ss, registry):
             stack_item = registry[reg_char]
         except KeyError:
             raise RollbackTransaction(f"Register '{reg_char}' does not exist.")
-        if not ss.push((stack_item,)):
-            raise RollbackTransaction("Stack is full.")
+        ss.push((stack_item,))
         screen().refresh_stack(ss)
         status.ready()
 

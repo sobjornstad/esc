@@ -5,8 +5,7 @@ consts.py - constant values used across esc
 VERSION = "1.0.1"
 PROGRAM_NAME = f"esc {VERSION}"
 TESTING = False  # set to True by the test framework
-STACK_CAPACITY = 12
-STACKDEPTH = STACK_CAPACITY  # deprecated alias for plugins
+STACKDEPTH = 999999999  # stack is unbounded now; kept in case some plugin is using this
 PRECISION = 12
 STACKWIDTH = 21  # needs room for sci notation and labels on top of precision
 

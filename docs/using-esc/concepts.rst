@@ -43,13 +43,9 @@ an :ref:`undo <History>` will let you edit the number again.)
 
     Entering several numbers onto the stack.
 
-You can enter as many numbers as you like this way,
-at least until the stack fills up.
-(In esc, the stack size
-is based on the number of lines allocated for the stack on the screen,
-which is ordinarily 12.
-12 entries should be more than enough for all but the craziest calculations;
-many RPN-based HP calculators only have four, and that is normally enough.)
+You can enter as many numbers as you like onto the stack;
+esc will scroll the window and show only the most recent items
+if the terminal is too small to show the entire stack.
 
 Enter negative signs with :kbd:`_` (underscore)
 and scientific notation with :kbd:`e`

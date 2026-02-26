@@ -68,12 +68,11 @@ In many cases, you'll have a choice
 between entering the numbers in strict order as they come in the expression
 or working from the inner parentheses out,
 or some combination thereof.
-This is largely a matter of taste,
-although in extremely large calculations
-you could run out of stack space if you type the numbers in order.
-This is not a serious threat in esc since the stack holds at least 12 numbers,
-but is more of a concern on hardware RPN calculators,
-which may hold as few as 3.
+This is largely a matter of taste;
+RPN old hands are more likely to work from the inside out
+since hardware-based RPN calculators have a limited number of stack entries
+and one might run out of stack space when working strictly left-to-right,
+but esc has no stack size limit.
 
 .. note::
     Keystroke sequences are rendered with spaces between operations

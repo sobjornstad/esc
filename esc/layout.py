@@ -7,7 +7,7 @@ dependency, making it easy to unit-test.
 
 from dataclasses import dataclass
 
-from .consts import STACK_CAPACITY, STACKWIDTH
+from .consts import STACKWIDTH
 
 # Minimum terminal dimensions for esc to be usable.
 MIN_TERM_WIDTH = 60
@@ -44,37 +44,36 @@ def compute_layout(term_height: int, term_width: int) -> LayoutSpec:
     The layout follows these rules:
 
     * **Status bar** — 1 row, full width, at the top.
-    * **Stack** — fixed width (24), variable height based on available rows.
+    * **Stack** — fixed width (24), gets all remaining height after
+      registers.  Minimum 8 content lines (11 rows with border/heading).
     * **Commands** — fixed width (24), anchored to the right edge, full
       remaining height.
     * **History** — fills the space between Stack and Commands columns,
       same height as Stack.
-    * **Registers** — spans below Stack + History, height is whatever
-      rows remain. Hidden if fewer than 3 rows are available.
-
-    At 80x24, the result is identical to the old hardcoded layout.
+    * **Registers** — preferred 5 rows (3 content + 2 border), compressed
+      or hidden when the terminal is short.
 
     >>> layout = compute_layout(24, 80)
     >>> layout.status
     WindowSpec(x=0, y=0, width=80, height=1)
     >>> layout.stack
-    WindowSpec(x=0, y=1, width=24, height=15)
+    WindowSpec(x=0, y=1, width=24, height=18)
     >>> layout.history
-    WindowSpec(x=24, y=1, width=32, height=15)
+    WindowSpec(x=24, y=1, width=32, height=18)
     >>> layout.commands
     WindowSpec(x=56, y=1, width=24, height=23)
     >>> layout.registers
-    WindowSpec(x=0, y=16, width=56, height=8)
+    WindowSpec(x=0, y=19, width=56, height=5)
 
     >>> small = compute_layout(16, 60)
     >>> small.stack
-    WindowSpec(x=0, y=1, width=24, height=12)
+    WindowSpec(x=0, y=1, width=24, height=11)
     >>> small.history
-    WindowSpec(x=24, y=1, width=12, height=12)
+    WindowSpec(x=24, y=1, width=12, height=11)
     >>> small.commands
     WindowSpec(x=36, y=1, width=24, height=15)
     >>> small.registers
-    WindowSpec(x=0, y=13, width=36, height=3)
+    WindowSpec(x=0, y=12, width=36, height=4)
     """
     # Total available rows below the status bar.
     main_rows = term_height - 1  # 1 row for status
@@ -83,16 +82,19 @@ def compute_layout(term_height: int, term_width: int) -> LayoutSpec:
     history_width = term_width - STACK_COL_WIDTH - COMMANDS_COL_WIDTH
     left_width = STACK_COL_WIDTH + history_width  # stack + history span
 
-    # Left-column height: enough for STACK_CAPACITY items + border (2 rows),
-    # but leave at least 3 rows for registers when possible.
-    max_stack_height = STACK_CAPACITY + 3  # border(2) + 1 heading-ish row
-    desired_stack_height = min(max_stack_height, main_rows - 3)
-    # But never less than 5 (border + a few items).
-    stack_height = max(5, min(desired_stack_height, main_rows))
+    # Stack/history get all remaining rows after registers.
+    # Registers prefer 5 rows (3 content + 2 border) but compress when short.
+    preferred_registers_height = 5  # 3 content + 2 border
+    min_stack_height = 11           # 8 content + 2 border + 1 heading
+
+    stack_height = main_rows - preferred_registers_height
+    if stack_height < min_stack_height:
+        # Compress registers to give stack priority.
+        stack_height = min(min_stack_height, main_rows)
 
     # Registers get whatever is left below the stack/history.
     registers_rows = main_rows - stack_height
-    registers_visible = registers_rows >= 3
+    registers_visible = registers_rows >= 3  # need 1 content + 2 border
 
     status_spec = WindowSpec(x=0, y=0, width=term_width, height=1)
     stack_spec = WindowSpec(x=0, y=1,
