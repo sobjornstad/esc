@@ -32,6 +32,7 @@ class StatusState:
         IN_MENU = ('m', "Expecting menu selection")
         EXPECTING_REGISTER = ('r', "Expecting register identifier (any letter)")
         EXPECTING_HELP = ('h', "Browsing help (select a command or menu)")
+        ENTERING_UNIT = ('\\', "Entering unit tag")
 
         def __init__(self, status_char, status_message):
             self.status_char = status_char
@@ -105,6 +106,11 @@ class StatusState:
         "Clear errors and put calculator in a state to select a command to get help on."
         self._clear_errors()
         self.state = StatusState.Modality.EXPECTING_HELP
+
+    def entering_unit(self):
+        "Clear errors and put calculator in a state to enter a unit tag."
+        self._clear_errors()
+        self.state = StatusState.Modality.ENTERING_UNIT
 
     def advisory(self, msg):
         """

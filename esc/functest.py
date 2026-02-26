@@ -6,8 +6,9 @@ import decimal
 import math
 
 from .oops import FunctionProgrammingError
-from .stack import StackState
+from .stack import StackItem, StackState
 from .registers import Registry
+from .units import UnitDecimal
 from .util import decimalize_iterable
 
 
@@ -103,6 +104,21 @@ class TestCase:
         else:
             return stack == expected
 
+    @staticmethod
+    def _make_stack_items(values):
+        """
+        Convert a list of values into StackItems, preserving UnitDecimal units.
+        """
+        items = []
+        for v in values:
+            if isinstance(v, UnitDecimal):
+                dec = decimal.Decimal(v)
+                items.append(StackItem(decval=dec, unit=v.unit))
+            else:
+                dec = decimal.Decimal(v)
+                items.append(StackItem(decval=dec))
+        return items
+
     def execute(self, operation):
         """
         Execute this test case against the EscOperation /operation/.
@@ -113,11 +129,16 @@ class TestCase:
                                 "(only one is allowed)", operation)
 
         try:
-            start_dec = decimalize_iterable(self.before)
+            start_items = self._make_stack_items(self.before)
             if self.after is None:
                 end_dec = []
+                expected_units = []
             else:
                 end_dec = decimalize_iterable(self.after)
+                expected_units = [
+                    v.unit if isinstance(v, UnitDecimal) else None
+                    for v in self.after
+                ]
         except (decimal.InvalidOperation, TypeError) as e:
             raise self._oops_it(
                 "tried to place a non-decimal value on a test stack",
@@ -125,7 +146,7 @@ class TestCase:
 
         ss = StackState()
         registry = Registry()
-        ss.push(start_dec)
+        ss.push(start_items)
         try:
             operation.execute(access_key=None, ss=ss, registry=registry)
         except Exception as e:
@@ -145,6 +166,16 @@ class TestCase:
                     f"failed a self-test: Expected {end_dec}, "
                     f"but got {ss.as_decimal()} as the final stack",
                     operation)
+            elif expected_units:
+                # Also check units if any expected values had them
+                actual_units = [
+                    item.unit for item in ss.s
+                ]
+                if actual_units != expected_units:
+                    raise self._oops_it(
+                        f"failed a self-test: Expected units {expected_units},"
+                        f" but got {actual_units}",
+                        operation)
 
 
 def _recursive_exception_instance(exception, type_):

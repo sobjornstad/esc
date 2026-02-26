@@ -13,6 +13,7 @@ REQUIRED_TERM_WIDTH = 60   # minimum terminal width
 REQUIRED_TERM_HEIGHT = 16  # minimum terminal height
 
 QUIT_CHARACTER = 'q'
+UNIT_ENTRY_CHARACTER = '\\'
 UNDO_CHARACTER = 'u'
 REDO_CHARACTER = '^R'
 CONSTANT_MENU_CHARACTER = 'i'

@@ -115,6 +115,59 @@ class InsufficientItemsError(FunctionExecutionError):
             return f"Insufficient items: needs at least {self.number_required}"
 
 
+class UnitError(FunctionExecutionError):
+    "Base class for unit-related errors. All are overridable by pressing the same key again."
+
+
+class IncommensurableUnitsError(UnitError):
+    "Raised when adding/subtracting values with mismatched units."
+
+    def __init__(self, unit_a, unit_b):
+        self.unit_a = unit_a
+        self.unit_b = unit_b
+        a_str = unit_a.display() or "unitless"
+        b_str = unit_b.display() or "unitless"
+        super().__init__(
+            f"Incommensurable units: {a_str} vs {b_str}. "
+            f"Press again to override.")
+
+
+class UnitlessOperandError(UnitError):
+    "Raised when mixing unitless and unitful operands in mul/div."
+
+    def __init__(self):
+        super().__init__(
+            "Mixing unitful and unitless operands. "
+            "Press again to override.")
+
+
+class OperationWillRemoveUnitsError(UnitError):
+    "Raised when an UNSPECIFIED operation is applied to unitful values."
+
+    def __init__(self):
+        super().__init__(
+            "This operation will remove units. "
+            "Press again to override.")
+
+
+class UnitRootError(UnitError):
+    "Raised when a root produces non-integer exponents."
+
+    def __init__(self, msg=None):
+        super().__init__(
+            msg or "Cannot simplify units through root. "
+            "Press again to override.")
+
+
+class UnitExponentError(UnitError):
+    "Raised when the exponent has units or is non-integer on a unitful base."
+
+    def __init__(self, msg=None):
+        super().__init__(
+            msg or "Exponent cannot have units. "
+            "Press again to override.")
+
+
 class RollbackTransaction(Exception):
     """
     Raised during a StackState .transaction() to indicate that the transaction

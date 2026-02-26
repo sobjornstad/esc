@@ -14,7 +14,7 @@ from typing import Sequence
 from .consts import (PROGRAM_NAME,
                      QUIT_CHARACTER, UNDO_CHARACTER, REDO_CHARACTER,
                      RETRIEVE_REG_CHARACTER, STORE_REG_CHARACTER,
-                     DELETE_REG_CHARACTER)
+                     DELETE_REG_CHARACTER, UNIT_ENTRY_CHARACTER)
 from .layout import compute_layout, MIN_TERM_WIDTH, MIN_TERM_HEIGHT
 from .status import status
 from .util import truncate, centered_position
@@ -120,6 +120,7 @@ class StackWindow(Window):
         super().__init__(scr, spec.width, spec.height, spec.x, spec.y)
         self.ss = None
         self._scroll_offset = 0
+        self.partial_unit = None  # None = not in unit mode; "" = unit mode, empty buffer
 
         self.window.border()
         self.refresh()
@@ -133,9 +134,36 @@ class StackWindow(Window):
                 items = list(self.ss)
                 visible_items = items[-visible_slots:]
                 self._scroll_offset = max(0, len(items) - visible_slots)
+                max_text_width = self.width - 2
+                last_index = len(visible_items) - 1
                 for index, stack_item in enumerate(visible_items):
-                    text = truncate(str(stack_item), self.width - 2)
-                    self.window.addstr(1 + index, 1, text)
+                    num_str = truncate(stack_item.string, max_text_width)
+                    self.window.addstr(1 + index, 1, num_str)
+
+                    # For bos during unit entry, show partial_unit
+                    if self.partial_unit is not None and index == last_index:
+                        unit_str = " " + self.partial_unit
+                        col = 1 + len(num_str)
+                        remaining = max_text_width - len(num_str)
+                        if remaining > 1:
+                            unit_str = truncate(
+                                unit_str, remaining
+                            ) if len(unit_str) > remaining else unit_str
+                            self.window.addstr(
+                                1 + index, col, unit_str,
+                                curses.color_pair(3))
+                    elif (stack_item.unit is not None
+                            and not stack_item.unit.is_unitless):
+                        unit_str = " " + stack_item.unit.display()
+                        col = 1 + len(num_str)
+                        remaining = max_text_width - len(num_str)
+                        if remaining > 1:
+                            unit_str = truncate(
+                                unit_str, remaining
+                            ) if len(unit_str) > remaining else unit_str
+                            self.window.addstr(
+                                1 + index, col, unit_str,
+                                curses.color_pair(3))
         except curses.error:
             pass
         super().refresh()
@@ -154,13 +182,23 @@ class StackWindow(Window):
         line, as appropriate.
         """
         try:
-            if self.ss.editing_last_item:
+            if self.partial_unit is not None:
+                # During unit entry, cursor sits after the partial unit on BOS row
                 row = self._display_row(self.ss.stack_posn)
+                row = max(1, min(row, self.height - 2))
+                bos_str = self.ss.bos.string if not self.ss.is_empty else ""
+                col = 1 + len(bos_str) + len(" ") + len(self.partial_unit)
+                col = min(col, self.width - 2)
+                self.window.move(row, col)
+            elif self.ss.editing_last_item:
+                row = self._display_row(self.ss.stack_posn)
+                row = max(1, min(row, self.height - 2))
+                self.window.move(row, self.ss.cursor_posn + 1)
             else:
                 # when not editing a number, cursor goes on *next line*
                 row = self._display_row(self.ss.stack_posn) + 1
-            row = max(1, min(row, self.height - 2))
-            self.window.move(row, self.ss.cursor_posn + 1)
+                row = max(1, min(row, self.height - 2))
+                self.window.move(row, self.ss.cursor_posn + 1)
         except curses.error:
             pass
 
@@ -292,7 +330,12 @@ class CommandsWindow(Window):
                                           'redo)', yposn+3, redo_x)
                     else:
                         truncated = True
-                    yposn += 4
+                    if yposn + 4 < self.height - 1:
+                        self._add_command(UNIT_ENTRY_CHARACTER,
+                                          'add unit tag', yposn+4, xposn)
+                    else:
+                        truncated = True
+                    yposn += 5
 
                 # then the quit option, which is always there but not an op
                 if yposn < self.height - 1:
@@ -369,8 +412,21 @@ class RegistersWindow(Window):
                                    register, curses.color_pair(2))
                 value_width = col_width - 3
                 if value_width > 3:
-                    text = truncate(str(stack_item), value_width)
-                    self.window.addstr(row + 1, x_offset + 2, text)
+                    num_str = truncate(stack_item.string, value_width)
+                    self.window.addstr(row + 1, x_offset + 2, num_str)
+                    # Show unit in contrasting color
+                    if (stack_item.unit is not None
+                            and not stack_item.unit.is_unitless):
+                        unit_str = " " + stack_item.unit.display()
+                        ucol = x_offset + 2 + len(num_str)
+                        remaining = value_width - len(num_str)
+                        if remaining > 1:
+                            unit_str = truncate(
+                                unit_str, remaining
+                            ) if len(unit_str) > remaining else unit_str
+                            self.window.addstr(
+                                row + 1, ucol, unit_str,
+                                curses.color_pair(3))
 
             if truncated and rows_available >= 2:
                 last_col_x = (num_cols - 1) * col_width + 1
@@ -471,6 +527,7 @@ class EscScreen:
         self.helpw = None
         self._layout = None
         self._too_small = False
+        self._units_active = False
         self._setup()
 
     def _setup(self):
@@ -486,11 +543,13 @@ class EscScreen:
             return
 
         self._too_small = False
-        self._layout = compute_layout(max_y, max_x)
+        self._layout = compute_layout(max_y, max_x,
+                                      units_active=self._units_active)
         layout = self._layout
 
         curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_GREEN)
         curses.init_pair(2, curses.COLOR_BLUE, curses.COLOR_BLACK)
+        curses.init_pair(3, curses.COLOR_CYAN, curses.COLOR_BLACK)
 
         self.statusw = StatusWindow(self, layout.status)
         self.stackw = StackWindow(self, layout.stack)
@@ -524,6 +583,12 @@ class EscScreen:
         self.stdscr.clear()
         self.stdscr.refresh()
         self._setup()
+
+    def activate_units(self):
+        """One-time transition to wider stack column for unit display."""
+        if not self._units_active:
+            self._units_active = True
+            self.handle_resize()
 
     def refresh_all(self):
         self.refresh_status()

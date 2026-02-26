@@ -17,6 +17,7 @@ which walks you through creating a plugin that implements a simple operation.
     :caption: Contents
 
     operations
+    unit-handling
     menus
     constants
     modes

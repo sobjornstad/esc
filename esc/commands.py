@@ -25,7 +25,10 @@ from . import consts
 from .functest import TestCase
 from . import modes
 from .oops import (FunctionExecutionError, InsufficientItemsError, NotInMenuError,
-                   FunctionProgrammingError, ProgrammingError)
+                   FunctionProgrammingError, ProgrammingError,
+                   UnitError, IncommensurableUnitsError, UnitlessOperandError,
+                   OperationWillRemoveUnitsError, UnitRootError, UnitExponentError)
+from .units import UnitExpression, UnitHandling, UnitDecimal
 from . import util
 
 BINOP = 'binop'
@@ -174,7 +177,7 @@ class EscMenu(EscCommand):
         except KeyError:
             raise NotInMenuError(access_key)
 
-    def execute(self, access_key, ss, registry):
+    def execute(self, access_key, ss, registry, unit_override=False):
         """
         Look up the child described by *access_key* and execute it. If said
         child is a menu, return it (so the user can choose an item from that
@@ -183,6 +186,7 @@ class EscMenu(EscCommand):
         :param access_key: A menu access key indicating which child to execute.
         :param ss: The current stack state, passed through to a child operation.
         :param registry: The current registry, passed through to a child operation.
+        :param unit_override: If True, suppress unit errors in child operations.
 
         :return: The :class:`EscMenu` to display next,
                  or ``None`` to return to the main menu.
@@ -206,7 +210,8 @@ class EscMenu(EscCommand):
         if child.is_menu:
             return child
         else:
-            return child.execute(access_key, ss, registry)
+            return child.execute(access_key, ss, registry,
+                                 unit_override=unit_override)
 
     def test(self):
         "Execute the test method of all children."
@@ -225,7 +230,7 @@ class EscOperation(EscCommand):
     """
     # pylint: disable=too-many-arguments
     def __init__(self, key, func, pop, push, description, menu, retain=False,
-                 log_as=None, simulate=True):
+                 log_as=None, simulate=True, unit_handling=None):
         super().__init__(key, description)
         self.parent = menu
         #: The function, decorated with :func:`@Operation <Operation>`,
@@ -246,6 +251,17 @@ class EscOperation(EscCommand):
         #: Whether this function should be run when a simulation is requested for
         #: help purposes. Turn off if the function is slow or has side effects.
         self.simulate_allowed = simulate
+
+        #: How this operation handles units. May be a UnitHandling enum value,
+        #: a callable, or None (defaults to UNSPECIFIED behavior).
+        self.root_degree = None
+        if isinstance(unit_handling, tuple) and unit_handling[0] is UnitHandling.ROOT:
+            self.unit_handling = UnitHandling.ROOT
+            self.root_degree = unit_handling[1]
+        elif unit_handling is None:
+            self.unit_handling = UnitHandling.UNSPECIFIED
+        else:
+            self.unit_handling = unit_handling
 
     def __repr__(self):
         return f"<EscOperation '{self.key}': {self.description}"
@@ -283,18 +299,39 @@ class EscOperation(EscCommand):
         else:
             output = f"    Output: {self.push} {results} added to the stack"
 
-        return (type_, input_, output)
+        # Unit handling description
+        if isinstance(self.unit_handling, UnitHandling):
+            uh_names = {
+                UnitHandling.ADDITIVE: "additive (units must match)",
+                UnitHandling.MULTIPLICATIVE: "multiplicative (units combine)",
+                UnitHandling.DIVISIVE: "divisive (units divide)",
+                UnitHandling.POWER: "power (base units scaled by exponent)",
+                UnitHandling.ROOT: f"root (unit exponents / {self.root_degree})",
+                UnitHandling.PRESERVE: "preserves units",
+                UnitHandling.NO_OUTPUT: "no output units",
+                UnitHandling.NO_INPUT: "no input units",
+                UnitHandling.UNSPECIFIED: "unspecified (will strip units)",
+            }
+            units = f"    Units: {uh_names.get(self.unit_handling, '?')}"
+        else:
+            units = "    Units: custom"
+
+        return (type_, input_, output, units)
 
     def _describe_operation(self, args, retvals, registry):
         """
         Given the values popped from the stack (args) and the values pushed
         back to the stack (retvals), return a string describing what was done.
+
+        Note: retvals may be UnitDecimal instances whose __format__ (inherited
+        from Decimal) does not include units. We use str() explicitly in
+        format expressions so that UnitDecimal.__str__ is called instead.
         """
         if self.log_as is None:
             return self.description
         elif self.log_as == UNOP:
             try:
-                return f"{self.description} {args[0]} = {retvals[0]}"
+                return f"{self.description} {args[0]} = {str(retvals[0])}"
             except IndexError:
                 raise FunctionProgrammingError(
                     operation=self,
@@ -302,7 +339,7 @@ class EscOperation(EscCommand):
                             "request any values from the stack")
         elif self.log_as == BINOP:
             try:
-                return f"{args[0]} {self.key} {args[1]} = {retvals[0]}"
+                return f"{args[0]} {self.key} {args[1]} = {str(retvals[0])}"
             except IndexError:
                 raise FunctionProgrammingError(
                     operation=self,
@@ -313,7 +350,8 @@ class EscOperation(EscCommand):
                 self.log_as,
                 {'args': args, 'retval': retvals, 'registry': registry})
         else:
-            return self.log_as.format(*itertools.chain(args, retvals))
+            retval_strs = [str(r) for r in retvals]
+            return self.log_as.format(*itertools.chain(args, retval_strs))
 
     def _insufficient_items_on_stack(self, pops_requested=None):
         "Call for a FunctionExecutionError() if the stack is too empty."
@@ -323,6 +361,121 @@ class EscOperation(EscCommand):
         pops = 'item' if pops_requested == 1 else 'items'
         msg = f"'{self.key}' needs at least {pops_requested} {pops} on stack."
         return InsufficientItemsError(pops_requested, msg)
+
+    def _compute_result_units(self, args, num_results, override=False):
+        """
+        Compute the units for the result values based on unit_handling.
+
+        :param args: list of StackItems that were popped from the stack
+        :param num_results: number of results the function will push
+        :param override: if True, suppress unit errors and return unitless
+        :return: list of UnitExpression or None for each result
+        """
+        input_units = [
+            (a.unit if a.unit is not None else UnitExpression())
+            for a in args
+        ]
+        any_has_units = any(not u.is_unitless for u in input_units)
+
+        if callable(self.unit_handling) and not isinstance(
+                self.unit_handling, UnitHandling):
+            # Custom callable: call directly with input units
+            try:
+                result_units = self.unit_handling(input_units)
+            except UnitError:
+                if override:
+                    return [None] * max(num_results, 0)
+                raise
+            # Convert empty UnitExpression back to None
+            return [
+                (u if not u.is_unitless else None)
+                for u in result_units
+            ]
+
+        uh = self.unit_handling
+
+        if uh == UnitHandling.NO_OUTPUT or uh == UnitHandling.NO_INPUT:
+            return [None] * max(num_results, 0)
+
+        if not any_has_units:
+            return [None] * max(num_results, 0)
+
+        # From here on, at least one input has units.
+        try:
+            if uh == UnitHandling.UNSPECIFIED:
+                raise OperationWillRemoveUnitsError()
+
+            if uh == UnitHandling.ADDITIVE:
+                # All inputs must match
+                base = input_units[0]
+                for u in input_units[1:]:
+                    base = base.add(u)
+                return [base if not base.is_unitless else None]
+
+            if uh == UnitHandling.MULTIPLICATIVE:
+                if any(u.is_unitless for u in input_units):
+                    # Allow if the unitless operand is 1 (identity)
+                    unitless_args = [
+                        a for a, u in zip(args, input_units) if u.is_unitless
+                    ]
+                    if not all(a.decimal == 1 for a in unitless_args):
+                        if not override:
+                            raise UnitlessOperandError()
+                        # On override, proceed — the algebra still works
+                result = input_units[0].multiply(input_units[1])
+                return [result if not result.is_unitless else None]
+
+            if uh == UnitHandling.DIVISIVE:
+                if any(u.is_unitless for u in input_units):
+                    # Allow if the unitless operand is 1 (identity/reciprocal)
+                    unitless_args = [
+                        a for a, u in zip(args, input_units) if u.is_unitless
+                    ]
+                    if not all(a.decimal == 1 for a in unitless_args):
+                        if not override:
+                            raise UnitlessOperandError()
+                        # On override, proceed — the algebra still works
+                result = input_units[0].divide(input_units[1])
+                return [result if not result.is_unitless else None]
+
+            if uh == UnitHandling.POWER:
+                base_unit = input_units[0]
+                exp_unit = input_units[1]
+                if not exp_unit.is_unitless:
+                    raise UnitExponentError(
+                        "Exponent cannot have units. Press again to override.")
+                # Get the actual exponent value from args
+                exp_val = args[1].decimal
+                if base_unit.is_unitless:
+                    return [None]
+                try:
+                    result = base_unit.power(exp_val)
+                except UnitExponentError:
+                    raise UnitExponentError(
+                        "Cannot raise unitful value to a non-integer power. "
+                        "Press again to override.")
+                return [result if not result.is_unitless else None]
+
+            if uh == UnitHandling.ROOT:
+                base_unit = input_units[0]
+                if base_unit.is_unitless:
+                    return [None]
+                result = base_unit.root(self.root_degree)
+                return [result if not result.is_unitless else None]
+
+            if uh == UnitHandling.PRESERVE:
+                # Result keeps the units of the last input
+                # For single-input: return same unit for each result
+                base = input_units[-1]
+                base_or_none = base if not base.is_unitless else None
+                return [base_or_none] * max(num_results, 0)
+
+        except UnitError:
+            if override:
+                return [None] * max(num_results, 0)
+            raise
+
+        return [None] * max(num_results, 0)
 
     def _retrieve_arguments(self, ss):
         """
@@ -375,7 +528,8 @@ class EscOperation(EscCommand):
             description.append("    (none)")
         return description
 
-    def _store_results(self, ss, args, return_values, registry):
+    def _store_results(self, ss, args, return_values, registry,
+                        override=False):
         """
         Return the values computed by our function to the stack
         and record the operation in a history entry.
@@ -391,12 +545,31 @@ class EscOperation(EscCommand):
                     operation=self,
                     problem="returned a value that cannot be converted "
                             "to a Decimal") from e
-            ss.push(coerced_retvals,
-                    self._describe_operation(args, return_values, registry))
+
+            # Compute units for results
+            num_results = len(coerced_retvals)
+            result_units = self._compute_result_units(
+                args, num_results, override=override)
+
+            # Create UnitDecimals for history logging
+            unit_retvals = []
+            from .stack import StackItem
+            stack_items = []
+            for i, dec_val in enumerate(coerced_retvals):
+                unit = result_units[i] if i < len(result_units) else None
+                unit_retvals.append(UnitDecimal(dec_val, unit=unit))
+                stack_items.append(StackItem(decval=dec_val, unit=unit))
+
+            ss.push(stack_items,
+                    self._describe_operation(args, unit_retvals, registry))
         else:
+            # No-output operations still need unit checking
+            if args:
+                self._compute_result_units(args, 0, override=override)
             ss.record_operation(self._describe_operation(args, (), registry))
 
-    def execute(self, access_key, ss, registry):  # pylint: disable=useless-return
+    def execute(self, access_key, ss, registry,  # pylint: disable=useless-return
+                unit_override=False):
         """
         Execute the esc operation wrapped by this instance on the given stack
         state and registry.
@@ -404,6 +577,7 @@ class EscOperation(EscCommand):
         :param access_key: Not used by this subclass.
         :param ss: The current stack state, passed through to a child operation.
         :param registry: The current registry, passed through to a child operation.
+        :param unit_override: If True, suppress unit errors.
 
         :return: A constant ``None``,
                  indicating that we go back to the main menu.
@@ -427,7 +601,8 @@ class EscOperation(EscCommand):
                     "That operation is not defined by the rules of arithmetic.")
             except InsufficientItemsError as e:
                 raise self._insufficient_items_on_stack(e.number_required)
-            self._store_results(ss, args, retvals, registry)
+            self._store_results(ss, args, retvals, registry,
+                                override=unit_override)
         return None  # back to main menu
 
     def simulated_result(self, ss, registry):
@@ -561,7 +736,7 @@ def Menu(key, description, parent, doc, mode_display=None):  # pylint: disable=i
     return menu
 
 
-def Constant(value, key, description, menu):  # pylint: disable=invalid-name
+def Constant(value, key, description, menu, unit=None):  # pylint: disable=invalid-name
     """
     Register a new constant. Constants are just exceedingly boring operations
     that pop no values and push a constant value,
@@ -572,16 +747,26 @@ def Constant(value, key, description, menu):  # pylint: disable=invalid-name
     :param key: The key to press to select the constant from the menu.
     :param description: A brief description to show next to the *key*.
     :param menu: A :class:`Menu <EscMenu>` to place this function on.
+    :param unit: An optional :class:`UnitExpression` for the constant's unit.
     """
+    uh = (lambda _: [unit]) if unit else UnitHandling.NO_INPUT
     @Operation(key=key, menu=menu, push=1, description=description,
-               log_as=f"insert constant {description}")
+               log_as=f"insert constant {description}",
+               unit_handling=uh)
     def func():
         return value
     # You can't define a dynamic docstring from within the function.
     func.__doc__ = f"Add the constant {description} = {value} to the stack."
 
 
-def Operation(key, menu, push, description=None, retain=False, log_as=None, simulate=True):  # pylint: disable=invalid-name
+def Operation(key,
+              menu,
+              push,
+              description=None,
+              retain=False,
+              log_as=None,
+              simulate=True,
+              unit_handling=None):  # pylint: disable=invalid-name
     """
     Decorator to register a function on a menu
     and make it available for use as an esc operation.
@@ -592,7 +777,7 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
     :param menu:
         The :class:`Menu <EscMenu>` to place this operation on.
         The simplest choice is ``main_menu``,
-        which you can import from :mod:``esc.commands``.
+        which you can import from :mod:`esc.commands`.
     :param push:
         The number of items the decorated function
         will return to the stack on success.
@@ -614,12 +799,12 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
         A specification describing what appears
         in the :guilabel:`History` window after executing this function.
         It may be ``None`` (the default), ``UNOP`` or ``BINOP``,
-        a .format() string, or a callable.
+        a ``.format()``-style string, or a callable.
 
         * If it is ``None``, the *description* is used.
 
-        * If it is the module constant ``esc.commands.UNOP``
-          or ``esc.commands.BINOP``,
+        * If it is the module constant :attr:`esc.commands.UNOP`
+          or :attr:`esc.commands.BINOP`,
           the log string is a default suitable
           for many unary or binary operations:
           for ``UNOP`` it is
@@ -651,6 +836,7 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
           :registry: the current :class:`Registry <esc.registers.Registry>` instance
 
           The function should return an appropriate string.
+
     :param simulate:
         If ``True`` (the default), function execution will be simulated
         when the user looks at the help page for the function,
@@ -659,6 +845,19 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
         You should disable this option
         if your function is extremely slow or has side effects
         (e.g., changing the system clipboard, editing registers).
+
+    :param unit_handling:
+
+        A specification describing how this operation handles :ref:`units <Units>`.
+        It may be ``None`` (don't handle units),
+        a default :class:`UnitHandling <esc.units.UnitHandling>` enum value,
+        or a callable that takes an array of
+        :class:`UnitExpression <esc.units.UnitExpression>` s corresponding to the inputs,
+        and returns an array of
+        :class:`UnitExpression <esc.units.UnitExpression>` s corresponding to the outputs.
+
+        See :ref:`Unit Handling <Unit Handling>` for details
+        on making your operation unit-aware.
 
     In addition to placing the function on the menu,
     the function is wrapped with the following magic.
@@ -682,8 +881,11 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
          If the parameter name ends with ``_str``,
          it instead receives a string representation
          (this is exactly what shows up in the calculator window,
+         except for any unit tag,
          so it's helpful when doing something display-oriented
          like copying to the clipboard).
+         A ``_str_with_units`` suffix behaves identically
+         except that it also includes the unit tag.
          If the parameter name ends with ``_stackitem``,
          it receives the complete :class:`StackItem <esc.stack.StackItem>`,
          containing both of those representations and a few other things besides.
@@ -691,7 +893,7 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
        * A varargs parameter, like ``*args``,
          receives the entire contents of the stack as a tuple.
          This is invalid with any other parameters except ``registry``.
-         The ``_str`` and ``_stackitem`` suffixes still work.
+         The ``_str``, ``_str_with_units``, and ``_stackitem`` suffixes still work.
          Again, it can have any name; ``*stack`` is conventional for esc operations.
 
        * The special parameter name ``registry``
@@ -721,6 +923,7 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
        See :class:`TestCase <esc.functest.TestCase>`
        for further information on this testing feature.
     """
+
     def function_decorator(func):
         sig = signature(func)
         parms = sig.parameters.values()
@@ -732,6 +935,8 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
         def _bind_stack_parm(stack_item, parm):
             if parm.name.endswith('_stackitem'):
                 return stack_item
+            if parm.name.endswith('_str_with_units'):
+                return stack_item.string_with_units
             if parm.name.endswith('_str'):
                 return stack_item.string
             else:
@@ -743,13 +948,15 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
             keyword_binding = {}
 
             if bind_all:
-                positional_binding.extend(_bind_stack_parm(stack_item, bind_all[0])
-                                          for stack_item in stack)
+                positional_binding.extend(
+                    _bind_stack_parm(stack_item, bind_all[0]) for stack_item in stack)
             else:
                 stack_slice = stack[-(len(stack_parms)):]
-                keyword_binding.update({parm.name: _bind_stack_parm(stack_item, parm)
-                                        for stack_item, parm
-                                        in zip(stack_slice, stack_parms)})
+                keyword_binding.update({
+                    parm.name: _bind_stack_parm(stack_item, parm)
+                    for stack_item,
+                    parm in zip(stack_slice, stack_parms)
+                })
             if 'registry' in (i.name for i in parms):
                 keyword_binding['registry'] = registry
             if 'testing' in (i.name for i in parms):
@@ -760,13 +967,21 @@ def Operation(key, menu, push, description=None, retain=False, log_as=None, simu
         def ensure(before, after=None, raises=None, close=False):
             tc = TestCase(before, after, raises, close)
             wrapper.tests.append(tc)
+
         wrapper.ensure = ensure
         wrapper.tests = []
 
         # Create a new EscOperation instance and place it on the menu.
-        op = EscOperation(key=key, func=wrapper, pop=pop, push=push,
-                          description=description, menu=menu, log_as=log_as,
-                          retain=retain, simulate=simulate)
+        op = EscOperation(key=key,
+                          func=wrapper,
+                          pop=pop,
+                          push=push,
+                          description=description,
+                          menu=menu,
+                          log_as=log_as,
+                          retain=retain,
+                          simulate=simulate,
+                          unit_handling=unit_handling)
         menu.register_child(op)
 
         # Return the wrapped function to functions.py to complete

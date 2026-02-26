@@ -12,11 +12,13 @@ from operator import add as add_operator
 
 from esc.commands import Operation, Menu, main_menu, UNOP
 from esc.oops import FunctionExecutionError, InsufficientItemsError
+from esc.units import UnitHandling
 
 
 @Operation('S', menu=main_menu, push=1,
            description='sum entire stack',
-           log_as=lambda retval: f"sum entire stack = {retval[0]}")
+           log_as=lambda retval: f"sum entire stack = {retval[0]}",
+           unit_handling=UnitHandling.ADDITIVE)
 def sum_entire_stack(*stack):
     "Sum every item on the stack into one value."
     if len(stack) < 2:
@@ -31,7 +33,8 @@ sum_entire_stack.ensure(before=list(range(10)), after=[reduce(add_operator, rang
 
 @Operation('T', menu=main_menu, push=1,
            description='add MN sales tax',
-           log_as=lambda args, retval: f"+7.375% tax on {args[0]} = {retval[0]}")
+           log_as=lambda args, retval: f"+7.375% tax on {args[0]} = {retval[0]}",
+           unit_handling=UnitHandling.PRESERVE)
 def add_mn_sales_tax(bos):
     "Add sales tax to bos, using the rate for the Minnesota locality where I live."
     tax_rate = Decimal(".07375")
@@ -44,7 +47,8 @@ add_mn_sales_tax.ensure(before=[Decimal("10.00")], after=[Decimal("10.7375")])
 
 @Operation('I', menu=main_menu, push=1,
            description='increment the value on the bottom',
-           log_as=UNOP)
+           log_as=UNOP,
+           unit_handling=UnitHandling.PRESERVE)
 def increment(bos):
     "Add 1 to bos."
     return bos + 1
@@ -54,7 +58,8 @@ increment.ensure(before=[5, 6], after=[5, 7])
 
 @Operation('D', menu=main_menu, push=1,
            description='decrement bos',
-           log_as=UNOP)
+           log_as=UNOP,
+           unit_handling=UnitHandling.PRESERVE)
 def decrement(bos):
     "Subtract 1 from bos."
     return bos - 1
@@ -64,7 +69,8 @@ decrement.ensure(before=[5, 6], after=[5, 5])
 
 @Operation('R', menu=main_menu, push=1,
            description='Sum all registers',
-           log_as=lambda retval: f"sum all registers = {retval[0]}")
+           log_as=lambda retval: f"sum all registers = {retval[0]}",
+           unit_handling=UnitHandling.NO_INPUT)
 def sum_reg(registry):
     "Sum the values of all registers. Example function."
     values = registry.values()

@@ -86,6 +86,28 @@ class Redo(EscBuiltin):
                 "undid something).",)
 
 
+class AddUnitTag(EscBuiltin):
+    """
+    Add a unit tag to bos. Type the unit name and press Enter to confirm,
+    or Esc to cancel. Operators * and / combine units (e.g., m / s).
+    Press \\ on bos that already has a unit to replace it, or press Enter
+    on an empty buffer to clear the unit.
+    """
+    key = "\\"
+    description = "add unit tag"
+
+    def simulated_result(self, ss, registry):
+        if ss.bos is not None:
+            current = ss.bos.unit
+            if current is not None and not current.is_unitless:
+                return (f"You would replace the unit '{current.display()}'",
+                        f"on {ss.bos.string} with a new unit tag.")
+            return (f"You would add a unit tag to {ss.bos.string}.",)
+        else:
+            return ("An error would occur. (You must have at least",
+                    "one item on the stack.)")
+
+
 class Quit(EscBuiltin):
     """
     Quit esc. If you're in a menu, this option changes to "cancel" and gets

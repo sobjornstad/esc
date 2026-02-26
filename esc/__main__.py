@@ -13,17 +13,19 @@ import sys
 
 from .commands import main_menu
 from .consts import (UNDO_CHARACTER, REDO_CHARACTER, STORE_REG_CHARACTER,
-                     RETRIEVE_REG_CHARACTER, DELETE_REG_CHARACTER, PRECISION)
+                     RETRIEVE_REG_CHARACTER, DELETE_REG_CHARACTER, PRECISION,
+                     UNIT_ENTRY_CHARACTER)
 from . import display
 from .display import screen, fetch_input
 from . import function_loader
 from .helpme import get_help
 from . import history
 from .oops import (FunctionExecutionError, InvalidNameError, NotInMenuError,
-                   RollbackTransaction)
+                   RollbackTransaction, UnitError)
 from . import registers
 from . import stack
 from .status import status
+from .units import UnitExpression
 from . import util
 
 
@@ -146,6 +148,128 @@ def delete_register(ss, registry):
         status.ready()
 
 
+# Override tracking for unit errors
+_last_unit_error = None  # (menu_id, key, error_type) or None
+
+
+def _enter_unit_mode(ss, registry, menu):
+    """
+    Enter unit annotation mode. Collects characters into a buffer,
+    parses as a UnitExpression on finish, and attaches to bos.
+    """
+    if ss.is_empty:
+        status.error("No item on stack to tag with a unit.")
+        return
+
+    # If editing a number, finish entry first
+    if ss.editing_last_item:
+        try:
+            ss.enter_number()
+        except ValueError as e:
+            status.error(str(e))
+            return
+        screen().refresh_stack(ss)
+
+    status.entering_unit()
+    screen().refresh_status()
+
+    # Activate wider stack column early so there's room to type
+    screen().activate_units()
+    # Refresh all windows after possible layout change
+    screen().refresh_status()
+    screen().refresh_stack(ss)
+    screen().update_history(ss)
+    active_menu = menu if menu is not None else main_menu
+    screen().display_menu(active_menu)
+    screen().update_registers(registry)
+
+    # Lower escape delay so Esc cancels promptly (default ~1000ms)
+    old_escdelay = curses.get_escdelay()
+    curses.set_escdelay(25)
+
+    cancelled = False
+    buf = ""
+    target_item = ss.bos
+    original_unit = target_item.unit
+
+    # Signal unit-entry mode to the stack window (None = inactive, "" = active)
+    screen().stackw.partial_unit = buf
+    screen().refresh_stack(ss)
+
+    while True:
+        screen().place_cursor(ss)
+        c = fetch_input(False)  # read from stack window to keep cursor there
+
+        if c == curses.KEY_RESIZE:
+            _handle_resize(ss, registry, menu)
+            if not screen().too_small:
+                status.entering_unit()
+                screen().refresh_status()
+                screen().stackw.partial_unit = buf
+                screen().refresh_stack(ss)
+            continue
+
+        if c == 27:  # Escape — cancel, preserve original unit
+            cancelled = True
+            break
+
+        try:
+            char = chr(c)
+        except (ValueError, OverflowError):
+            continue
+
+        if char in ('\n', ' '):
+            # Finish unit entry
+            break
+        elif c in (curses.KEY_BACKSPACE, 127) or curses.ascii.unctrl(c) == '^H':
+            if buf:
+                # Remove the whole " * " or " / " if we auto-inserted it
+                if buf.endswith(' * ') or buf.endswith(' / '):
+                    buf = buf[:-3]
+                else:
+                    buf = buf[:-1]
+            else:
+                cancelled = True
+                break  # empty buffer, cancel
+        elif char == '*':
+            buf += " * "
+        elif char == '/':
+            buf += " / "
+        elif char.isprintable():
+            buf += char
+        else:
+            continue  # ignore other chars
+
+        # Show progress inline in the stack
+        screen().stackw.partial_unit = buf
+        screen().refresh_stack(ss)
+
+    # Restore escape delay and clear partial unit display
+    curses.set_escdelay(old_escdelay)
+    screen().stackw.partial_unit = None
+
+    if cancelled:
+        # Restore the original unit (no change)
+        pass
+    else:
+        # Process the buffer
+        buf = buf.strip()
+        if not buf:
+            # Empty buffer = clear unit
+            target_item.unit = None
+        else:
+            try:
+                unit = UnitExpression.parse(buf)
+            except ValueError as e:
+                status.error(f"Invalid unit: {e}")
+                return
+            target_item.unit = unit
+
+    screen().refresh_stack(ss)
+    screen().update_registers(registry)
+    status.ready()
+
+
 def try_special(c, ss, registry, menu):
     """
     Handle special values that aren't digits to be entered or
@@ -176,6 +300,8 @@ def try_special(c, ss, registry, menu):
         retrieve_register(ss, registry)
     elif chr(c) == DELETE_REG_CHARACTER:
         delete_register(ss, registry)
+    elif chr(c) == UNIT_ENTRY_CHARACTER:
+        _enter_unit_mode(ss, registry, menu)
     elif c == curses.KEY_F1:
         with status.save_state():
             help_on = _get_help_char(ss, registry, menu)
@@ -209,6 +335,7 @@ def user_loop(ss, registry):
     """
     Main loop to retrieve user input and perform calculator operations.
     """
+    global _last_unit_error
     menu = None
     while True:
         # If the terminal is too small, wait for a resize event.
@@ -238,11 +365,13 @@ def user_loop(ss, registry):
             # Are we entering a number?
             r = try_add_to_number(c, ss)
             if r:
+                _last_unit_error = None
                 continue
 
             # Or a special value like backspace or undo?
             r = try_special(c, ss, registry, menu)
             if r:
+                _last_unit_error = None
                 continue
         else:
             status.in_menu()
@@ -253,9 +382,29 @@ def user_loop(ss, registry):
                 _handle_resize(ss, registry, menu)
                 continue
 
+        # Check for unit error override: same menu, same key, same error type
+        unit_override = False
+        try:
+            key_char = chr(c)
+        except (ValueError, OverflowError):
+            key_char = None
+
+        if (_last_unit_error is not None
+                and key_char is not None
+                and _last_unit_error == (id(menu), key_char,
+                                         _last_unit_error[2])):
+            unit_override = True
+
+        _last_unit_error = None
+
         # Try to interpret the input as a function.
         try:
-            menu = menu.execute(chr(c), ss, registry)
+            menu = menu.execute(chr(c), ss, registry,
+                                unit_override=unit_override)
+        except UnitError as e:
+            _last_unit_error = (id(menu), chr(c), type(e))
+            status.error(str(e))
+            screen().refresh_status()
         except (NotInMenuError, FunctionExecutionError) as e:
             status.error(str(e))
             screen().refresh_status()

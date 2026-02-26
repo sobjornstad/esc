@@ -51,10 +51,12 @@ Let's generalize the example of a proportion calculation above,
 where *d* is the number we're solving for:
 
 .. math::
+    :nowrap:
+
     \begin{align}
-    \frac{a}{b} &= \frac{c}{d}\\
-    bc &= ad\\
-    d &= \frac{bc}{a}\\
+        \frac{a}{b} &= \frac{c}{d}\\
+        bc &= ad\\
+        d &= \frac{bc}{a}\\
     \end{align}
 
 We'll go ahead and use these letters for our variable names;

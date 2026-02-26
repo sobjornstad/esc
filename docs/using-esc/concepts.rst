@@ -51,6 +51,9 @@ Enter negative signs with :kbd:`_` (underscore)
 and scientific notation with :kbd:`e`
 (e.g., ``3.66e11`` is 3.66 × 10^12 or 366,000,000,000).
 
+You can add a unit tag to a number on the stack by pressing :kbd:`\\`.
+For more information, see :ref:`Units`.
+
 .. tip::
     You need only press :kbd:`Enter` or :kbd:`Space`
     between consecutively typed numbers.
@@ -59,7 +62,6 @@ and scientific notation with :kbd:`e`
     you can simply press the key for the operator.
     For instance, typing ``2 2+``
     is equivalent to typing ``2 2 +``.
-
 
 
 Commands
@@ -210,9 +212,8 @@ is so useful it's amazing how few calculators offer it.
 Registers
 =========
 
-In addition to placing numbers on the stack,
-sometimes you might want to keep track of numbers
-in a slightly more permanent way.
+Sometimes you want to do calculations with the same number multiple times,
+or hold onto the number for reference.
 In this case, you can store the number to a register.
 
 

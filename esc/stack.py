@@ -37,7 +37,7 @@ class StackItem:
     The StackState is in charge of calling this method if needed
     before trying to do any calculations with the number.
     """
-    def __init__(self, firstchar=None, decval=None):
+    def __init__(self, firstchar=None, decval=None, unit=None):
         """
         We can create an item on the stack either by the user entering it (in
         which case we have methods for gradually building up a string repr of
@@ -53,6 +53,9 @@ class StackItem:
         :param decval:
             If specified, make this Decimal the value of the StackItem
             and create a string representation from it.
+        :param unit:
+            An optional :class:`UnitExpression <esc.units.UnitExpression>`
+            to tag this item with, or ``None`` for unitless.
         """
         #: Whether the number has been fully entered. If not entered,
         #: many methods will not work as we don't have a Decimal representation yet.
@@ -62,6 +65,8 @@ class StackItem:
         self.decimal = None
         #: String representation.
         self.string = None
+        #: Optional unit annotation.
+        self.unit = unit
 
         if firstchar is not None:
             self._init_partial(firstchar)
@@ -71,9 +76,17 @@ class StackItem:
             raise AssertionError("No valid argument to constructor of StackItem!")
 
     def __repr__(self):
-        return f"<StackItem: Decimal({self.decimal}) String({self.string})>"
+        unit_part = f" Unit({self.unit})" if self.unit else ""
+        return f"<StackItem: Decimal({self.decimal}) String({self.string}){unit_part}>"
 
     def __str__(self):
+        return self.string_with_units
+
+    @property
+    def string_with_units(self):
+        "Number + unit: e.g. '42 miles'. Returns just the number if no unit."
+        if self.unit is not None and not self.unit.is_unitless:
+            return f"{self.string} {self.unit.display()}"
         return self.string
 
     def __eq__(self, other):

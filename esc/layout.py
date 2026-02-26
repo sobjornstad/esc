@@ -37,15 +37,20 @@ class LayoutSpec:
     registers: WindowSpec | None  # None when terminal is too short
 
 
-def compute_layout(term_height: int, term_width: int) -> LayoutSpec:
+UNIT_STACK_COL_WIDTH = STACK_COL_WIDTH + 15  # 39 — wider for unit display
+
+
+def compute_layout(term_height: int, term_width: int,
+                   units_active: bool = False) -> LayoutSpec:
     """
     Compute the layout for all esc windows given the terminal size.
 
     The layout follows these rules:
 
     * **Status bar** — 1 row, full width, at the top.
-    * **Stack** — fixed width (24), gets all remaining height after
-      registers.  Minimum 8 content lines (11 rows with border/heading).
+    * **Stack** — fixed width (24, or 39 with units active), gets all
+      remaining height after registers.  Minimum 8 content lines
+      (11 rows with border/heading).
     * **Commands** — fixed width (24), anchored to the right edge, full
       remaining height.
     * **History** — fills the space between Stack and Commands columns,
@@ -78,9 +83,10 @@ def compute_layout(term_height: int, term_width: int) -> LayoutSpec:
     # Total available rows below the status bar.
     main_rows = term_height - 1  # 1 row for status
 
-    # Column widths.
-    history_width = term_width - STACK_COL_WIDTH - COMMANDS_COL_WIDTH
-    left_width = STACK_COL_WIDTH + history_width  # stack + history span
+    # Column widths — wider stack when units are active.
+    stack_col_width = UNIT_STACK_COL_WIDTH if units_active else STACK_COL_WIDTH
+    history_width = term_width - stack_col_width - COMMANDS_COL_WIDTH
+    left_width = stack_col_width + history_width  # stack + history span
 
     # Stack/history get all remaining rows after registers.
     # Registers prefer 5 rows (3 content + 2 border) but compress when short.
@@ -98,8 +104,8 @@ def compute_layout(term_height: int, term_width: int) -> LayoutSpec:
 
     status_spec = WindowSpec(x=0, y=0, width=term_width, height=1)
     stack_spec = WindowSpec(x=0, y=1,
-                            width=STACK_COL_WIDTH, height=stack_height)
-    history_spec = WindowSpec(x=STACK_COL_WIDTH, y=1,
+                            width=stack_col_width, height=stack_height)
+    history_spec = WindowSpec(x=stack_col_width, y=1,
                               width=history_width, height=stack_height)
     commands_spec = WindowSpec(x=left_width, y=1,
                                width=COMMANDS_COL_WIDTH, height=main_rows)

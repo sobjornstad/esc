@@ -16,4 +16,5 @@ you want the :ref:`Developer Manual`.
     notation
     concepts
     exercises
+    units
     plugins
