@@ -84,11 +84,19 @@ def _get_register_char():
     return chr(fetch_input(True))
 
 
-def _get_help_char():
-    "Retrieve a character representing a register."
+def _get_help_char(ss, registry, menu):
+    "Retrieve a character representing a help topic."
     status.expecting_help()
     screen().refresh_status()
-    return chr(fetch_input(True))
+    while True:
+        c = fetch_input(True)
+        if c == curses.KEY_RESIZE:
+            _handle_resize(ss, registry, menu)
+            if not screen().too_small:
+                status.expecting_help()
+                screen().refresh_status()
+            continue
+        return chr(c)
 
 
 def store_register(ss, registry):
@@ -175,7 +183,7 @@ def try_special(c, ss, registry, menu):
         delete_register(ss, registry)
     elif c == curses.KEY_F1:
         with status.save_state():
-            help_on = _get_help_char()
+            help_on = _get_help_char(ss, registry, menu)
             get_help(help_on, menu, ss, registry)
         screen().refresh_all()
     else:
