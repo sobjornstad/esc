@@ -25,10 +25,9 @@ from . import consts
 from .functest import TestCase
 from . import modes
 from .oops import (FunctionExecutionError, InsufficientItemsError, NotInMenuError,
-                   FunctionProgrammingError, ProgrammingError,
-                   UnitError, IncommensurableUnitsError, UnitlessOperandError,
-                   OperationWillRemoveUnitsError, UnitRootError, UnitExponentError)
-from .units import UnitExpression, UnitHandling, UnitDecimal
+                   FunctionProgrammingError, ProgrammingError, UnitError)
+from .units import (UnitExpression, UnitDecimal,
+                    unspecified_unit_handling, no_input_unit_handling)
 from . import util
 
 BINOP = 'binop'
@@ -252,14 +251,10 @@ class EscOperation(EscCommand):
         #: help purposes. Turn off if the function is slow or has side effects.
         self.simulate_allowed = simulate
 
-        #: How this operation handles units. May be a UnitHandling enum value,
-        #: a callable, or None (defaults to UNSPECIFIED behavior).
-        self.root_degree = None
-        if isinstance(unit_handling, tuple) and unit_handling[0] is UnitHandling.ROOT:
-            self.unit_handling = UnitHandling.ROOT
-            self.root_degree = unit_handling[1]
-        elif unit_handling is None:
-            self.unit_handling = UnitHandling.UNSPECIFIED
+        #: How this operation handles units. May be a UnitHandler instance
+        #: or a callable (defaults to UNSPECIFIED behavior).
+        if unit_handling is None:
+            self.unit_handling = unspecified_unit_handling()
         else:
             self.unit_handling = unit_handling
 
@@ -300,21 +295,15 @@ class EscOperation(EscCommand):
             output = f"    Output: {self.push} {results} added to the stack"
 
         # Unit handling description
-        if isinstance(self.unit_handling, UnitHandling):
-            uh_names = {
-                UnitHandling.ADDITIVE: "additive (units must match)",
-                UnitHandling.MULTIPLICATIVE: "multiplicative (units combine)",
-                UnitHandling.DIVISIVE: "divisive (units divide)",
-                UnitHandling.POWER: "power (base units scaled by exponent)",
-                UnitHandling.ROOT: f"root (unit exponents / {self.root_degree})",
-                UnitHandling.PRESERVE: "preserves units",
-                UnitHandling.NO_OUTPUT: "no output units",
-                UnitHandling.NO_INPUT: "no input units",
-                UnitHandling.UNSPECIFIED: "unspecified (will strip units)",
-            }
-            units = f"    Units: {uh_names.get(self.unit_handling, '?')}"
-        else:
+        if (hasattr(self.unit_handling, 'description')
+                and self.unit_handling.description):
+            units = f"    Units: {self.unit_handling.description}"
+        elif self.unit_handling.__doc__:
+            units = f"    Units: {self.unit_handling.__doc__.strip()}"
+        elif callable(self.unit_handling):
             units = "    Units: custom"
+        else:
+            units = "    Units: unknown"
 
         return (type_, input_, output, units)
 
@@ -375,107 +364,24 @@ class EscOperation(EscCommand):
             (a.unit if a.unit is not None else UnitExpression())
             for a in args
         ]
-        any_has_units = any(not u.is_unitless for u in input_units)
-
-        if callable(self.unit_handling) and not isinstance(
-                self.unit_handling, UnitHandling):
-            # Custom callable: call directly with input units
-            try:
-                result_units = self.unit_handling(input_units)
-            except UnitError:
-                if override:
-                    return [None] * max(num_results, 0)
-                raise
-            # Convert empty UnitExpression back to None
-            return [
-                (u if not u.is_unitless else None)
-                for u in result_units
-            ]
-
-        uh = self.unit_handling
-
-        if uh == UnitHandling.NO_OUTPUT or uh == UnitHandling.NO_INPUT:
+        if not any(not u.is_unitless for u in input_units):
             return [None] * max(num_results, 0)
-
-        if not any_has_units:
-            return [None] * max(num_results, 0)
-
-        # From here on, at least one input has units.
         try:
-            if uh == UnitHandling.UNSPECIFIED:
-                raise OperationWillRemoveUnitsError()
-
-            if uh == UnitHandling.ADDITIVE:
-                # All inputs must match
-                base = input_units[0]
-                for u in input_units[1:]:
-                    base = base.add(u)
-                return [base if not base.is_unitless else None]
-
-            if uh == UnitHandling.MULTIPLICATIVE:
-                if any(u.is_unitless for u in input_units):
-                    # Allow if the unitless operand is 1 (identity)
-                    unitless_args = [
-                        a for a, u in zip(args, input_units) if u.is_unitless
-                    ]
-                    if not all(a.decimal == 1 for a in unitless_args):
-                        if not override:
-                            raise UnitlessOperandError()
-                        # On override, proceed — the algebra still works
-                result = input_units[0].multiply(input_units[1])
-                return [result if not result.is_unitless else None]
-
-            if uh == UnitHandling.DIVISIVE:
-                if any(u.is_unitless for u in input_units):
-                    # Allow if the unitless operand is 1 (identity/reciprocal)
-                    unitless_args = [
-                        a for a, u in zip(args, input_units) if u.is_unitless
-                    ]
-                    if not all(a.decimal == 1 for a in unitless_args):
-                        if not override:
-                            raise UnitlessOperandError()
-                        # On override, proceed — the algebra still works
-                result = input_units[0].divide(input_units[1])
-                return [result if not result.is_unitless else None]
-
-            if uh == UnitHandling.POWER:
-                base_unit = input_units[0]
-                exp_unit = input_units[1]
-                if not exp_unit.is_unitless:
-                    raise UnitExponentError(
-                        "Exponent cannot have units. Press again to override.")
-                # Get the actual exponent value from args
-                exp_val = args[1].decimal
-                if base_unit.is_unitless:
-                    return [None]
-                try:
-                    result = base_unit.power(exp_val)
-                except UnitExponentError:
-                    raise UnitExponentError(
-                        "Cannot raise unitful value to a non-integer power. "
-                        "Press again to override.")
-                return [result if not result.is_unitless else None]
-
-            if uh == UnitHandling.ROOT:
-                base_unit = input_units[0]
-                if base_unit.is_unitless:
-                    return [None]
-                result = base_unit.root(self.root_degree)
-                return [result if not result.is_unitless else None]
-
-            if uh == UnitHandling.PRESERVE:
-                # Result keeps the units of the last input
-                # For single-input: return same unit for each result
-                base = input_units[-1]
-                base_or_none = base if not base.is_unitless else None
-                return [base_or_none] * max(num_results, 0)
-
+            result = util.magic_call(self.unit_handling, {
+                'input_units': input_units,
+                'input_stackitems': args,
+                'num_results': num_results,
+                'override': override,
+            })
         except UnitError:
             if override:
                 return [None] * max(num_results, 0)
-            raise
-
-        return [None] * max(num_results, 0)
+            else:
+                raise
+        return [
+            (u if u is not None and not u.is_unitless else None)
+            for u in result
+        ]
 
     def _retrieve_arguments(self, ss):
         """
@@ -749,7 +655,7 @@ def Constant(value, key, description, menu, unit=None):  # pylint: disable=inval
     :param menu: A :class:`Menu <EscMenu>` to place this function on.
     :param unit: An optional :class:`UnitExpression` for the constant's unit.
     """
-    uh = (lambda _: [unit]) if unit else UnitHandling.NO_INPUT
+    uh = (lambda input_units: [unit]) if unit else no_input_unit_handling()
     @Operation(key=key, menu=menu, push=1, description=description,
                log_as=f"insert constant {description}",
                unit_handling=uh)
@@ -849,12 +755,17 @@ def Operation(key,
     :param unit_handling:
 
         A specification describing how this operation handles :ref:`units <Units>`.
-        It may be ``None`` (don't handle units),
-        a default :class:`UnitHandling <esc.units.UnitHandling>` enum value,
-        or a callable that takes an array of
-        :class:`UnitExpression <esc.units.UnitExpression>` s corresponding to the inputs,
-        and returns an array of
-        :class:`UnitExpression <esc.units.UnitExpression>` s corresponding to the outputs.
+        It may be ``None`` (defaults to unspecified behavior),
+        a built-in :class:`UnitHandler <esc.units.UnitHandler>` instance
+        (e.g., ``additive_unit_handling``),
+        or a callable.
+
+        Callables are dispatched through :func:`magic_call <esc.util.magic_call>`
+        with the available kwargs ``input_units``, ``input_stackitems``,
+        and ``num_results``; declare only the parameters you need.
+        The callable should return a list of
+        :class:`UnitExpression <esc.units.UnitExpression>` instances,
+        one per output.
 
         See :ref:`Unit Handling <Unit Handling>` for details
         on making your operation unit-aware.

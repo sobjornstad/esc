@@ -5,7 +5,12 @@ test_units.py - tests for the units module
 import pytest
 from decimal import Decimal
 
-from esc.units import UnitExpression, UnitHandling, UnitDecimal
+from esc.units import (UnitExpression, UnitHandler, UnitDecimal,
+                       additive_unit_handling, multiplicative_unit_handling,
+                       divisive_unit_handling, power_unit_handling,
+                       root_unit_handling, preserve_unit_handling,
+                       no_output_unit_handling, no_input_unit_handling,
+                       unspecified_unit_handling)
 from esc.oops import (IncommensurableUnitsError, UnitRootError,
                       UnitExponentError)
 
@@ -228,16 +233,42 @@ class TestUnitDecimal:
         assert "UnitDecimal" in repr(ud)
 
 
-# === UnitHandling enum ===
+# === UnitHandler classes ===
 
 class TestUnitHandling:
-    def test_enum_values_exist(self):
-        assert UnitHandling.ADDITIVE
-        assert UnitHandling.MULTIPLICATIVE
-        assert UnitHandling.DIVISIVE
-        assert UnitHandling.POWER
-        assert UnitHandling.ROOT
-        assert UnitHandling.PRESERVE
-        assert UnitHandling.NO_OUTPUT
-        assert UnitHandling.NO_INPUT
-        assert UnitHandling.UNSPECIFIED
+    ALL_HANDLER_CLASSES = [
+        additive_unit_handling,
+        multiplicative_unit_handling,
+        divisive_unit_handling,
+        power_unit_handling,
+        preserve_unit_handling,
+        no_output_unit_handling,
+        no_input_unit_handling,
+        unspecified_unit_handling,
+    ]
+
+    def test_all_handler_instances_are_callable(self):
+        for cls in self.ALL_HANDLER_CLASSES:
+            assert callable(cls())
+
+    def test_all_handler_instances_are_unit_handler(self):
+        for cls in self.ALL_HANDLER_CLASSES:
+            assert isinstance(cls(), UnitHandler)
+
+    def test_all_handlers_have_description(self):
+        for cls in self.ALL_HANDLER_CLASSES:
+            # root_unit_handling sets description in __init__
+            if cls is root_unit_handling:
+                assert root_unit_handling(2).description
+            else:
+                assert cls.description, f"{cls!r} has no description"
+
+    def test_root_unit_handling(self):
+        handler = root_unit_handling(2)
+        assert isinstance(handler, UnitHandler)
+        assert callable(handler)
+        assert "2" in handler.description
+
+    def test_root_unit_handling_different_degrees(self):
+        h3 = root_unit_handling(3)
+        assert "3" in h3.description

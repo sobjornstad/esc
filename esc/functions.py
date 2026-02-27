@@ -14,7 +14,11 @@ from .consts import CONSTANT_MENU_CHARACTER
 from .oops import InsufficientItemsError
 from .status import status
 from .oops import IncommensurableUnitsError
-from .units import UnitDecimal as UD, UnitExpression as U, UnitHandling
+from .units import (UnitDecimal as UD, UnitExpression as U,
+                     additive_unit_handling, multiplicative_unit_handling,
+                     divisive_unit_handling, power_unit_handling,
+                     root_unit_handling, preserve_unit_handling,
+                     no_output_unit_handling)
 
 
 ####################
@@ -22,7 +26,7 @@ from .units import UnitDecimal as UD, UnitExpression as U, UnitHandling
 ####################
 
 @Operation('+', menu=main_menu, push=1, log_as=BINOP,
-           unit_handling=UnitHandling.ADDITIVE)
+           unit_handling=additive_unit_handling())
 def add(sos, bos):
     "Add sos and bos."
     return sos + bos
@@ -41,7 +45,7 @@ add.ensure(
 
 
 @Operation('-', menu=main_menu, push=1, log_as=BINOP,
-           unit_handling=UnitHandling.ADDITIVE)
+           unit_handling=additive_unit_handling())
 def subtract(sos, bos):
     "Subtract bos from sos."
     return sos - bos
@@ -50,7 +54,7 @@ subtract.ensure(before=[3, 2], after=[1])
 
 
 @Operation('*', menu=main_menu, push=1, log_as=BINOP,
-           unit_handling=UnitHandling.MULTIPLICATIVE)
+           unit_handling=multiplicative_unit_handling())
 def multiply(sos, bos):
     "Multiply sos and bos."
     return sos * bos
@@ -67,7 +71,7 @@ multiply.ensure(
 
 
 @Operation('/', menu=main_menu, push=1, log_as=BINOP,
-           unit_handling=UnitHandling.DIVISIVE)
+           unit_handling=divisive_unit_handling())
 def divide(sos, bos):
     "Divide sos by bos."
     return sos / bos
@@ -86,7 +90,7 @@ divide.ensure(
 
 
 @Operation('^', menu=main_menu, push=1, log_as=BINOP,
-           unit_handling=UnitHandling.POWER)
+           unit_handling=power_unit_handling())
 def exponentiate(sos, bos):
     "Take sos to the power of bos."
     return sos**bos
@@ -99,7 +103,7 @@ exponentiate.ensure(before=[6, -2], after=[Decimal(1)/36])
 
 
 @Operation('%', menu=main_menu, push=1, log_as=BINOP,
-           unit_handling=UnitHandling.ADDITIVE)
+           unit_handling=additive_unit_handling())
 def modulus(sos, bos):
     "Take the remainder of sos divided by bos (a.k.a., sos mod bos)."
     return sos % bos
@@ -111,7 +115,7 @@ modulus.ensure(before=[6, 0], raises=InvalidOperation)  # undefined
 
 
 @Operation('s', menu=main_menu, push=1, log_as="sqrt {0} = {1}",
-           unit_handling=(UnitHandling.ROOT, 2))
+           unit_handling=root_unit_handling(2))
 def sqrt(bos):
     "Take the square root of bos."
     return math.sqrt(bos)
@@ -128,7 +132,7 @@ sqrt.ensure(before=[-2], raises=ValueError)
 @Operation('d', menu=main_menu, push=2,
            description='duplicate bos',
            log_as="duplicate {0}",
-           unit_handling=UnitHandling.PRESERVE)
+           unit_handling=preserve_unit_handling())
 def duplicate(bos):
     """
     Duplicate bos into a new stack entry. Useful if you want to hang onto the
@@ -154,7 +158,7 @@ exchange.ensure(before=[1, 2, 3], after=[1, 3, 2])
 
 
 @Operation('p', menu=main_menu, push=0, description='pop off bos', log_as="pop bos {0}",
-           unit_handling=UnitHandling.NO_OUTPUT)
+           unit_handling=no_output_unit_handling())
 def pop(_):
     "Remove and discard the bottom item from the stack."
     return None
@@ -181,7 +185,7 @@ roll.ensure(before=[], raises=InsufficientItemsError)
 
 
 @Operation('c', menu=main_menu, push=0, description='clear stack',
-           unit_handling=UnitHandling.NO_OUTPUT)
+           unit_handling=no_output_unit_handling())
 def clear(*stack):  #pylint: disable=useless-return
     """
     Clear all items from the stack, giving you a clean slate but maintaining
@@ -218,7 +222,7 @@ Constant(math.e, 'e', description='e', menu=constants_menu)
            retain=True,
            log_as="yank {0} to clipboard",
            simulate=False,
-           unit_handling=UnitHandling.NO_OUTPUT)
+           unit_handling=no_output_unit_handling())
 def yank_bos(bos_str_with_units, testing):
     """
     Copy the value of bos to your system clipboard.
@@ -235,13 +239,18 @@ def yank_bos(bos_str_with_units, testing):
 yank_bos.ensure(before=[3, 5], after=[3, 5])
 yank_bos.ensure(before=[], raises=InsufficientItemsError)
 
-from .oops import UnitlessOperandError
-def distance_velocity_unit_handler(units):
-    if (not all(u.is_unitless for u in units)) and any(u.is_unitless for u in units):
+
+from esc.oops import UnitlessOperandError
+from esc.units import UnitHandler
+
+def distance_velocity_unit_handler(input_units):
+    """acceleration, time -> distance, velocity"""
+    if ((not all(u.is_unitless for u in input_units))
+            and any(u.is_unitless for u in input_units)):
         raise UnitlessOperandError()
     return [
-        units[0].multiply(units[1]).multiply(units[1]),
-        units[0].multiply(units[1]),
+        input_units[0].multiply(input_units[1]).multiply(input_units[1]),
+        input_units[0].multiply(input_units[1]),
     ]
 
 @Operation(key='a', menu=main_menu, push=2, 
@@ -249,6 +258,11 @@ def distance_velocity_unit_handler(units):
             log_as="accel {0} for {1}: travels {2} and reaches {3}",
             unit_handling=distance_velocity_unit_handler)
 def distance_and_final_velocity_from_standing(acceleration, time):
+    """
+    Given a constant acceleration and an amount of time,
+    calculate the distance traveled and the final velocity
+    of an object starting from rest.
+    """
     return [
         time * time * acceleration / 2,
         time * acceleration,

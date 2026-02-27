@@ -7,7 +7,15 @@ The goal is to catch dimensional mistakes by checking your work.
 
 import re
 from decimal import Decimal
-from enum import Enum, auto
+
+from .oops import (
+    IncommensurableUnitsError,
+    OperationWillRemoveUnitsError,
+    ProgrammingError,
+    UnitExponentError,
+    UnitlessOperandError,
+    UnitRootError,
+)
 
 
 def _canonical_token(token):
@@ -118,8 +126,8 @@ class UnitExpression:
         True
         """
         if isinstance(other, UnitExpression):
-            return (_canonical_exponents(self._exponents)
-                    == _canonical_exponents(other._exponents))
+            return (_canonical_exponents(self._exponents) == _canonical_exponents(
+                other._exponents))
         return NotImplemented
 
     def __repr__(self):
@@ -139,8 +147,10 @@ class UnitExpression:
         True
         >>> UnitExpression({"meter": 1}).add(UnitExpression({"meters": 1})).display()
         'meter'
+
+        Raises :class:`~esc.oops.IncommensurableUnitsError`
+        if the inputs have different unit tags.
         """
-        from .oops import IncommensurableUnitsError
         if (_canonical_exponents(self._exponents)
                 != _canonical_exponents(other._exponents)):
             raise IncommensurableUnitsError(self, other)
@@ -198,7 +208,6 @@ class UnitExpression:
           ...
         esc.oops.UnitExponentError: ...
         """
-        from .oops import UnitExponentError
         if not _is_integer(n):
             raise UnitExponentError(
                 "Cannot raise unitful value to a non-integer power.")
@@ -216,13 +225,11 @@ class UnitExpression:
         >>> UnitExpression({"m": 4, "s": -2}).root(2)
         UnitExpression({'m': 2, 's': -1})
         """
-        from .oops import UnitRootError
         result = {}
         for token, exp in self._exponents.items():
             if exp % n != 0:
-                raise UnitRootError(
-                    f"Cannot simplify units through root: "
-                    f"{token}^{exp} is not divisible by {n}.")
+                raise UnitRootError(f"Cannot simplify units through root: "
+                                    f"{token}^{exp} is not divisible by {n}.")
             result[token] = exp // n
         return UnitExpression(result)
 
@@ -345,30 +352,260 @@ class UnitExpression:
         return UnitExpression(exponents)
 
 
-class UnitHandling(Enum):
+# TODO: Probably we should supply this to users writing their own?
+class UnitHandler:
     """
-    Enum describing how an operation handles units.
+    A UnitHandler is a callable with the following parameters,
+    bound by name to the following available kwargs:
 
-    All situations described as "invalid" give the user a warning if they obtain,
-    which the user can override by pressing the operation key again;
-    this will carry out the operation as unitless and strip units from the result.
+    :param input_units: 
+        A list of :class:`UnitExpression <esc.units.UnitExpression>` instances, 
+        one per input in sequence.
+    :param input_stackitems:
+        Like ``input_units``, but gives the
+        :class:`StackItem <esc.stack.StackItem>` for each input.
+    :param num_results: 
+        The number of results that the operation returns with these inputs.
+    :param override:
+        Whether the user has repeated the operation to override a unit error.
+
+        .. note::
+            **You probably do not need or want this parameter.**
+
+            The default behavior for overrides
+            is to offer the user an override, and if accepted,
+            carry out the calculation unitless and push unitless results to the stack.
+            You don't need to consume or use this parameter to get that behavior.
+
+            If for your operation there is some sensible way to recover
+            from a unit error/warning and still return unitful values,
+            you can consume this parameter and return the units
+            that should be used for the result(s) in this case.
+            If some unit errors that can occur are recoverable and others are not,
+            raise an exception again for the unrecoverable ones.
+
+            This is used internally for the warning about multiplying a unitful by a
+            unitless value.
+
+    :returns:
+        A list of :class:`UnitExpression <esc.units.UnitExpression>` instances,
+        one for each output.
+
+    A unit handler need only declare the parameters it actually uses.
+    Most custom handlers only need ``input_units``.
+
+    If the callable has a :attr:`description` attribute,
+    or if that is not present a :attr:`__doc__` attribute (docstring),
+    it will be shown in the help screen after ``Units: ``.
+    In a couple of words, this should describe what happens to the units.
     """
-    ADDITIVE = auto()  #: Both inputs must have same units; result uses same units.
-    MULTIPLICATIVE = auto()  #: Exponents of input units are added.
-    DIVISIVE = auto()  #: Exponents of input units are subtracted.
-    POWER = auto(
-    )  #: Exponents of input are multiplied by exponent value; exponent must be unitless or the operation is invalid.
-    #: Exponents of input are divided by root degree; must yield an integer exponent or the operation is invalid.
-    #: Unlike all other unit handling behaviors, the root degree must be specified
-    #: as the second value in a tuple when passed to the :func:`@Operation <esc.commands.Operation>` decorator:
-    #: e.g., ``(UnitHandling.ROOT, 2)`` for square root.
-    ROOT = auto()
-    PRESERVE = auto(
-    )  #: Result keeps same units as the last input (normally used only when there is a single input).
-    NO_OUTPUT = auto()  #: Operation doesn't push anything; units are irrelevant.
-    NO_INPUT = auto()  #: Operation has no inputs and result is unitless.
-    UNSPECIFIED = auto(
-    )  #: Operation doesn't support/define unit behavior; operations on unitful quantities are invalid.
+    description = ""
+
+    def __repr__(self):
+        return f"<UnitHandler: {self.__class__.__name__}>"
+
+    def __call__(self, input_units, input_stackitems, num_results, override):
+        raise NotImplementedError("")
+
+
+# pylint: disable=invalid-name
+
+
+class additive_unit_handling(UnitHandler):
+    """
+    All inputs must have an identical unit tag (after coercion of singular/plural
+    variants); the result uses that unit tag.
+    A unitless input is considered to be different from all unitful inputs.
+    Any number of operands are allowed.
+
+    Raises:
+        :class:`~esc.oops.IncommensurableUnitsError` if any unit tag differs.
+    """
+    description = "additive (units must match)"
+
+    def __call__(self, input_units):
+        base = input_units[0]
+        for u in input_units[1:]:
+            base = base.add(u)
+        return [base]
+
+
+class multiplicative_unit_handling(UnitHandler):
+    """
+    Unit exponents are added.
+    Any number of operands are allowed.
+    When some operands are unitful and others are unitless,
+    a warning will be issued on the first run.
+
+    Raises:
+        :class:`~esc.oops.UnitlessOperandError` if a unitless operand is not the
+        identity value (1). Unlike most unit errors, this is a warning only,
+        and overriding it will carry out the calculation and process the units
+        as normal (the unitless operand will not change the units of the result).
+    """
+    description = "multiplicative (units combine)"
+
+    def __call__(self, input_units, input_stackitems, override):
+        if any(u.is_unitless for u in input_units):
+            unitless_args = [
+                a for a, u in zip(input_stackitems, input_units) if u.is_unitless
+            ]
+            if not all(a.decimal == 1 for a in unitless_args):
+                if not override:
+                    raise UnitlessOperandError()
+        result = input_units[0].multiply(input_units[1])
+        return [result]
+
+
+class divisive_unit_handling(UnitHandler):
+    """
+    Unit exponents are subtracted.
+    Any number of operands are allowed.
+    When some operands are unitful and others are unitless,
+    a warning will be issued on the first run.
+    
+    Raises:
+        :class:`~esc.oops.UnitlessOperandError` if a unitless operand is not the
+        identity value (1). Unlike most unit errors, this is a warning only,
+        and overriding it will carry out the calculation and process the units
+        as normal (the unitless operand will not change the units of the result).
+    """
+    description = "divisive (units divide)"
+
+    def __call__(self, input_units, input_stackitems, override):
+        if any(u.is_unitless for u in input_units):
+            unitless_args = [
+                a for a, u in zip(input_stackitems, input_units) if u.is_unitless
+            ]
+            if not all(a.decimal == 1 for a in unitless_args):
+                if not override:
+                    raise UnitlessOperandError()
+        result = input_units[0].divide(input_units[1])
+        return [result]
+
+
+class power_unit_handling(UnitHandler):
+    """
+    Exponents of the first input's unit are multiplied by the exponent value.
+    The exponent must be unitless and integer-valued.
+    Only two operands are allowed, the base and the exponent.
+
+    Raises:
+        :class:`~esc.oops.UnitExponentError` if the exponent has a unit or is
+        not an integer.
+        :class:`~esc.oops.ProgrammingError` (at runtime) if
+        the handler is called with != 2 inputs.
+    """
+    description = "power (base units scaled by exponent)"
+
+    def __call__(self, input_units, input_stackitems):
+        if len(input_units) != 2:
+            raise ProgrammingError(f"Invalid unit handler: "
+                                   f"power handler requires exactly 2 inputs, "
+                                   f"got {input_units!r}.")
+
+        base_unit = input_units[0]
+        exp_unit = input_units[1]
+        if not exp_unit.is_unitless:
+            raise UnitExponentError("Exponent cannot have units. "
+                                    "Press again to override.")
+        exp_val = input_stackitems[1].decimal
+        if base_unit.is_unitless:
+            return [None]
+        try:
+            result = base_unit.power(exp_val)
+        except UnitExponentError as exc:
+            raise UnitExponentError("Cannot raise unitful value to a non-integer "
+                                    "power. Press again to override.") from exc
+        return [result]
+
+
+class root_unit_handling(UnitHandler):
+    """
+    Exponents of the first unit are divided by the *degree*
+    specified at handler instantiation time.
+    All exponents must be evenly divisible.
+    Only one operand is allowed, the base.
+
+    Raises:
+        :class:`~esc.oops.UnitRootError` if any exponent is not evenly
+        divisible by the degree. :class:`~esc.oops.ProgrammingError` (at
+        runtime) if the handler is called with != 1 input.
+    """
+    def __init__(self, degree):
+        if not _is_integer(degree):
+            raise ProgrammingError(f"Invalid unit handler: "
+                                   f"degree must be an integer (not {degree!r}).")
+        self._degree = degree
+        self.description = f"root (unit exponents / {degree})"
+
+    def __call__(self, input_units):
+        if len(input_units) != 1:
+            raise ProgrammingError(f"Invalid unit handler: "
+                                   f"root handler requires exactly 1 input, "
+                                   f"got {input_units!r}.")
+
+        base_unit = input_units[0]
+        if base_unit.is_unitless:
+            return [None]
+        result = base_unit.root(self._degree)
+        return [result]
+
+
+class preserve_unit_handling(UnitHandler):
+    """
+    Maintain the same units as the only input.
+
+    Raises:
+        :class:`~esc.oops.ProgrammingError` (at runtime) if the handler is
+        called with != 1 input.
+    """
+    description = "preserves units"
+
+    def __call__(self, input_units, num_results):
+        if len(input_units) != 1:
+            raise ProgrammingError(f"Invalid unit handler: "
+                                   f"preserve handler requires exactly 1 input, "
+                                   f"got {input_units!r}.")
+
+        base = input_units[0]
+        base_or_none = base if not base.is_unitless else None
+        return [base_or_none] * max(num_results, 0)
+
+
+class no_output_unit_handling(UnitHandler):
+    """
+    The operation doesn't push anything; units are irrelevant.
+    """
+    description = "no output units"
+
+    def __call__(self, num_results):
+        return [None] * max(num_results, 0)
+
+
+class no_input_unit_handling(UnitHandler):
+    """
+    The operation has no inputs and the result is unitless (e.g., unitless constants).
+    """
+    description = "no input units"
+
+    def __call__(self, num_results):
+        return [None] * max(num_results, 0)
+
+
+class unspecified_unit_handling(UnitHandler):
+    """
+    The operation doesn't support unit behavior.
+
+    Operations on unitful quantities cannot be carried out,
+    but the user can choose to strip units and complete the calculation.
+    """
+    description = "unspecified (will strip units)"
+
+    def __call__(self):
+        raise OperationWillRemoveUnitsError()
+
+# pylint: enable=invalid-name
 
 
 class UnitDecimal(Decimal):
