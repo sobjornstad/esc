@@ -19,3 +19,21 @@
 - [ ] Start w/ numbers on stack
 - [ ] Output stack to a file on quit (like ranger)
 - [ ] Execute things automatically and return nonzero exit code on error
+
+------
+
+Currently in the help screen, if you are trying to apply incommensurable units, you get a generic "An error would occur," as shown in the screenshot. Let's add special handling in the speculative execution in the help that detects unit errors and displays an appropriate message for them instead of this generic one.
+
+-> TODO: understand the excs claude added and figure out what should be shown for each of them
+
+------
+
+READY PROMPT:
+
+If you enter an invalid unit, like "28", you are still able to move to the next line of the stack, and there is silently no unit attached to that item even though it still appears on the screen. Please fix this so the cursor stays where it is until you've corrected the issue, like it does for invalid numbers.
+
+After checking that this works -- in the spec I said that a unit name could contain letters, numbers, or symbols, but it feels confusing to allow numbers in the name of a unit, and I can’t immediately think of a case where that would be useful, outside of a use case that you ought to handle with an exponent -- can you? Unless you can, I think we should make sure that we haven’t defined that as legal anywhere. (Obviously you can still enter numbers in a unit tag in the sense that you can put one after an exponent, but it won’t validly form one of the individual units that the tag can combine.)
+
+------
+
+endwin() returned ERR if you resize with an error (it's probably status bar size?)

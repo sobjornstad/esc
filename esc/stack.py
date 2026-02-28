@@ -329,9 +329,8 @@ class StackState:
             True if a number was finished.
             False if bos was already finished.
 
-        Raises:
-            ValueError if the value was invalid and the number couldn't be
-            finished. The exception message can be displayed on the status bar.
+        :raises ValueError: if the value was invalid and the number couldn't
+            be finished. The exception message can be displayed on the status bar.
 
         Set running_op to an operation name if you're entering prior to running
         an operation (go figure) for a more helpful error message in that case.

@@ -167,8 +167,8 @@ class EscMenu(EscCommand):
     def child(self, access_key):
         """
         Return the child defined by *access_key*.
-        Raises :class:`NotInMenuError <esc.oops.NotInMenuError>`
-        if it doesn't exist.
+
+        :raises esc.oops.NotInMenuError: if it doesn't exist.
         """
         try:
             return self.children[access_key]
@@ -191,9 +191,8 @@ class EscMenu(EscCommand):
                  This will be a child menu, if one was selected,
                  or None if an operation runs.
 
-        :raises: :class:`FunctionExecutionError <esc.oops.FunctionExecutionError>`
-                 or a subclass, if a child operation was selected
-                 but does not complete successfully.
+        :raises esc.oops.FunctionExecutionError: or a subclass, if a child
+            operation was selected but does not complete successfully.
 
         If the user chose the special quit command, return to the previous
         menu, or raise ``SystemExit`` if this is the main menu.
@@ -489,9 +488,8 @@ class EscOperation(EscCommand):
         :return: A constant ``None``,
                  indicating that we go back to the main menu.
 
-        :raises: :class:`FunctionExecutionError <esc.oops.FunctionExecutionError>`
-                 or a subclass,
-                 if the operation cannot be completed successfully.
+        :raises esc.oops.FunctionExecutionError: or a subclass, if the
+            operation cannot be completed successfully.
         """
         with ss.transaction():
             args = self._retrieve_arguments(ss)

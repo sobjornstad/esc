@@ -79,6 +79,8 @@ class FunctionExecutionError(EscError):
     - a number is in the middle of being entered and isn't a valid number
     - a function performed an undefined operation like dividing by zero
     - there are too few items on the stack
+    - the units of the inputs are incompatible or the operation
+      can't handle the units of the items on the stack
     - a function directly raises this error due to invalid input
       or inability to complete its task for some other reason
 
@@ -116,11 +118,17 @@ class InsufficientItemsError(FunctionExecutionError):
 
 
 class UnitError(FunctionExecutionError):
-    "Base class for unit-related errors. All are overridable by pressing the same key again."
+    """
+    General class of exception raised
+    when an operation that uses units in a potentially incorrect way is performed.
+
+    All unit errors are overridable by the user by pressing the same key again,
+    but many overrides will result in stripping all units from the inputs and outputs.
+    """
 
 
 class IncommensurableUnitsError(UnitError):
-    "Raised when adding/subtracting values with mismatched units."
+    "Raised when adding/subtracting values with different units."
 
     def __init__(self, unit_a, unit_b):
         self.unit_a = unit_a
@@ -133,7 +141,19 @@ class IncommensurableUnitsError(UnitError):
 
 
 class UnitlessOperandError(UnitError):
-    "Raised when mixing unitless and unitful operands in mul/div."
+    """
+    Raised when mixing unitless and unitful operands when multiplying or dividing
+    (unless one of the operands is 1, which never triggers a warning).
+
+    Since this is a warning and not an unrecoverable error,
+    the raiser of this exception must ensure that they allow the user to override
+    the error without stripping the units
+    (using the ``override`` parameter of the :class:`~esc.units.UnitHandler`).
+
+    If mixing unitful and unitless operands here is incoherent,
+    rather than a possible mistake to double-check for,
+    ``UnitlessOperandError`` is not the appropriate exception to raise.
+    """
 
     def __init__(self):
         super().__init__(
@@ -142,8 +162,11 @@ class UnitlessOperandError(UnitError):
 
 
 class OperationWillRemoveUnitsError(UnitError):
-    "Raised when an UNSPECIFIED operation is applied to unitful values."
-
+    """
+    Raised when an operation that doesn't support units is applied to unitful values.
+    The user can override this, if intentional, by pressing the operation key again;
+    units will then be stripped from the inputs and outputs.
+    """
     def __init__(self):
         super().__init__(
             "This operation will remove units. "
@@ -151,7 +174,9 @@ class OperationWillRemoveUnitsError(UnitError):
 
 
 class UnitRootError(UnitError):
-    "Raised when a root produces non-integer exponents."
+    """
+    Raised when a root operation on a unit produces non-integer exponents.
+    """
 
     def __init__(self, msg=None):
         super().__init__(
@@ -160,12 +185,13 @@ class UnitRootError(UnitError):
 
 
 class UnitExponentError(UnitError):
-    "Raised when the exponent has units or is non-integer on a unitful base."
+    """
+    Raised when an exponentiation operation on a unit attempts to raise the unit
+    to a power that has a unit, or a non-integer power.
+    """
 
-    def __init__(self, msg=None):
-        super().__init__(
-            msg or "Exponent cannot have units. "
-            "Press again to override.")
+    def __init__(self, msg="Exponent cannot have units. Press again to override."):
+        super().__init__(msg)
 
 
 class RollbackTransaction(Exception):

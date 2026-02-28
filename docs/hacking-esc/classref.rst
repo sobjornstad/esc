@@ -117,7 +117,7 @@ and you will receive the following object:
 
 .. warning::
     If you *set* a register in your operation,
-    be sure to turn the ``simulate <esc.commands.Operation.simulate>``
+    be sure to turn the ``simulate``
     option off in your :func:`Operation <esc.commands.Operation>` decorator,
     or users may end up inadvertently setting registers
     when viewing the help for your function.
@@ -135,10 +135,18 @@ but here is the complete hierarchy for reference.
 .. inheritance-diagram:: EscError FunctionExecutionError
                          InsufficientItemsError ProgrammingError
                          FunctionProgrammingError InvalidNameError
-                         NotInMenuError
+                         NotInMenuError UnitError UnitRootError
+                         UnitExponentError UnitlessOperandError
+                         IncommensurableUnitsError
     :parts: 1
 
 .. autoclass:: EscError
+
+
+Execution errors
+----------------
+
+These errors occur at runtime based on the user's input or actions.
 
 .. autoclass:: FunctionExecutionError
     :noindex:
@@ -146,10 +154,31 @@ but here is the complete hierarchy for reference.
 .. autoclass:: InsufficientItemsError
     :noindex:
 
+.. autoclass:: UnitError
+
+.. autoclass:: IncommensurableUnitsError
+
+.. autoclass:: UnitlessOperandError
+
+.. autoclass:: UnitRootError
+
+.. autoclass:: UnitExponentError
+
+
+Programming exceptions
+----------------------
+
+These errors may occur at startup or at runtime,
+but always indicate that the plugin developer has done something disallowed.
+
 .. autoclass:: ProgrammingError
     :noindex:
 
 .. autoclass:: FunctionProgrammingError
+
+
+Miscellaneous exceptions
+------------------------
 
 .. autoclass:: InvalidNameError
 

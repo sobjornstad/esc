@@ -148,9 +148,8 @@ class UnitExpression:
         >>> (UnitExpression({"meter": 1}) + UnitExpression({"meters": 1})).display()
         'meter'
 
-        Raises:
-            :class:`~esc.oops.IncommensurableUnitsError`
-            if the inputs have different unit tags.
+        :raises esc.oops.IncommensurableUnitsError: if the inputs have
+            different unit tags.
         """
         if (_canonical_exponents(self._exponents)
                 != _canonical_exponents(other._exponents)):
@@ -161,9 +160,8 @@ class UnitExpression:
         """
         Unit algebra for subtraction: units must match (same as addition).
 
-        Raises:
-            :class:`~esc.oops.IncommensurableUnitsError`
-            if the inputs have different unit tags.
+        :raises esc.oops.IncommensurableUnitsError: if the inputs have
+            different unit tags.
         """
         return self.__add__(other)
 
@@ -219,9 +217,7 @@ class UnitExpression:
           ...
         esc.oops.UnitExponentError: ...
 
-        Raises:
-            :class:`~esc.oops.UnitExponentError`
-            if the exponent is not an integer.
+        :raises esc.oops.UnitExponentError: if the exponent is not an integer.
         """
         if not _is_integer(n):
             raise UnitExponentError(
@@ -240,9 +236,8 @@ class UnitExpression:
         >>> UnitExpression({"m": 4, "s": -2}).root(2)
         UnitExpression({'m': 2, 's': -1})
 
-        Raises:
-            :class:`~esc.oops.UnitRootError`
-            if any exponent is not evenly divisible by *n*.
+        :raises esc.oops.UnitRootError: if any exponent is not evenly
+            divisible by *n*.
         """
         result = {}
         for token, exp in self._exponents.items():
@@ -452,8 +447,7 @@ class additive_unit_handling(UnitHandler):
     A unitless input is considered to be different from all unitful inputs.
     Any number of operands are allowed.
 
-    Raises:
-        :class:`~esc.oops.IncommensurableUnitsError` if any unit tag differs.
+    :raises esc.oops.IncommensurableUnitsError: if any unit tag differs.
     """
     description = "additive (units must match)"
 
@@ -471,8 +465,7 @@ class multiplicative_unit_handling(UnitHandler):
     When some operands are unitful and others are unitless,
     a warning will be issued on the first run.
 
-    Raises:
-        :class:`~esc.oops.UnitlessOperandError` if a unitless operand is not the
+    :raises esc.oops.UnitlessOperandError: if a unitless operand is not the
         identity value (1). Unlike most unit errors, this is a warning only,
         and overriding it will carry out the calculation and process the units
         as normal (the unitless operand will not change the units of the result).
@@ -499,8 +492,7 @@ class divisive_unit_handling(UnitHandler):
     When some operands are unitful and others are unitless,
     a warning will be issued on the first run.
 
-    Raises:
-        :class:`~esc.oops.UnitlessOperandError` if a unitless operand is not the
+    :raises esc.oops.UnitlessOperandError: if a unitless operand is not the
         identity value (1). Unlike most unit errors, this is a warning only,
         and overriding it will carry out the calculation and process the units
         as normal (the unitless operand will not change the units of the result).
@@ -526,10 +518,8 @@ class power_unit_handling(UnitHandler):
     The exponent must be unitless and integer-valued.
     Only two operands are allowed, the base and the exponent.
 
-    Raises:
-        :class:`~esc.oops.ProgrammingError` if the operation has != 2 operands.
-
-        :class:`~esc.oops.UnitExponentError` if the exponent has a unit or is
+    :raises esc.oops.ProgrammingError: if the operation has != 2 operands.
+    :raises esc.oops.UnitExponentError: if the exponent has a unit or is
         not an integer.
     """
     description = "power (base units scaled by exponent)"
@@ -585,8 +575,7 @@ class preserve_unit_handling(UnitHandler):
     """
     Maintain the same units as the only input.
 
-    :raises:
-        :class:`~esc.oops.ProgrammingError` if the operation has != 1 operand.
+    :raises esc.oops.ProgrammingError: if the operation has != 1 operand.
     """
     description = "preserves units"
 

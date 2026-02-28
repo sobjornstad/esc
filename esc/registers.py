@@ -32,8 +32,8 @@ class Registry:
         """
         Set the value of a register.
 
-        :raises: :class:`InvalidNameError <esc.oops.InvalidNameError>`
-                 if the key (register name) isn't valid.
+        :raises esc.oops.InvalidNameError: if the key (register name)
+            isn't valid.
         """
         if not self._valid_name(key):
             raise InvalidNameError(
