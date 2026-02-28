@@ -18,7 +18,6 @@ the main menu.
 from collections import OrderedDict
 import decimal
 from functools import wraps
-from inspect import signature, Parameter
 import itertools
 
 from . import consts
@@ -258,6 +257,9 @@ class EscOperation(EscCommand):
         else:
             self.unit_handling = unit_handling
 
+        self._unit_caller, _ = util.positional_caller(
+            self.unit_handling, _bind_unit_parm, ('num_results', 'override'))
+
     def __repr__(self):
         return f"<EscOperation '{self.key}': {self.description}"
 
@@ -364,12 +366,11 @@ class EscOperation(EscCommand):
             (a.unit if a.unit is not None else UnitExpression())
             for a in args
         ]
-        if not any(not u.is_unitless for u in input_units):
+        if input_units and not any(not u.is_unitless for u in input_units):
             return [None] * max(num_results, 0)
         try:
-            result = util.magic_call(self.unit_handling, {
-                'input_units': input_units,
-                'input_stackitems': args,
+            items = list(zip(input_units, args))
+            result = self._unit_caller(items, {
                 'num_results': num_results,
                 'override': override,
             })
@@ -655,7 +656,7 @@ def Constant(value, key, description, menu, unit=None):  # pylint: disable=inval
     :param menu: A :class:`Menu <EscMenu>` to place this function on.
     :param unit: An optional :class:`UnitExpression` for the constant's unit.
     """
-    uh = (lambda input_units: [unit]) if unit else no_input_unit_handling()
+    uh = (lambda: [unit]) if unit else no_input_unit_handling()
     @Operation(key=key, menu=menu, push=1, description=description,
                log_as=f"insert constant {description}",
                unit_handling=uh)
@@ -663,6 +664,25 @@ def Constant(value, key, description, menu, unit=None):  # pylint: disable=inval
         return value
     # You can't define a dynamic docstring from within the function.
     func.__doc__ = f"Add the constant {description} = {value} to the stack."
+
+
+def _bind_stack_parm(stack_item, parm):
+    "Convert a StackItem to the type requested by the parameter's name suffix."
+    if parm.name.endswith('_stackitem'):
+        return stack_item
+    if parm.name.endswith('_str_with_units'):
+        return stack_item.string_with_units
+    if parm.name.endswith('_str'):
+        return stack_item.string
+    return stack_item.decimal
+
+
+def _bind_unit_parm(item_pair, parm):
+    "Convert a (UnitExpression, StackItem) pair for a unit handler parameter."
+    unit_expr, stack_item = item_pair
+    if parm.name.endswith('_stackitem'):
+        return stack_item
+    return unit_expr
 
 
 def Operation(key,
@@ -760,12 +780,16 @@ def Operation(key,
         (e.g., ``additive_unit_handling``),
         or a callable.
 
-        Callables are dispatched through :func:`magic_call <esc.util.magic_call>`
-        with the available kwargs ``input_units``, ``input_stackitems``,
-        and ``num_results``; declare only the parameters you need.
-        The callable should return a list of
-        :class:`UnitExpression <esc.units.UnitExpression>` instances,
-        one per output.
+        Parameters are bound by position to the operation's inputs,
+        in a similar way as for the operation function itself (see below for details).
+        The only differences:
+        
+        * The default type of parameters with no suffix
+          is a :class:`UnitExpression <esc.units.UnitExpression>`
+          rather than a :class:`Decimal <decimal.Decimal>`.
+        * The ``_str`` suffix is not supported.
+        * The special parameters available are ``num_results`` and ``override``,
+          rather than ``registry`` and ``testing``.
 
         See :ref:`Unit Handling <Unit Handling>` for details
         on making your operation unit-aware.
@@ -836,43 +860,15 @@ def Operation(key,
     """
 
     def function_decorator(func):
-        sig = signature(func)
-        parms = sig.parameters.values()
-
-        bind_all = [i for i in parms if i.kind == Parameter.VAR_POSITIONAL]
-        stack_parms = [i for i in parms if i.name not in ('registry', 'testing')]
-        pop = len(stack_parms) if not bind_all else -1
-
-        def _bind_stack_parm(stack_item, parm):
-            if parm.name.endswith('_stackitem'):
-                return stack_item
-            if parm.name.endswith('_str_with_units'):
-                return stack_item.string_with_units
-            if parm.name.endswith('_str'):
-                return stack_item.string
-            else:
-                return stack_item.decimal
+        caller, pop = util.positional_caller(
+            func, _bind_stack_parm, ('registry', 'testing'))
 
         @wraps(func)
         def wrapper(stack, registry):
-            positional_binding = []
-            keyword_binding = {}
-
-            if bind_all:
-                positional_binding.extend(
-                    _bind_stack_parm(stack_item, bind_all[0]) for stack_item in stack)
-            else:
-                stack_slice = stack[-(len(stack_parms)):]
-                keyword_binding.update({
-                    parm.name: _bind_stack_parm(stack_item, parm)
-                    for stack_item,
-                    parm in zip(stack_slice, stack_parms)
-                })
-            if 'registry' in (i.name for i in parms):
-                keyword_binding['registry'] = registry
-            if 'testing' in (i.name for i in parms):
-                keyword_binding['testing'] = consts.TESTING
-            return func(*positional_binding, **keyword_binding)
+            return caller(stack, {
+                'registry': registry,
+                'testing': consts.TESTING,
+            })
 
         # Add test definition functionality.
         def ensure(before, after=None, raises=None, close=False):

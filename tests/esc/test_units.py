@@ -272,3 +272,61 @@ class TestUnitHandling:
     def test_root_unit_handling_different_degrees(self):
         h3 = root_unit_handling(3)
         assert "3" in h3.description
+
+
+# === Direct handler call tests (positional API) ===
+
+class TestHandlerPositionalAPI:
+    """Test that handlers work with positional arguments after the refactor."""
+
+    def test_additive_two_matching(self):
+        m = UnitExpression({"m": 1})
+        result = additive_unit_handling()(m, m)
+        assert result == [m]
+
+    def test_additive_three_matching(self):
+        m = UnitExpression({"m": 1})
+        result = additive_unit_handling()(m, m, m)
+        assert result == [m]
+
+    def test_additive_mismatched_raises(self):
+        with pytest.raises(IncommensurableUnitsError):
+            additive_unit_handling()(
+                UnitExpression({"m": 1}), UnitExpression({"s": 1}))
+
+    def test_multiplicative_positional(self):
+        from esc.stack import StackItem
+        si_m = StackItem(decval=Decimal(2), unit=UnitExpression({"m": 1}))
+        si_s = StackItem(decval=Decimal(3), unit=UnitExpression({"s": -1}))
+        result = multiplicative_unit_handling()(si_m, si_s, override=False)
+        assert result == [UnitExpression({"m": 1, "s": -1})]
+
+    def test_divisive_positional(self):
+        from esc.stack import StackItem
+        si_m = StackItem(decval=Decimal(10), unit=UnitExpression({"m": 1}))
+        si_s = StackItem(decval=Decimal(2), unit=UnitExpression({"s": 1}))
+        result = divisive_unit_handling()(si_m, si_s, override=False)
+        assert result == [UnitExpression({"m": 1, "s": -1})]
+
+    def test_power_positional(self):
+        from esc.stack import StackItem
+        si_exp = StackItem(decval=Decimal(2))
+        result = power_unit_handling()(UnitExpression({"m": 1}), si_exp)
+        assert result == [UnitExpression({"m": 2})]
+
+    def test_root_positional(self):
+        result = root_unit_handling(2)(UnitExpression({"m": 2}))
+        assert result == [UnitExpression({"m": 1})]
+
+    def test_preserve_positional(self):
+        m = UnitExpression({"m": 1})
+        result = preserve_unit_handling()(m, num_results=2)
+        assert result == [m, m]
+
+    def test_no_output_positional(self):
+        result = no_output_unit_handling()(num_results=0)
+        assert result == []
+
+    def test_no_input_positional(self):
+        result = no_input_unit_handling()(num_results=1)
+        assert result == [None]

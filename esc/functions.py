@@ -146,7 +146,7 @@ duplicate.ensure(before=[3, 2], after=[3, 2, 2])
 @Operation('x', menu=main_menu, push=2,
            description='exchange bos, sos',
            log_as="{1} <=> {0}",
-           unit_handling=lambda u: [u[1], u[0]])
+           unit_handling=lambda sos, bos: [bos, sos])
 def exchange(sos, bos):
     """
     Swap bos and sos. Useful if you enter numbers in the wrong order or when
@@ -171,7 +171,7 @@ pop.ensure(before=[], raises=InsufficientItemsError)
 @Operation('r', menu=main_menu, push=-1,
            description='roll up',
            log_as="roll tos {0} to bos",
-           unit_handling=lambda u: [*u[1:], u[0]])
+           unit_handling=lambda *units: [*units[1:], units[0]])
 def roll(*stack):
     "Move the top item on the stack to the bottom."
     if len(stack) < 2:
@@ -243,14 +243,15 @@ yank_bos.ensure(before=[], raises=InsufficientItemsError)
 from esc.oops import UnitlessOperandError
 from esc.units import UnitHandler
 
-def distance_velocity_unit_handler(input_units):
+def distance_velocity_unit_handler(acceleration, time):
     """acceleration, time -> distance, velocity"""
-    if ((not all(u.is_unitless for u in input_units))
-            and any(u.is_unitless for u in input_units)):
+    units = [acceleration, time]
+    if ((not all(u.is_unitless for u in units))
+            and any(u.is_unitless for u in units)):
         raise UnitlessOperandError()
     return [
-        input_units[0] * input_units[1] * input_units[1],
-        input_units[0] * input_units[1],
+        acceleration * time * time,
+        acceleration * time,
     ]
 
 @Operation(key='a', menu=main_menu, push=2, 

@@ -128,6 +128,67 @@ def is_number(c):
     return ('0' <= c <= '9') or (c in ('.', '_', 'e'))
 
 
+def positional_caller(func, bind_item, special_names):
+    """
+    Inspect the signature of /func/ once and return a ``(caller, num_positional)``
+    pair that can bind stack-like items positionally thereafter.
+
+    :param func: The callable whose signature is inspected.
+    :param bind_item: ``bind_item(item, parm)`` converts a single item
+        according to the :class:`Parameter` /parm/ (e.g., suffix-based
+        type conversion).
+    :param special_names: A set or sequence of parameter names that are
+        bound by name from a keyword dict, not positionally from items.
+    :returns: ``(caller, num_positional)`` where *caller* is
+        ``caller(items, special_kwargs)`` and *num_positional* is the count
+        of positional parameters (or ``-1`` if the function uses ``*args``).
+
+    Keyword-only parameters not listed in *special_names* cause a
+    :class:`ProgrammingError`.
+    """
+    sig = inspect.signature(func)
+    special_names = set(special_names)
+
+    positional_parms = []
+    splat_parm = None
+    requested_specials = []
+
+    for parm in sig.parameters.values():
+        if parm.kind == inspect.Parameter.VAR_POSITIONAL:
+            splat_parm = parm
+        elif parm.name in special_names:
+            requested_specials.append(parm.name)
+        elif parm.kind == inspect.Parameter.KEYWORD_ONLY:
+            raise ProgrammingError(
+                f"The function '{func.__name__}' has keyword-only parameter "
+                f"'{parm.name}' which is not a recognized special name. "
+                f"Available special names: {', '.join(sorted(special_names))}.")
+        else:
+            positional_parms.append(parm)
+
+    num_positional = -1 if splat_parm else len(positional_parms)
+
+    def caller(items, special_kwargs):
+        args = []
+        kwargs = {}
+
+        if splat_parm is not None:
+            args.extend(bind_item(item, splat_parm) for item in items)
+        else:
+            stack_slice = items[-(len(positional_parms)):] if positional_parms else []
+            kwargs.update({
+                parm.name: bind_item(item, parm)
+                for item, parm in zip(stack_slice, positional_parms)
+            })
+
+        for name in requested_specials:
+            kwargs[name] = special_kwargs[name]
+
+        return func(*args, **kwargs)
+
+    return caller, num_positional
+
+
 def magic_call(func, available_kwargs):
     """
     Call /func/, allowing it to pick and choose from a set of arguments. This

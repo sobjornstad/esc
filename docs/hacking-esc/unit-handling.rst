@@ -73,7 +73,7 @@ you will likely want to just write a single function with the appropriate parame
     :members:
 
 Inside your callable, you will ordinarily use the methods on the
-:class:`UnitExpression <esc.units.UnitExpression>` objects passed as ``input_units``
+:class:`UnitExpression <esc.units.UnitExpression>` objects
 to determine what units to return:
 
 .. autoclass:: esc.units.UnitExpression
@@ -100,8 +100,7 @@ so it is a good idea to include a check of this behavior in your
     this behavior can lead to results with nonsensical units being pushed onto the stack
     without any warning.
     For instance, if you create a “velocity” operation that takes a distance and a time,
-    define the return value of your ``unit_handling`` as
-    ``[input_units[0] / input_units[1]]``,
+    define the return value of your ``unit_handling`` as ``[distance / time]``,
     and the user passes ``10`` for the distance and ``2 seconds`` for the time,
     the resulting “velocity” will be ``5 seconds^-1``,
     which is presumably not what either you or they expected.
@@ -127,14 +126,15 @@ for an object starting from rest under constant acceleration:
     from esc.oops import UnitlessOperandError
     from esc.units import UnitHandler
 
-    def distance_velocity_unit_handler(input_units):
+    def distance_velocity_unit_handler(acceleration, time):
         """acceleration, time -> distance, velocity"""
-        if ((not all(u.is_unitless for u in input_units))
-                and any(u.is_unitless for u in input_units)):
+        units = [acceleration, time]
+        if ((not all(u.is_unitless for u in units))
+                and any(u.is_unitless for u in units)):
             raise UnitlessOperandError()
         return [
-            input_units[0] * input_units[1] * input_units[1],
-            input_units[0] * input_units[1],
+            acceleration * time * time,
+            acceleration * time,
         ]
 
     @Operation(key='a', menu=main_menu, push=2,
@@ -161,11 +161,12 @@ You could equivalently write the unit handler as a subclass of
     class distance_velocity_unit_handler(UnitHandler):
         description = "acceleration, time -> distance, velocity"
 
-        def __call__(self, input_units):
-            if ((not all(u.is_unitless for u in input_units))
-                    and any(u.is_unitless for u in input_units)):
+        def __call__(self, acceleration, time):
+            units = [acceleration, time]
+            if ((not all(u.is_unitless for u in units))
+                    and any(u.is_unitless for u in units)):
                 raise UnitlessOperandError()
             return [
-                input_units[0] * input_units[1] * input_units[1],
-                input_units[0] * input_units[1],
+                acceleration * time * time,
+                acceleration * time,
             ]

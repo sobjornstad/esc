@@ -357,19 +357,33 @@ class UnitExpression:
         return UnitExpression(exponents)
 
 
-# TODO: Probably we should supply this to users writing their own?
 class UnitHandler:
     """
-    A UnitHandler is a callable with the following parameters,
-    bound by name to the following available kwargs:
+    A UnitHandler is a callable whose parameters are bound positionally
+    to the operation's inputs, using the same pattern as
+    :func:`@Operation <esc.commands.Operation>` functions.
 
-    :param input_units: 
-        A list of :class:`UnitExpression <esc.units.UnitExpression>` instances, 
-        one per input in sequence.
-    :param input_stackitems:
-        Like ``input_units``, but gives the
-        :class:`StackItem <esc.stack.StackItem>` for each input.
-    :param num_results: 
+    Most parameters are bound to a slice of values at the bottom of the stack,
+    by position.
+    These should ordinarily be identical to those used in your operation function.
+    If the function has one parameter,
+    it receives :ref:`bos <Terminology and notation>`;
+    if the function has two parameters,
+    the first receives sos and the second bos;
+    and so on.
+    See :func:`@Operation <esc.commands.Operation>`'s documentation for details.
+
+    A varargs (``*args``)  parameter receives all input
+    :class:`UnitExpression` instances as a list.
+
+    If a parameter name ends with ``_stackitem``, it receives the
+    :class:`StackItem <esc.stack.StackItem>` instead of the
+    :class:`UnitExpression`. This can be used with a varargs parameter as well
+    (e.g., ``*args_stackitem``).
+
+    Two special parameters are available, bound by name:
+
+    :param num_results:
         The number of results that the operation returns with these inputs.
     :param override:
         Whether the user has repeated the operation to override a unit error.
@@ -392,16 +406,19 @@ class UnitHandler:
             This is used internally for the warning about multiplying a unitful by a
             unitless value.
 
+    The ``_str`` suffix and the special parameters ``registry`` and ``testing``
+    offered by operation parameter binding
+    are currently not supported for unit handlers.
+
     :returns:
         A list of :class:`UnitExpression <esc.units.UnitExpression>` instances,
         one for each output.
 
     A unit handler need only declare the parameters it actually uses.
-    Most custom handlers only need ``input_units``.
 
     If the callable has a :attr:`description` attribute,
     or if that is not present a :attr:`__doc__` attribute (docstring),
-    it will be shown in the help screen after ``Units: ``.
+    it will be shown in the help screen after :literal:`Units: \\ `.
     In a couple of words, this should describe what happens to the units.
     """
     description = ""
@@ -409,7 +426,7 @@ class UnitHandler:
     def __repr__(self):
         return f"<UnitHandler: {self.__class__.__name__}>"
 
-    def __call__(self, input_units, input_stackitems, num_results, override):
+    def __call__(self):
         raise NotImplementedError("")
 
 
@@ -428,9 +445,9 @@ class additive_unit_handling(UnitHandler):
     """
     description = "additive (units must match)"
 
-    def __call__(self, input_units):
-        base = input_units[0]
-        for u in input_units[1:]:
+    def __call__(self, *units):
+        base = units[0]
+        for u in units[1:]:
             base = base + u
         return [base]
 
@@ -450,15 +467,16 @@ class multiplicative_unit_handling(UnitHandler):
     """
     description = "multiplicative (units combine)"
 
-    def __call__(self, input_units, input_stackitems, override):
-        if any(u.is_unitless for u in input_units):
+    def __call__(self, *items_stackitem, override):
+        units = [si.unit or UnitExpression() for si in items_stackitem]
+        if any(u.is_unitless for u in units):
             unitless_args = [
-                a for a, u in zip(input_stackitems, input_units) if u.is_unitless
+                si for si, u in zip(items_stackitem, units) if u.is_unitless
             ]
             if not all(a.decimal == 1 for a in unitless_args):
                 if not override:
                     raise UnitlessOperandError()
-        result = input_units[0] * input_units[1]
+        result = units[0] * units[1]
         return [result]
 
 
@@ -468,7 +486,7 @@ class divisive_unit_handling(UnitHandler):
     Any number of operands are allowed.
     When some operands are unitful and others are unitless,
     a warning will be issued on the first run.
-    
+
     Raises:
         :class:`~esc.oops.UnitlessOperandError` if a unitless operand is not the
         identity value (1). Unlike most unit errors, this is a warning only,
@@ -477,15 +495,16 @@ class divisive_unit_handling(UnitHandler):
     """
     description = "divisive (units divide)"
 
-    def __call__(self, input_units, input_stackitems, override):
-        if any(u.is_unitless for u in input_units):
+    def __call__(self, *items_stackitem, override):
+        units = [si.unit or UnitExpression() for si in items_stackitem]
+        if any(u.is_unitless for u in units):
             unitless_args = [
-                a for a, u in zip(input_stackitems, input_units) if u.is_unitless
+                si for si, u in zip(items_stackitem, units) if u.is_unitless
             ]
             if not all(a.decimal == 1 for a in unitless_args):
                 if not override:
                     raise UnitlessOperandError()
-        result = input_units[0] / input_units[1]
+        result = units[0] / units[1]
         return [result]
 
 
@@ -498,23 +517,16 @@ class power_unit_handling(UnitHandler):
     Raises:
         :class:`~esc.oops.UnitExponentError` if the exponent has a unit or is
         not an integer.
-        :class:`~esc.oops.ProgrammingError` (at runtime) if
-        the handler is called with != 2 inputs.
     """
     description = "power (base units scaled by exponent)"
 
-    def __call__(self, input_units, input_stackitems):
-        if len(input_units) != 2:
-            raise ProgrammingError(f"Invalid unit handler: "
-                                   f"power handler requires exactly 2 inputs, "
-                                   f"got {input_units!r}.")
-
-        base_unit = input_units[0]
-        exp_unit = input_units[1]
+    def __call__(self, base, exp_stackitem):
+        base_unit = base
+        exp_unit = exp_stackitem.unit or UnitExpression()
         if not exp_unit.is_unitless:
             raise UnitExponentError("Exponent cannot have units. "
                                     "Press again to override.")
-        exp_val = input_stackitems[1].decimal
+        exp_val = exp_stackitem.decimal
         if base_unit.is_unitless:
             return [None]
         try:
@@ -534,8 +546,7 @@ class root_unit_handling(UnitHandler):
 
     Raises:
         :class:`~esc.oops.UnitRootError` if any exponent is not evenly
-        divisible by the degree. :class:`~esc.oops.ProgrammingError` (at
-        runtime) if the handler is called with != 1 input.
+        divisible by the degree.
     """
     def __init__(self, degree):
         if not _is_integer(degree):
@@ -544,36 +555,20 @@ class root_unit_handling(UnitHandler):
         self._degree = degree
         self.description = f"root (unit exponents / {degree})"
 
-    def __call__(self, input_units):
-        if len(input_units) != 1:
-            raise ProgrammingError(f"Invalid unit handler: "
-                                   f"root handler requires exactly 1 input, "
-                                   f"got {input_units!r}.")
-
-        base_unit = input_units[0]
-        if base_unit.is_unitless:
+    def __call__(self, base):
+        if base.is_unitless:
             return [None]
-        result = base_unit.root(self._degree)
+        result = base.root(self._degree)
         return [result]
 
 
 class preserve_unit_handling(UnitHandler):
     """
     Maintain the same units as the only input.
-
-    Raises:
-        :class:`~esc.oops.ProgrammingError` (at runtime) if the handler is
-        called with != 1 input.
     """
     description = "preserves units"
 
-    def __call__(self, input_units, num_results):
-        if len(input_units) != 1:
-            raise ProgrammingError(f"Invalid unit handler: "
-                                   f"preserve handler requires exactly 1 input, "
-                                   f"got {input_units!r}.")
-
-        base = input_units[0]
+    def __call__(self, base, *, num_results):
         base_or_none = base if not base.is_unitless else None
         return [base_or_none] * max(num_results, 0)
 
@@ -584,7 +579,7 @@ class no_output_unit_handling(UnitHandler):
     """
     description = "no output units"
 
-    def __call__(self, num_results):
+    def __call__(self, *, num_results):
         return [None] * max(num_results, 0)
 
 
@@ -594,7 +589,7 @@ class no_input_unit_handling(UnitHandler):
     """
     description = "no input units"
 
-    def __call__(self, num_results):
+    def __call__(self, *, num_results):
         return [None] * max(num_results, 0)
 
 
