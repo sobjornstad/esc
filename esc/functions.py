@@ -238,33 +238,3 @@ def yank_bos(bos_str_with_units, testing):
 
 yank_bos.ensure(before=[3, 5], after=[3, 5])
 yank_bos.ensure(before=[], raises=InsufficientItemsError)
-
-
-from esc.oops import UnitlessOperandError
-from esc.units import UnitHandler
-
-def distance_velocity_unit_handler(acceleration, time):
-    """acceleration, time -> distance, velocity"""
-    units = [acceleration, time]
-    if ((not all(u.is_unitless for u in units))
-            and any(u.is_unitless for u in units)):
-        raise UnitlessOperandError()
-    return [
-        acceleration * time * time,
-        acceleration * time,
-    ]
-
-@Operation(key='a', menu=main_menu, push=2, 
-            description='dist/vel',
-            log_as="accel {0} for {1}: travels {2} and reaches {3}",
-            unit_handling=distance_velocity_unit_handler)
-def distance_and_final_velocity_from_standing(acceleration, time):
-    """
-    Given a constant acceleration and an amount of time,
-    calculate the distance traveled and the final velocity
-    of an object starting from rest.
-    """
-    return [
-        time * time * acceleration / 2,
-        time * acceleration,
-    ]

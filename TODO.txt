@@ -11,8 +11,6 @@
 
 - [ ] Interval arithmetic
 - [ ] Provide a way to handle modes and registers in function testing
-- [ ] Dynamic window resizing
-- [ ] Infinite stack?
 - [ ] Scrollable history and commands
 - [ ] tox
 

@@ -24,8 +24,9 @@ Built-in unit handling behaviors
 
 Many simple operations can become unit-aware
 by choosing an appropriate built-in unit handling behavior from :mod:`esc.units`.
-Simply set unit_handler to a newly constructed instance of one of these handler classes
-(e.g., ``unit_handler=additive_unit_handling()``):
+Simply set ``unit_handling``
+to a newly constructed instance of one of these handler classes
+(e.g., ``unit_handling=additive_unit_handling()``):
 
 .. autoclass:: esc.units.additive_unit_handling
    :no-members:

@@ -303,9 +303,9 @@ class EscOperation(EscCommand):
         elif self.unit_handling.__doc__:
             units = f"    Units: {self.unit_handling.__doc__.strip()}"
         elif callable(self.unit_handling):
-            units = "    Units: custom"
+            units = "    Units: custom handling"
         else:
-            units = "    Units: unknown"
+            units = "    Units: not supported"
 
         return (type_, input_, output, units)
 

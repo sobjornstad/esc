@@ -1,6 +1,6 @@
 """
 trig.py - esc plugin for trigonometric functions
-Copyright (c) 2019 Soren Bjornstad.
+Copyright (c) 2019, 2026 Soren Bjornstad.
 
 This plugin is provided with the esc distribution:
 <https://github.com/sobjornstad/esc>
@@ -9,6 +9,7 @@ import math
 
 from esc import modes
 from esc.commands import Menu, Operation, Mode, ModeChange, UNOP, main_menu
+from esc.units import unspecified_unit_handling
 
 TRIG_MODE_NAME = 'trig_mode'
 
@@ -50,7 +51,8 @@ def trig_wrapper(bos, func, arc=False):
     return ret
 
 
-@Operation('s', menu=trig_menu, push=1, description='sine', log_as=UNOP)
+@Operation('s', menu=trig_menu, push=1, description='sine', log_as=UNOP,
+           unit_handling=unspecified_unit_handling())
 def sine(bos):
     """
     Take the sine of bos. Affected by the mode 'degrees' or 'radians'
@@ -59,7 +61,8 @@ def sine(bos):
     return trig_wrapper(bos, math.sin)
 
 
-@Operation('c', menu=trig_menu, push=1, description='cosine', log_as=UNOP)
+@Operation('c', menu=trig_menu, push=1, description='cosine', log_as=UNOP,
+           unit_handling=unspecified_unit_handling())
 def cosine(bos):
     """
     Take the cosine of bos. Affected by the mode 'degrees' or 'radians'
@@ -68,7 +71,8 @@ def cosine(bos):
     return trig_wrapper(bos, math.cos)
 
 
-@Operation('t', menu=trig_menu, push=1, description='tangent', log_as=UNOP)
+@Operation('t', menu=trig_menu, push=1, description='tangent', log_as=UNOP,
+           unit_handling=unspecified_unit_handling())
 def tangent(bos):
     """
     Take the tangent of bos. Affected by the mode 'degrees' or 'radians'
@@ -77,7 +81,8 @@ def tangent(bos):
     return trig_wrapper(bos, math.tan)
 
 
-@Operation('i', menu=trig_menu, push=1, description='arc sin', log_as=UNOP)
+@Operation('i', menu=trig_menu, push=1, description='arc sin', log_as=UNOP,
+           unit_handling=unspecified_unit_handling())
 def arc_sine(bos):
     """
     Take the arc sine (a.k.a., inverse sine) of bos. Affected by the mode
@@ -86,7 +91,8 @@ def arc_sine(bos):
     return trig_wrapper(bos, math.sin)
 
 
-@Operation('o', menu=trig_menu, push=1, description='arc cos', log_as=UNOP)
+@Operation('o', menu=trig_menu, push=1, description='arc cos', log_as=UNOP,
+           unit_handling=unspecified_unit_handling())
 def arc_cosine(bos):
     """
     Take the arc cosine (a.k.a., inverse cosine) of bos. Affected by the mode
@@ -95,7 +101,8 @@ def arc_cosine(bos):
     return trig_wrapper(bos, math.cos)
 
 
-@Operation('a', menu=trig_menu, push=1, description='arc tan', log_as=UNOP)
+@Operation('a', menu=trig_menu, push=1, description='arc tan', log_as=UNOP,
+           unit_handling=unspecified_unit_handling())
 def arc_tangent(bos):
     """
     Take the arc cosine (a.k.a., inverse cosine) of bos. Affected by the mode

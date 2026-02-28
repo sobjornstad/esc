@@ -65,9 +65,9 @@ will issue the error :guilabel:`Incommensurable units`.
 You can override this error by pressing the operation key again;
 this will ignore the units and return a unitless result.
 
-Custom operations can define what combinations of units they accept
+**Custom operations** can define what combinations of units they accept
 and what effect the input units have on the result units;
-see the developer guide for details.
+see :ref:`Unit Handling <Unit Handling>` in the developer guide for details.
 If a custom operation doesn't specify how to handle units,
 the warning :guilabel:`This operation will remove units` will be issued
 when you run it on unitful stack values;

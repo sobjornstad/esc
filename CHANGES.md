@@ -1,3 +1,57 @@
+Changes in 1.1.0
+================
+
+There are two major changes in 1.1.0.
+
+First, **terminal size and layout** have been overhauled.
+esc no longer crashes when the terminal is resized below its minimum size,
+and instead shows a helpful message suggesting you make it larger.
+The minimum size has also decreased to 60x16.
+More space is used for the stack and history,
+since registers essentially never need all the possible available space,
+and esc will dynamically adjust the size of each container to something sensible
+for the current screen size.
+
+Combined with that, the stack now has infinite size in practice
+(theoretically bounded by the memory available to the running app).
+The stack window will only show the items at the bottom of the stack
+that fit on the screen,
+but all items further up will remain available by rolling the stack
+or consuming some items at the bottom.
+In practice, the 12-item stack was rarely a limitation,
+but now if you temporarily need more items for some reason,
+you can keep them.
+
+Second, esc now supports **unit tags**,
+which allow you to check your work with dimensional analysis.
+Press `\` after entering a number to add a unit tag.
+Subsequent arithmetic operations on these numbers will check, combine, and cancel
+units as appropriate for those operations.
+See the “Units” section of the user manual for details.
+
+(Note that esc doesn't understand the actual meaning of units or convert units;
+unit operations are purely symbolic.
+Check out [Frink][] if your workflow uses units heavily
+and you don't mind learning a small language.)
+
+[Frink]: https://frinklang.org/
+
+Custom operations in existing plugins that are not unit-aware will still work,
+but using them will strip units from the inputs and push unitless values to the stack.
+Operations can be upgraded to be unit-aware by adding a `unit_handling` parameter
+to the `@Operation` decorator.
+For many operations, this is simply a matter of selecting the correct built-in behavior;
+for more complex ones, you can write a function
+that describes the algebraic operations to be taken on the unit tags.
+See the “Unit Handling” section of the developer manual for details.
+
+
+Additional changes
+------------------
+
+* Python 3.10 or greater is now required.
+
+
 Changes in 1.0.0
 ================
 

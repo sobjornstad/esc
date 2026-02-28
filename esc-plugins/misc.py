@@ -1,6 +1,6 @@
 """
 misc.py - esc plugin demonstrating some miscellaneous useful custom esc operations
-Copyright (c) 2019 Soren Bjornstad.
+Copyright (c) 2019, 2026 Soren Bjornstad.
 
 This plugin is provided with the esc distribution:
 <https://github.com/sobjornstad/esc>
@@ -34,16 +34,23 @@ sum_entire_stack.ensure(before=list(range(10)), after=[reduce(add_operator, rang
 
 @Operation('T', menu=main_menu, push=1,
            description='add MN sales tax',
-           log_as=lambda args, retval: f"+7.375% tax on {args[0]} = {retval[0]}",
+           log_as=lambda args, retval: f"+9.025% tax on {args[0]} = {retval[0]}",
            unit_handling=preserve_unit_handling())
 def add_mn_sales_tax(bos):
     "Add sales tax to bos, using the rate for the Minnesota locality where I live."
-    tax_rate = Decimal(".07375")
+    # Attested July 2025.
+    # State = 6.875%
+    # Hennepin County = 0.150%
+    # Minneapolis = 0.500%
+    # Hennepin County Transit = 0.500%
+    # Metro Area Transportation = 0.750%
+    # Metro Area Tax for Housing = 0.250%
+    tax_rate = Decimal(".09025")
     tax = tax_rate * bos
     return bos + tax
 
 add_mn_sales_tax.ensure(before=[0], after=[0])
-add_mn_sales_tax.ensure(before=[Decimal("10.00")], after=[Decimal("10.7375")])
+add_mn_sales_tax.ensure(before=[Decimal("10.00")], after=[Decimal("10.9025")])
 
 
 @Operation('I', menu=main_menu, push=1,
@@ -88,7 +95,8 @@ subsubmenu = Menu(key='m', description='subsubmenu test', parent=submenu,
 
 @Operation('t', menu=subsubmenu, push=1,
            description='test identity function',
-           log_as=UNOP)
+           log_as=UNOP,
+           unit_handling=preserve_unit_handling())
 def identity(bos):
     "Identity function."
     return bos
