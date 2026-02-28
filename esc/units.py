@@ -148,8 +148,9 @@ class UnitExpression:
         >>> (UnitExpression({"meter": 1}) + UnitExpression({"meters": 1})).display()
         'meter'
 
-        Raises :class:`~esc.oops.IncommensurableUnitsError`
-        if the inputs have different unit tags.
+        Raises:
+            :class:`~esc.oops.IncommensurableUnitsError`
+            if the inputs have different unit tags.
         """
         if (_canonical_exponents(self._exponents)
                 != _canonical_exponents(other._exponents)):
@@ -157,8 +158,13 @@ class UnitExpression:
         return UnitExpression(self._exponents)
 
     def __sub__(self, other):
-        # Feels wrong to make __sub__ the same as __add__,
-        # but it works here, the behavior is the same!
+        """
+        Unit algebra for subtraction: units must match (same as addition).
+
+        Raises:
+            :class:`~esc.oops.IncommensurableUnitsError`
+            if the inputs have different unit tags.
+        """
         return self.__add__(other)
 
     def __mul__(self, other):
@@ -212,6 +218,10 @@ class UnitExpression:
         Traceback (most recent call last):
           ...
         esc.oops.UnitExponentError: ...
+
+        Raises:
+            :class:`~esc.oops.UnitExponentError`
+            if the exponent is not an integer.
         """
         if not _is_integer(n):
             raise UnitExponentError(
@@ -229,6 +239,10 @@ class UnitExpression:
         True
         >>> UnitExpression({"m": 4, "s": -2}).root(2)
         UnitExpression({'m': 2, 's': -1})
+
+        Raises:
+            :class:`~esc.oops.UnitRootError`
+            if any exponent is not evenly divisible by *n*.
         """
         result = {}
         for token, exp in self._exponents.items():
@@ -406,15 +420,13 @@ class UnitHandler:
             This is used internally for the warning about multiplying a unitful by a
             unitless value.
 
-    The ``_str`` suffix and the special parameters ``registry`` and ``testing``
-    offered by operation parameter binding
-    are currently not supported for unit handlers.
-
     :returns:
         A list of :class:`UnitExpression <esc.units.UnitExpression>` instances,
         one for each output.
 
-    A unit handler need only declare the parameters it actually uses.
+    The ``_str`` suffix and the special parameters ``registry`` and ``testing``
+    offered by operation parameter binding
+    are currently not supported for unit handlers.
 
     If the callable has a :attr:`description` attribute,
     or if that is not present a :attr:`__doc__` attribute (docstring),
@@ -600,7 +612,7 @@ class unspecified_unit_handling(UnitHandler):
     Operations on unitful quantities cannot be carried out,
     but the user can choose to strip units and complete the calculation.
     """
-    description = "unspecified (will strip units)"
+    description = "not supported"
 
     def __call__(self):
         raise OperationWillRemoveUnitsError()

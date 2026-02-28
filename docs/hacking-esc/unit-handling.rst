@@ -78,6 +78,7 @@ to determine what units to return:
 
 .. autoclass:: esc.units.UnitExpression
     :members:
+    :special-members: __add__, __sub__, __mul__, __truediv__, __pow__
     :member-order: bysource
 
 esc does not verify that the unit algebra specified by a unit handler
