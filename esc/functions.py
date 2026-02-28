@@ -249,8 +249,8 @@ def distance_velocity_unit_handler(input_units):
             and any(u.is_unitless for u in input_units)):
         raise UnitlessOperandError()
     return [
-        input_units[0].multiply(input_units[1]).multiply(input_units[1]),
-        input_units[0].multiply(input_units[1]),
+        input_units[0] * input_units[1] * input_units[1],
+        input_units[0] * input_units[1],
     ]
 
 @Operation(key='a', menu=main_menu, push=2, 

@@ -136,16 +136,16 @@ class UnitExpression:
     def __hash__(self):
         return hash(tuple(sorted(_canonical_exponents(self._exponents).items())))
 
-    def add(self, other):
+    def __add__(self, other):
         """
         Unit algebra for addition/subtraction: units must match.
 
         >>> m = UnitExpression({"m": 1})
-        >>> m.add(UnitExpression({"m": 1})) == m
+        >>> (m + UnitExpression({"m": 1})) == m
         True
-        >>> UnitExpression({}).add(UnitExpression({})).is_unitless
+        >>> (UnitExpression({}) + UnitExpression({})).is_unitless
         True
-        >>> UnitExpression({"meter": 1}).add(UnitExpression({"meters": 1})).display()
+        >>> (UnitExpression({"meter": 1}) + UnitExpression({"meters": 1})).display()
         'meter'
 
         Raises :class:`~esc.oops.IncommensurableUnitsError`
@@ -156,19 +156,24 @@ class UnitExpression:
             raise IncommensurableUnitsError(self, other)
         return UnitExpression(self._exponents)
 
-    def multiply(self, other):
+    def __sub__(self, other):
+        # Feels wrong to make __sub__ the same as __add__,
+        # but it works here, the behavior is the same!
+        return self.__add__(other)
+
+    def __mul__(self, other):
         """
         Unit algebra for multiplication: add exponents.
 
         >>> m = UnitExpression({"m": 1})
         >>> s = UnitExpression({"s": 1})
-        >>> m.multiply(s) == UnitExpression({"m": 1, "s": 1})
+        >>> m * s == UnitExpression({"m": 1, "s": 1})
         True
-        >>> m.multiply(UnitExpression({"m": 1})) == UnitExpression({"m": 2})
+        >>> m * UnitExpression({"m": 1}) == UnitExpression({"m": 2})
         True
-        >>> m.multiply(UnitExpression({})) == m
+        >>> m * UnitExpression({}) == m
         True
-        >>> UnitExpression({"meter": 1}).multiply(UnitExpression({"meters": 1}))
+        >>> UnitExpression({"meter": 1}) * UnitExpression({"meters": 1})
         UnitExpression({'meter': 2})
         """
         result = dict(self._exponents)
@@ -176,17 +181,17 @@ class UnitExpression:
             _merge_token(result, token, exp)
         return UnitExpression(result)
 
-    def divide(self, other):
+    def __truediv__(self, other):
         """
         Unit algebra for division: subtract exponents.
 
         >>> m = UnitExpression({"m": 1})
         >>> s = UnitExpression({"s": 1})
-        >>> m.divide(s) == UnitExpression({"m": 1, "s": -1})
+        >>> m / s == UnitExpression({"m": 1, "s": -1})
         True
-        >>> m.divide(m).is_unitless
+        >>> (m / m).is_unitless
         True
-        >>> UnitExpression({"meters": 1}).divide(UnitExpression({"meter": 1})).is_unitless
+        >>> (UnitExpression({"meters": 1}) / UnitExpression({"meter": 1})).is_unitless
         True
         """
         result = dict(self._exponents)
@@ -194,16 +199,16 @@ class UnitExpression:
             _merge_token(result, token, -exp)
         return UnitExpression(result)
 
-    def power(self, n):
+    def __pow__(self, n):
         r"""
         Unit algebra for exponentiation: multiply all exponents by n.
         n must be an integer.
 
-        >>> UnitExpression({"m": 1}).power(2) == UnitExpression({"m": 2})
+        >>> UnitExpression({"m": 1}) ** 2 == UnitExpression({"m": 2})
         True
-        >>> UnitExpression({"m": 1}).power(0).is_unitless
+        >>> (UnitExpression({"m": 1}) ** 0).is_unitless
         True
-        >>> UnitExpression({"m": 1}).power(2.5)  # doctest: +ELLIPSIS
+        >>> UnitExpression({"m": 1}) ** 2.5  # doctest: +ELLIPSIS
         Traceback (most recent call last):
           ...
         esc.oops.UnitExponentError: ...
@@ -426,7 +431,7 @@ class additive_unit_handling(UnitHandler):
     def __call__(self, input_units):
         base = input_units[0]
         for u in input_units[1:]:
-            base = base.add(u)
+            base = base + u
         return [base]
 
 
@@ -453,7 +458,7 @@ class multiplicative_unit_handling(UnitHandler):
             if not all(a.decimal == 1 for a in unitless_args):
                 if not override:
                     raise UnitlessOperandError()
-        result = input_units[0].multiply(input_units[1])
+        result = input_units[0] * input_units[1]
         return [result]
 
 
@@ -480,7 +485,7 @@ class divisive_unit_handling(UnitHandler):
             if not all(a.decimal == 1 for a in unitless_args):
                 if not override:
                     raise UnitlessOperandError()
-        result = input_units[0].divide(input_units[1])
+        result = input_units[0] / input_units[1]
         return [result]
 
 
@@ -513,7 +518,7 @@ class power_unit_handling(UnitHandler):
         if base_unit.is_unitless:
             return [None]
         try:
-            result = base_unit.power(exp_val)
+            result = base_unit ** exp_val
         except UnitExponentError as exc:
             raise UnitExponentError("Cannot raise unitful value to a non-integer "
                                     "power. Press again to override.") from exc

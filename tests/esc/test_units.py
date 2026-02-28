@@ -54,57 +54,57 @@ class TestUnitExpressionBasics:
 class TestUnitExpressionAlgebra:
     def test_add_matching(self):
         m = UnitExpression({"m": 1})
-        result = m.add(UnitExpression({"m": 1}))
+        result = m + UnitExpression({"m": 1})
         assert result == m
 
     def test_add_mismatched_raises(self):
         with pytest.raises(IncommensurableUnitsError):
-            UnitExpression({"m": 1}).add(UnitExpression({"s": 1}))
+            UnitExpression({"m": 1}) + UnitExpression({"s": 1})
 
     def test_add_unitless(self):
-        result = UnitExpression({}).add(UnitExpression({}))
+        result = UnitExpression({}) + UnitExpression({})
         assert result.is_unitless
 
     def test_add_unitless_vs_unitful_raises(self):
         with pytest.raises(IncommensurableUnitsError):
-            UnitExpression({}).add(UnitExpression({"m": 1}))
+            UnitExpression({}) + UnitExpression({"m": 1})
 
     def test_multiply(self):
-        result = UnitExpression({"m": 1}).multiply(UnitExpression({"s": 1}))
+        result = UnitExpression({"m": 1}) * UnitExpression({"s": 1})
         assert result == UnitExpression({"m": 1, "s": 1})
 
     def test_multiply_same_unit(self):
-        result = UnitExpression({"m": 1}).multiply(UnitExpression({"m": 1}))
+        result = UnitExpression({"m": 1}) * UnitExpression({"m": 1})
         assert result == UnitExpression({"m": 2})
 
     def test_multiply_neutral(self):
         m = UnitExpression({"m": 1})
-        result = m.multiply(UnitExpression({}))
+        result = m * UnitExpression({})
         assert result == m
 
     def test_divide(self):
-        result = UnitExpression({"m": 1}).divide(UnitExpression({"s": 1}))
+        result = UnitExpression({"m": 1}) / UnitExpression({"s": 1})
         assert result == UnitExpression({"m": 1, "s": -1})
 
     def test_divide_cancels(self):
-        result = UnitExpression({"m": 1}).divide(UnitExpression({"m": 1}))
+        result = UnitExpression({"m": 1}) / UnitExpression({"m": 1})
         assert result.is_unitless
 
     def test_power_integer(self):
-        result = UnitExpression({"m": 1}).power(3)
+        result = UnitExpression({"m": 1}) ** 3
         assert result == UnitExpression({"m": 3})
 
     def test_power_zero(self):
-        result = UnitExpression({"m": 2}).power(0)
+        result = UnitExpression({"m": 2}) ** 0
         assert result.is_unitless
 
     def test_power_decimal_integer(self):
-        result = UnitExpression({"m": 1}).power(Decimal("2"))
+        result = UnitExpression({"m": 1}) ** Decimal("2")
         assert result == UnitExpression({"m": 2})
 
     def test_power_non_integer_raises(self):
         with pytest.raises(UnitExponentError):
-            UnitExpression({"m": 1}).power(Decimal("2.5"))
+            UnitExpression({"m": 1}) ** Decimal("2.5")
 
     def test_root_even(self):
         result = UnitExpression({"m": 2}).root(2)

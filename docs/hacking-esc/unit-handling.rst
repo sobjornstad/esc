@@ -101,7 +101,7 @@ so it is a good idea to include a check of this behavior in your
     without any warning.
     For instance, if you create a “velocity” operation that takes a distance and a time,
     define the return value of your ``unit_handling`` as
-    ``[input_units[0].divide(input_units[1])]``,
+    ``[input_units[0] / input_units[1]]``,
     and the user passes ``10`` for the distance and ``2 seconds`` for the time,
     the resulting “velocity” will be ``5 seconds^-1``,
     which is presumably not what either you or they expected.
@@ -133,11 +133,11 @@ for an object starting from rest under constant acceleration:
                 and any(u.is_unitless for u in input_units)):
             raise UnitlessOperandError()
         return [
-            input_units[0].multiply(input_units[1]).multiply(input_units[1]),
-            input_units[0].multiply(input_units[1]),
+            input_units[0] * input_units[1] * input_units[1],
+            input_units[0] * input_units[1],
         ]
 
-    @Operation(key='a', menu=main_menu, push=2, 
+    @Operation(key='a', menu=main_menu, push=2,
                 description='dist/vel',
                 log_as="accel {0} for {1}: travels {2} and reaches {3}",
                 unit_handling=distance_velocity_unit_handler)
@@ -166,6 +166,6 @@ You could equivalently write the unit handler as a subclass of
                     and any(u.is_unitless for u in input_units)):
                 raise UnitlessOperandError()
             return [
-                input_units[0].multiply(input_units[1]).multiply(input_units[1]),
-                input_units[0].multiply(input_units[1]),
+                input_units[0] * input_units[1] * input_units[1],
+                input_units[0] * input_units[1],
             ]
