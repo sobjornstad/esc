@@ -11,7 +11,8 @@ from esc import helpme
 from esc.status import status
 from esc.commands import main_menu
 from esc.registers import Registry
-from esc.stack import StackState
+from esc.stack import StackItem, StackState
+from esc.units import UnitExpression
 
 
 # pylint: disable=redefined-outer-name
@@ -112,6 +113,23 @@ def test_get_help_menu(help_test_case):
     ss, registry, mock_screen = help_test_case
     helpme.get_help('i', main_menu, ss, registry)
     assert mock_screen.called == default_call_set.union({'display_menu'})
+
+def test_simulated_result_incommensurable_units():
+    """
+    The help screen's speculative execution surfaces unit-error details
+    rather than the generic "values on the stack are not valid" message.
+    """
+    ss = StackState()
+    ss.push((
+        StackItem(decval=Decimal(2), unit=UnitExpression({"m": 1})),
+        StackItem(decval=Decimal(3), unit=UnitExpression({"kg": 1})),
+    ))
+    add_op = main_menu.child('+')
+    result = add_op.simulated_result(ss, Registry())
+    assert result[0] == "A unit error would occur:"
+    assert "Incommensurable units" in result[1]
+    assert "Press again to override" not in result[1]
+
 
 def test_get_help_invalid_key(help_test_case, monkeypatch):
     """

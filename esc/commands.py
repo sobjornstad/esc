@@ -530,6 +530,9 @@ class EscOperation(EscCommand):
             return (
                 f"An error would occur. (At least {e.number_required} stack {items}",
                 f"needed to run this function.)")
+        except UnitError as e:
+            msg = str(e).replace(" Press again to override.", "")
+            return ("A unit error would occur:", msg)
         except FunctionExecutionError:
             return ("An error would occur. (Most likely the values on ",
                     "the stack are not valid.)")
