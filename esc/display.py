@@ -62,11 +62,11 @@ class Window:
 
 class StatusWindow(Window):
     "Window for the status bar at the top of the screen."
-    status_start = 16
 
     def __init__(self, scr, spec):
         super().__init__(scr, spec.width, spec.height, spec.x, spec.y)
         self.max_width = self.width - 1
+        self.status_start = len(f"[ ] {PROGRAM_NAME} | ")
 
         self.status_char = ' '
         self._status_msg = ''
