@@ -9,8 +9,9 @@ to help you check your work.
 
 To attach a unit tag to a number, type a backslash (:kbd:`\\`) after it,
 then type the unit tag.
-Unit names can consist of letters, numbers,
-and symbols other than ``*``, ``/``, or ``^``.
+Unit names can consist of letters
+and symbols other than ``*``, ``/``, ``^``, or digits
+(digits are reserved for use as exponents after ``^``).
 ``*`` and ``/`` are used to create compound units (e.g., ``kg / liters``),
 while ``^`` allows you to raise a unit to an integer power (e.g., ``feet^2``).
 Negative powers represent reciprocals (e.g., ``seconds^-1``).

@@ -187,10 +187,8 @@ def _enter_unit_mode(ss, registry, menu):
     old_escdelay = curses.get_escdelay()
     curses.set_escdelay(25)
 
-    cancelled = False
     buf = ""
     target_item = ss.bos
-    original_unit = target_item.unit
 
     # Signal unit-entry mode to the stack window (None = inactive, "" = active)
     screen().stackw.partial_unit = buf
@@ -210,7 +208,6 @@ def _enter_unit_mode(ss, registry, menu):
             continue
 
         if c == 27:  # Escape — cancel, preserve original unit
-            cancelled = True
             break
 
         try:
@@ -219,7 +216,17 @@ def _enter_unit_mode(ss, registry, menu):
             continue
 
         if char in ('\n', ' '):
-            # Finish unit entry
+            stripped = buf.strip()
+            if not stripped:
+                target_item.unit = None
+                break
+            try:
+                unit = UnitExpression.parse(stripped)
+            except ValueError as e:
+                status.error(f"Invalid unit name: {e}")
+                screen().refresh_status()
+                continue
+            target_item.unit = unit
             break
         elif c in (curses.KEY_BACKSPACE, 127) or curses.ascii.unctrl(c) == '^H':
             if buf:
@@ -229,7 +236,6 @@ def _enter_unit_mode(ss, registry, menu):
                 else:
                     buf = buf[:-1]
             else:
-                cancelled = True
                 break  # empty buffer, cancel
         elif char == '*':
             buf += " * "
@@ -247,23 +253,6 @@ def _enter_unit_mode(ss, registry, menu):
     # Restore escape delay and clear partial unit display
     curses.set_escdelay(old_escdelay)
     screen().stackw.partial_unit = None
-
-    if cancelled:
-        # Restore the original unit (no change)
-        pass
-    else:
-        # Process the buffer
-        buf = buf.strip()
-        if not buf:
-            # Empty buffer = clear unit
-            target_item.unit = None
-        else:
-            try:
-                unit = UnitExpression.parse(buf)
-            except ValueError as e:
-                status.error(f"Invalid unit: {e}")
-                return
-            target_item.unit = unit
 
     screen().refresh_stack(ss)
     screen().update_registers(registry)

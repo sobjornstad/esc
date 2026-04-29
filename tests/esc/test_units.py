@@ -189,6 +189,17 @@ class TestUnitExpressionParse:
         with pytest.raises(ValueError):
             UnitExpression.parse("123")
 
+    def test_digit_in_token_raises(self):
+        with pytest.raises(ValueError):
+            UnitExpression.parse("m2")
+        with pytest.raises(ValueError):
+            UnitExpression.parse("ft2")
+        with pytest.raises(ValueError):
+            UnitExpression.parse("CO2")
+
+    def test_multi_digit_exponent(self):
+        assert UnitExpression.parse("m^10") == UnitExpression({"m": 10})
+
     def test_complex_expression(self):
         result = UnitExpression.parse("kg * m^2 / s^2")
         assert result == UnitExpression({"kg": 1, "m": 2, "s": -2})

@@ -345,21 +345,18 @@ class UnitExpression:
                 sign = -1
                 continue
 
-            # Parse token^exponent
-            # Token is any non-whitespace chars except *, /, ^
-            # but must not be purely digits
-            match = re.match(r'^([^\s*/^]+)\^(-?\d+)$', part)
+            # Parse token^exponent. Token is any non-whitespace chars
+            # except *, /, ^, and digits — digits are reserved for the
+            # exponent.
+            match = re.match(r'^([^\s*/^\d]+)\^(-?\d+)$', part)
             if match:
                 token = match.group(1)
                 exp = int(match.group(2))
             else:
-                if not re.match(r'^[^\s*/^]+$', part):
-                    raise ValueError(f"Invalid unit token: '{part}'")
+                if not re.match(r'^[^\s*/^\d]+$', part):
+                    raise ValueError(part)
                 token = part
                 exp = 1
-
-            if re.match(r'^\d+$', token):
-                raise ValueError(f"Invalid unit token: '{token}'")
 
             exponents[token] = exponents.get(token, 0) + exp * sign
 
