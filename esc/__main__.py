@@ -210,6 +210,24 @@ def _enter_unit_mode(ss, registry, menu):
         if c == 27:  # Escape — cancel, preserve original unit
             break
 
+        if c in (curses.KEY_BACKSPACE, 127) or curses.ascii.unctrl(c) == '^H':
+            if buf:
+                # Remove the whole " * " or " / " if we auto-inserted it
+                if buf.endswith(' * ') or buf.endswith(' / '):
+                    buf = buf[:-3]
+                else:
+                    buf = buf[:-1]
+                screen().stackw.partial_unit = buf
+                screen().refresh_stack(ss)
+            else:
+                break  # empty buffer, cancel
+            continue
+
+        if c > 256:
+            status.error("The key you pressed doesn't mean anything to esc here.")
+            screen().refresh_status()
+            continue
+
         try:
             char = chr(c)
         except (ValueError, OverflowError):
@@ -228,15 +246,6 @@ def _enter_unit_mode(ss, registry, menu):
                 continue
             target_item.unit = unit
             break
-        elif c in (curses.KEY_BACKSPACE, 127) or curses.ascii.unctrl(c) == '^H':
-            if buf:
-                # Remove the whole " * " or " / " if we auto-inserted it
-                if buf.endswith(' * ') or buf.endswith(' / '):
-                    buf = buf[:-3]
-                else:
-                    buf = buf[:-1]
-            else:
-                break  # empty buffer, cancel
         elif char == '*':
             buf += " * "
         elif char == '/':
