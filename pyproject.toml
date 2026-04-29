@@ -26,7 +26,7 @@ dependencies = [
 ]
 
 [project.scripts]
-esc = "esc.__main__:curses_wrapper"
+esc = "esc.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/sobjornstad/esc"

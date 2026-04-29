@@ -8,9 +8,10 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
@@ -19,6 +20,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: uv sync --group test
       - run: uv run pytest
+      - run: uv run python -c "from esc.cli import main; print(main)"
 
   lint:
     runs-on: ubuntu-latest

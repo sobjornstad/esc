@@ -460,9 +460,6 @@ def bootstrap(stdscr):
     main()
 
 
-def curses_wrapper():
-    curses.wrapper(bootstrap)
-
-
 if __name__ == '__main__':
-    curses_wrapper()
+    from .cli import main
+    main()
