@@ -251,9 +251,9 @@ class UnitExpression:
         """
         Render the unit expression for screen display.
 
-        Positive-exponent tokens first (joined by ' * ' if multiple),
-        then ' / ' and negative-exponent tokens. Exponents shown as ^n
-        when |n| > 1. If ALL exponents are negative, use ^-n notation.
+        Positive-exponent tokens first (joined by ``*`` if multiple),
+        then ``/`` and negative-exponent tokens. Exponents shown as ``^n``
+        when :math:`|n| > 1`. If all exponents are negative, use ``^-n`` notation.
 
         >>> UnitExpression({"m": 1}).display()
         'm'
@@ -283,7 +283,7 @@ class UnitExpression:
                 return token
             return f"{token}^{abs(exp)}"
 
-        # If ALL exponents are negative, use ^-n notation
+        # If all exponents are negative, use ^-n notation
         if not pos:
             parts = []
             for token, exp in neg:
@@ -395,7 +395,7 @@ class UnitHandler:
         Whether the user has repeated the operation to override a unit error.
 
         .. note::
-            **You probably do not need or want this parameter.**
+            **You probably do not need or want to consume this parameter.**
 
             The default behavior for overrides
             is to offer the user an override, and if accepted,
@@ -612,6 +612,13 @@ class unspecified_unit_handling(UnitHandler):
 
     Operations on unitful quantities cannot be carried out,
     but the user can choose to strip units and complete the calculation.
+
+    As an argument to ``unit_handling``
+    in an :func:`@Operation <esc.commands.Operation>` decorator,
+    this is functionally equivalent to ``None``. 
+    It is nevertheless good style to provide it
+    to clarify that you're intentionally choosing not to support units,
+    rather than simply not bothering to add such support.
     """
     description = "not supported"
 
@@ -623,10 +630,10 @@ class unspecified_unit_handling(UnitHandler):
 
 class UnitDecimal(Decimal):
     """
-    Subclass of Decimal with an optional .unit attribute (UnitExpression or None).
+    Subclass of Decimal with an optional ``unit`` attribute
+    (expected type :class:`UnitExpression <esc.units.UnitExpression>` or ``None``).
 
-    This avoids exposing type changes in user-facing APIs -- anything that
-    received a Decimal still receives a Decimal.
+    UnitDecimals otherwise behave identically to Decimals in all respects.
 
     >>> ud = UnitDecimal(42, unit=UnitExpression({"m": 1}))
     >>> isinstance(ud, Decimal)

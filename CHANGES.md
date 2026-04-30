@@ -31,7 +31,7 @@ See the “Units” section of the user manual for details.
 
 (Note that esc doesn't understand the actual meaning of units or convert units;
 unit operations are purely symbolic.
-Check out [Frink][] if your workflow uses units heavily
+Check out [Frink][] if you need to do calculations that actually understand units
 and you don't mind learning a small language.)
 
 [Frink]: https://frinklang.org/

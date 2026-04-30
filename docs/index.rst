@@ -45,6 +45,21 @@ What does this mean?
    hacking-esc/index
 
 
+AI use in this documentation
+============================
+
+Small portions of this esc documentation have been drafted or updated by Claude Code
+(particularly some of the docstrings).
+However, the vast majority of it is human-written from the start,
+and all of it has been thoroughly reviewed and edited by a human.
+
+The author of esc sees a need to mention this limited amount of LLM use
+only because his `personal LLM policy`_
+indicates he never publishes any English text written with LLMs without disclosing it.
+
+.. _personal LLM policy: https://sorenbjornstad.com/ai/
+
+
 Indices and tables
 ==================
 

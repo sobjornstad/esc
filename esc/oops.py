@@ -142,17 +142,21 @@ class IncommensurableUnitsError(UnitError):
 
 class UnitlessOperandError(UnitError):
     """
-    Raised when mixing unitless and unitful operands when multiplying or dividing
-    (unless one of the operands is 1, which never triggers a warning).
+    Raised by an operation's unit handler when unitless and unitful operands
+    are mixed in a way invalid for that operation.
+     
+    In the built-in unit handlers, this is raised when multiplying or dividing
+    and one of the operands is unitless and not the identity value (1).
 
-    Since this is a warning and not an unrecoverable error,
-    the raiser of this exception must ensure that they allow the user to override
-    the error without stripping the units
-    (using the ``override`` parameter of the :class:`~esc.units.UnitHandler`).
+    Sometimes this is a warning and not an unrecoverable error,
+    e.g., in the multiplication case described above.
+    If this is the case, the raiser of this exception
+    can allow the user to override the error without stripping the units
+    using the ``override`` parameter of the :class:`~esc.units.UnitHandler`.
 
-    If mixing unitful and unitless operands here is incoherent,
-    rather than a possible mistake to double-check for,
-    ``UnitlessOperandError`` is not the appropriate exception to raise.
+    If the ``override`` parameter is not used,
+    overriding this error will strip all units and call the operation again;
+    this is usually what you want if you're writing a custom unit handler.
     """
 
     def __init__(self):

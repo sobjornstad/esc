@@ -196,6 +196,9 @@ Here's the full scoop on defining tests:
 
 .. autoclass:: esc.functest.TestCase
 
+Unit-aware operations can test their unit behaviors in tests;
+see :ref:`Testing unit handlers <Testing unit handlers>` for details.
+
 
 Putting it all together
 =======================

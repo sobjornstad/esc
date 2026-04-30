@@ -61,9 +61,9 @@ class TestCase:
     itself is not returned to the functions file, only a decorated function,
     the function author can't access the :class:`EscOperation
     <esc.commands.EscOperation>`. Instead, they are associated with the
-    function itself, and when the test() method is called on an
+    function itself, and when the ``test()`` method is called on an
     :class:`EscOperation <esc.commands.EscOperation>`, it retrieves the test
-    cases from the function and passes itself into the execute() method of
+    cases from the function and passes itself into the ``execute()`` method of
     each test case.
     """
     def __init__(self, before, after=None, raises=None, close=False):

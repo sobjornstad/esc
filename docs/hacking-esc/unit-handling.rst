@@ -68,7 +68,8 @@ While the built-in behaviors
 use subclasses of :class:`UnitHandler <esc.units.UnitHandler>`
 for clarity of interface, structure, and customizability,
 if you're writing a one-off unit handler for an operation,
-you will likely want to just write a single function with the appropriate parameters.
+you will likely want to just write a single function that implements this interface
+by including the appropriate parameters.
 
 .. autoclass:: esc.units.UnitHandler
     :members:
@@ -82,10 +83,21 @@ to determine what units to return:
     :special-members: __add__, __sub__, __mul__, __truediv__, __pow__
     :member-order: bysource
 
-esc does not verify that the unit algebra specified by a unit handler
-matches the algebra of your operation,
-so it is a good idea to include a check of this behavior in your
-:ref:`tests <Writing tests>`.
+The :class:`UnitDecimal <esc.units.UnitDecimal>` class is used in some places
+to carry units along with numeric values;
+for instance, you'll attach your
+:class:`UnitExpression <esc.units.UnitExpression>`\ s to it when
+:ref:`testing unit handlers <Testing unit handlers>`:
+
+.. autoclass:: esc.units.UnitDecimal
+    :members:
+
+Several classes of exception,
+descended from :class:`UnitError <esc.oops.UnitError>`,
+are available to describe invalid combinations of units
+that you might be passed in a unit handler;
+see :ref:`Execution errors <Execution errors>` in the class reference
+for details.
 
 .. caution::
     esc allows a mix of unitful and unitless values to be passed
@@ -172,3 +184,40 @@ You could equivalently write the unit handler as a subclass of
                 acceleration * time * time,
                 acceleration * time,
             ]
+
+
+
+Testing unit handlers
+=====================
+
+esc does not verify that the unit algebra specified by a unit handler
+matches the algebra of your operation,
+so it is a good idea to include a check of this behavior
+in your operation's tests.
+
+To test the unit behavior of an operation in a test case,
+use :class:`UnitDecimal <esc.units.UnitDecimal>` objects rather than numbers,
+and attach appropriate :class:`UnitExpression <esc.units.UnitExpression>`\ s
+to their ``unit`` attributes.
+For example, here's how the built-in add operation's unit behavior is tested,
+arbitrarily using units of meters and seconds:
+
+.. code-block:: python
+
+    from esc.functest import TestCase
+    from esc.units import UnitDecimal as UD
+    from esc.units import UnitExpression as U
+
+    # ...define the "add" operation...
+
+    add.ensure(
+        before=[UD(2, unit=U({"m": 1})), UD(3, unit=U({"m": 1}))],
+        after=[UD(5, unit=U({"m": 1}))]
+    )
+    add.ensure(
+        before=[UD(2, unit=U({"m": 1})), UD(3, unit=U({"s": 1}))],
+        raises=IncommensurableUnitsError
+    )
+
+For more information on testing custom operations,
+see :ref:`Writing tests <Writing tests>`.

@@ -74,3 +74,14 @@ the warning :guilabel:`This operation will remove units` will be issued
 when you run it on unitful stack values;
 pressing the operation key again
 will pass the values as unitless and return a unitless result.
+
+
+Walkthrough
+===========
+
+If you learn better by watching and then doing,
+here's a full worked example of catching a real mistake with unit tags.
+
+.. raw:: html
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/3c0MKm3F0Gk?si=ru9DyOWqCDzWn4M7" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
