@@ -515,16 +515,12 @@ class power_unit_handling(UnitHandler):
     The exponent must be unitless and integer-valued.
     Only two operands are allowed, the base and the exponent.
 
-    :raises esc.oops.ProgrammingError: if the operation has != 2 operands.
     :raises esc.oops.UnitExponentError: if the exponent has a unit or is
         not an integer.
     """
     description = "power (base units scaled by exponent)"
 
-    def __call__(self, base, exp_stackitem, *all_items):
-        if len(all_items) != 2:
-            raise ProgrammingError("Power unit handling requires exactly two operands.")
-
+    def __call__(self, base, exp_stackitem):
         base_unit = base
         exp_unit = exp_stackitem.unit or UnitExpression()
         if not exp_unit.is_unitless:
@@ -548,7 +544,6 @@ class root_unit_handling(UnitHandler):
     All exponents must be evenly divisible.
     Only one operand is allowed, the base.
 
-    :raises esc.oops.ProgrammingError: if the operation has != 1 operand.
     :raises esc.oops.UnitRootError: if any exponent is not evenly
         divisible by the degree.
     """
@@ -559,9 +554,7 @@ class root_unit_handling(UnitHandler):
         self._degree = degree
         self.description = f"root (unit exponents / {degree})"
 
-    def __call__(self, base, *all_items):
-        if len(all_items) != 1:
-            raise ProgrammingError("Root unit handling requires exactly one operand.")
+    def __call__(self, base):
         if base.is_unitless:
             return [None]
         result = base.root(self._degree)
@@ -571,16 +564,10 @@ class root_unit_handling(UnitHandler):
 class preserve_unit_handling(UnitHandler):
     """
     Maintain the same units as the only input.
-
-    :raises esc.oops.ProgrammingError: if the operation has != 1 operand.
     """
     description = "preserves units"
 
-    def __call__(self, base, *all_items, num_results):
-        if len(all_items) != 1:
-            raise ProgrammingError(
-                "Preserve unit handling requires exactly one operand."
-            )
+    def __call__(self, base, *, num_results):
         base_or_none = base if not base.is_unitless else None
         return [base_or_none] * max(num_results, 0)
 
@@ -591,8 +578,8 @@ class no_output_unit_handling(UnitHandler):
     """
     description = "no output units"
 
-    def __call__(self):
-        return []
+    def __call__(self, *, num_results):
+        return [None] * max(num_results, 0)
 
 
 class no_input_unit_handling(UnitHandler):
