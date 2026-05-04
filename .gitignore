@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 .venv/
+.pypi_token
 
 # IDE and linters
 .mypy_cache/

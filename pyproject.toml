@@ -32,6 +32,11 @@ esc = "esc.cli:main"
 Homepage = "https://github.com/sobjornstad/esc"
 Documentation = "https://esc-calc.readthedocs.io"
 
+[tool.hatch.build]
+exclude = [
+    ".jj",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["esc"]
 
