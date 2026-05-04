@@ -655,7 +655,7 @@ def Constant(value, key, description, menu, unit=None):  # pylint: disable=inval
     :param key: The key to press to select the constant from the menu.
     :param description: A brief description to show next to the *key*.
     :param menu: A :class:`Menu <EscMenu>` to place this function on.
-    :param unit: An optional :class:`UnitExpression` for the constant's unit.
+    :param unit: An optional :class:`esc.units.UnitExpression` for the constant's unit.
     """
     uh = (lambda: [unit]) if unit else no_input_unit_handling()
     @Operation(key=key, menu=menu, push=1, description=description,
@@ -704,7 +704,7 @@ def Operation(key,
     :param menu:
         The :class:`Menu <EscMenu>` to place this operation on.
         The simplest choice is ``main_menu``,
-        which you can import from :mod:`esc.commands`.
+        which you can import from ``esc.commands``.
     :param push:
         The number of items the decorated function
         will return to the stack on success.
@@ -730,8 +730,8 @@ def Operation(key,
 
         * If it is ``None``, the *description* is used.
 
-        * If it is the module constant :attr:`esc.commands.UNOP`
-          or :attr:`esc.commands.BINOP`,
+        * If it is the module constant ``esc.commands.UNOP``
+          or ``esc.commands.BINOP``,
           the log string is a default suitable
           for many unary or binary operations:
           for ``UNOP`` it is

@@ -420,11 +420,13 @@ class UnitHandler:
     offered by operation parameter binding
     are currently not supported for unit handlers.
 
-    If the callable has a :attr:`description` attribute,
-    or if that is not present a :attr:`__doc__` attribute (docstring),
+    If the callable has a :attr:`UnitHandler.description` attribute,
+    or if that is not present a ``__doc__`` attribute (docstring),
     it will be shown in the help screen after :literal:`Units: \\ `.
     In a couple of words, this should describe what happens to the units.
     """
+    #: Short phrase describing what this handler does to the units,
+    #: shown on the help screen. Falls back to the docstring if empty.
     description = ""
 
     def __repr__(self):

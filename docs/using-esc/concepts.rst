@@ -164,6 +164,10 @@ esc defines several special commands.
 
         See :ref:`History` for more information on calculation history.
 
+    .. autoclass:: esc.builtin_stubs.AddUnitTag
+
+        See :ref:`Units` for more information on unit tags.
+
     .. autoclass:: esc.builtin_stubs.Quit
 
 

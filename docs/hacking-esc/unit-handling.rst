@@ -23,7 +23,7 @@ Built-in unit handling behaviors
 ================================
 
 Many simple operations can become unit-aware
-by choosing an appropriate built-in unit handling behavior from :mod:`esc.units`.
+by choosing an appropriate built-in unit handling behavior from ``esc.units``.
 Simply set ``unit_handling``
 to a newly constructed instance of one of these handler classes
 (e.g., ``unit_handling=additive_unit_handling()``):
@@ -122,14 +122,14 @@ for details.
     If a mix of unitful and unitless values is not sensible,
     or only certain combinations of unitful and unitless values are sensible,
     your unit handler should check for invalid conditions
-    (using the :attr:`is_unitless` attribute of the unit object)
+    (using the :attr:`is_unitless <esc.units.UnitExpression.is_unitless>` attribute of the unit object)
     and raise a :class:`UnitlessOperandError <esc.oops.UnitlessOperandError>`.
     The user will be able to override this by pressing the operation key again,
     which will carry out the calculation without units.
 
 
-Example
--------
+Example unit handler
+--------------------
 
 Consider the following operation,
 which calculates the distance traveled and final velocity
