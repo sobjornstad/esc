@@ -80,6 +80,15 @@ are maintained on [Read The Docs][].
 [Read The Docs]: https://esc-calc.readthedocs.io
 
 
+AI
+==
+
+I use AI agents to develop and maintain esc,
+but I maintain a working understanding of and responsibility for the codebase.
+(At this time, most of the codebase was developed before AI agents existed,
+so AI contributions are fairly minimal and mostly limited to the new features in esc 1.1.0.)
+
+
 Contributing
 ============
 
